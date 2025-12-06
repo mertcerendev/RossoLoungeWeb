@@ -1,0 +1,67 @@
+﻿@using Newtonsoft.Json
+@{
+    Layout = null;
+    // Veriler boş gelirse hata vermemesi için kontrol eklendi
+    var gunlerJson = ViewBag.GrafikGunler != null ? JsonConvert.SerializeObject(ViewBag.GrafikGunler) : "[]";
+    var sayilarJson = ViewBag.GrafikSayilar != null ? JsonConvert.SerializeObject(ViewBag.GrafikSayilar) : "[]";
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <title>Dashboard | Rosso Lounge</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
+        .sidebar { height: 100vh; background: #1a1a1a; color: white; padding: 20px; position: fixed; width: 250px; top: 0; left: 0; z-index: 100; }
+        .content { margin-left: 250px; padding: 30px; }
+        .stat-card { border: none; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.3s; color: white; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .icon-box { font-size: 2.5rem; opacity: 0.6; }
+        .menu-item { display: block; padding: 12px 15px; color: #bbb; text-decoration: none; margin-bottom: 5px; border-radius: 8px; transition: 0.3s; }
+        .menu-item:hover, .menu-item.active { background: #e74c3c; color: white; }
+        .logo { font-size: 1.5rem; font-weight: bold; margin-bottom: 40px; display: block; color: white; text-decoration: none;} .logo span { color: #e74c3c; }
+        
+        /* Çift  ile düzeltildi */
+        @@media (max-width: 768px) { 
+            .sidebar { width: 100%; height: auto; position: relative; display: flex; flex-direction: column; align-items: center; } 
+            .content { margin-left: 0; padding: 15px; } 
+            .menu-item { width: 100%; text-align: center; } 
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="#" class="logo">ROSSO <span>PANEL</span></a>
+        <a href="/Admin/Index" class="menu-item active"><i class="fas fa-home me-2"></i> Özet</a>
+        <a href="/Admin/Rezervasyonlar" class="menu-item"><i class="fas fa-calendar-check me-2"></i> Rezervasyonlar</a>
+        <a href="/Kategori/Index" class="menu-item"><i class="fas fa-list me-2"></i> Kategoriler</a>
+        <a href="/Urun/Index" class="menu-item"><i class="fas fa-utensils me-2"></i> Ürünler</a>
+        <a href="/Admin/Yorumlar" class="menu-item"><i class="fas fa-comments me-2"></i> Yorumlar</a>
+        <a href="/Admin/MailAyarlari" class="menu-item"><i class="fas fa-envelope me-2"></i> Mail Ayarları</a>
+        <a href="/Admin/Profil" class="menu-item"><i class="fas fa-user-cog me-2"></i> Ayarlar</a>
+        <a href="/" target="_blank" class="menu-item"><i class="fas fa-globe me-2"></i> Siteye Git</a>
+        <a href="/Admin/CikisYap" class="menu-item bg-dark mt-3"><i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap</a>
+    </div>
+
+    <div class="content">
+        <h2 class="mb-4">Hoşgeldiniz, Yönetici</h2>
+        <div class="row g-4 mb-5">
+            <div class="col-md-3"><div class="card stat-card bg-primary p-3"><div class="d-flex justify-content-between"><div><h6>Toplam</h6><h2>@ViewBag.ToplamRezervasyon</h2></div><div class="icon-box"><i class="fas fa-users"></i></div></div></div></div>
+            <div class="col-md-3"><div class="card stat-card bg-warning p-3"><div class="d-flex justify-content-between"><div><h6>Bekleyen</h6><h2>@ViewBag.BekleyenRezervasyon</h2></div><div class="icon-box"><i class="fas fa-clock"></i></div></div></div></div>
+            <div class="col-md-3"><div class="card stat-card bg-success p-3"><div class="d-flex justify-content-between"><div><h6>Onaylı</h6><h2>@ViewBag.OnayliRezervasyon</h2></div><div class="icon-box"><i class="fas fa-check-circle"></i></div></div></div></div>
+            <div class="col-md-3"><div class="card stat-card bg-danger p-3"><div class="d-flex justify-content-between"><div><h6>Ürünler</h6><h2>@ViewBag.ToplamUrun</h2></div><div class="icon-box"><i class="fas fa-hamburger"></i></div></div></div></div>
+        </div>
+        <div class="card shadow-sm p-4"><canvas id="rezervasyonChart" height="100"></canvas></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        var gunler = @Html.Raw(gunlerJson);
+        var sayilar = @Html.Raw(sayilarJson);
+        var ctx = document.getElementById('rezervasyonChart').getContext('2d');
+        new Chart(ctx, { type: 'line', data: { labels: gunler, datasets: [{ label: 'Rezervasyon', data: sayilar, borderColor: '#e74c3c', fill: true }] } });
+    </script>
+</body>
+</html>

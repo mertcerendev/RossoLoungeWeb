@@ -1,0 +1,352 @@
+﻿@model List<RossoLoungeWeb.Models.Yorum>
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rosso Lounge Bistro</title>
+    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/style.css">
+    <style>
+        /* Fiyat Stilleri (Index için) */
+        .price-container {
+            border-top: 1px solid #444;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        .price {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: block;
+        }
+
+        .price-label {
+            color: #aaa;
+            font-size: 0.85rem;
+            font-weight: normal;
+            margin-right: 5px;
+        }
+
+        .menu-card {
+            background: #2a2a2a;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .menu-card:hover {
+                transform: translateY(-5px);
+            }
+
+            .menu-card img {
+                width: 100%;
+                height: 250px;
+                object-fit: cover;
+            }
+
+        .menu-info {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+            .menu-info h3 {
+                color: #fff;
+                font-size: 1.3rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .menu-info p {
+                color: #ccc;
+                font-size: 0.9rem;
+                font-weight: 300;
+                min-height: 40px;
+            }
+    </style>
+</head>
+
+<body>
+    @if (TempData["Mesaj"] != null)
+    {
+        <script> window.onload = function() { alert("@Html.Raw(TempData["Mesaj"]?.ToString())"); }; </script>
+    }
+    @if (TempData["Hata"] != null)
+    {
+        <script> window.onload = function() { alert("Hata: @Html.Raw(TempData["Hata"]?.ToString())"); }; </script>
+    }
+
+    <header id="navbar">
+        <div class="container nav-container">
+            <a href="#home" class="logo">ROSSO <span>LOUNGE</span></a>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#home" class="active">Ana Sayfa</a></li>
+                    <li><a href="#about">Hakkımızda</a></li>
+                    <li><a href="#menu">Menü</a></li>
+                    <li><a href="#gallery">Galeri</a></li>
+                    <li><a href="#reviews">Yorumlar</a></li>
+                    <li><a href="#contact">İletişim</a></li>
+                    <li class="mobile-only-reserve-btn"><a href="#rezervasyon" class="btn-reserve">Rezervasyon Yap</a></li>
+                </ul>
+            </nav>
+            <a href="#rezervasyon" class="btn-reserve desktop-only-reserve-btn">Rezervasyon Yap</a>
+            <div class="hamburger"><i class="fas fa-bars"></i></div>
+        </div>
+    </header>
+
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1>Lezzetin ve Konforun Buluşma Noktası</h1>
+            <p>Rosso Lounge Bistro'da unutulmaz anlar yaşayın.</p>
+            <a href="#menu" class="btn-main">Menüyü Keşfet</a>
+        </div>
+    </section>
+
+    <section id="about" class="section-padding">
+        <div class="container">
+            <h2 class="section-title">Biz Kimiz?</h2>
+            <div class="about-content">
+                <div class="about-text">
+                    <p>Rosso Lounge Bistro olarak, misafirlerimize sadece yemek değil, bir deneyim sunuyoruz. Modern atmosferimiz ve özel imza kokteyllerimiz ile Bandırma'nın en keyifli buluşma noktasıyız.</p>
+                    <ul class="features">
+                        <li><i class="fas fa-check-circle"></i> Taze ve Organik Malzemeler</li>
+                        <li><i class="fas fa-check-circle"></i> Profesyonel Şefler</li>
+                        <li><i class="fas fa-check-circle"></i> Canlı Müzik Etkinlikleri</li>
+                    </ul>
+                </div>
+                <div class="about-image">
+                    <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Bistro İç Mekan">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="menu" class="section-padding bg-dark">
+        <div class="container">
+            <h2 class="section-title text-light">Öne Çıkan Lezzetler</h2>
+
+            <div class="row g-4 justify-content-center">
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="menu-card">
+                        <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Burger">
+                        <div class="menu-info">
+                            <div>
+                                <h3>Rosso Burger</h3>
+                                <p>Özel sos, karamelize soğan, çedar peyniri.</p>
+                            </div>
+                            <div class="price-container mt-3">
+                                <div class="text-center"><span class="price">320₺</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="menu-card">
+                        <img src="https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Pizza">
+                        <div class="menu-info">
+                            <div>
+                                <h3>İtalyan Pizza</h3>
+                                <p>Mozzarella, fesleğen, ince hamur.</p>
+                            </div>
+                            <div class="price-container mt-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div><span class="price-label">Orta:</span><span class="price">290₺</span></div>
+                                    <div class="text-end"><span class="price-label">Büyük:</span><span class="price">350₺</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="menu-card">
+                        <img src="https://images.unsplash.com/photo-1579306194872-64d3b7bac4c2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Tatlı">
+                        <div class="menu-info">
+                            <div>
+                                <h3>San Sebastian</h3>
+                                <p>Belçika çikolatası sosu ile.</p>
+                            </div>
+                            <div class="price-container mt-3">
+                                <div class="text-center"><span class="price">180₺</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center" style="margin-top: 2rem;">
+                <a href="/Home/Menu" class="btn-outline">Tüm Menüyü Gör</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="gallery" class="section-padding">
+        <div class="container">
+            <div class="text-center"><h2 class="section-title">Mekan & Atmosfer</h2><p style="margin-bottom: 3rem; color: #666;">Sizi bekleyen ayrıcalıklı ortam.</p></div>
+            <div class="gallery-grid">
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=60" alt="Mekan"></div>
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1514362545857-3bc16549766b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=60" alt="Kokteyl"></div>
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1559339352-11d035aa65de?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=60" alt="Bahçe"></div>
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=60" alt="Sunum"></div>
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1514933651103-005eec06c04b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=60" alt="Bar"></div>
+                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1522337660859-02fbefca4702?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=60" alt="Detay"></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="reviews" class="section-padding bg-dark">
+        <div class="container">
+            <h2 class="section-title text-light">Müşterilerimiz Ne Dedi?</h2>
+
+            <div id="reviewsCarousel" class="carousel slide" data-bs-ride="carousel" style="margin-bottom: 50px;">
+                <div class="carousel-inner">
+                    @if (Model != null && Model.Count > 0)
+                    {
+                        var yorumlar = Model.ToList();
+                        for (int i = 0; i < yorumlar.Count; i += 2)
+                        {
+                            <div class="carousel-item @(i == 0 ? "active" : "")">
+                                <div class="row justify-content-center">
+                                    @for (int j = 0; j < 2; j++)
+                                    {
+                                        if (i + j < yorumlar.Count)
+                                        {
+                                            var y = yorumlar[i + j];
+                                            <div class="col-md-5 col-12 mb-3">
+                                                <div class="review-card">
+                                                    <div class="stars">@for (int s = 0; s < y.Puan; s++) {
+                                                    <i class="fas fa-star"></i>
+                                                }
+            </div>
+                                                <p>"@y.Mesaj"</p>
+                                                <div class="review-info"><h5>- @y.AdSoyad</h5><small>@y.Tarih.ToString("dd.MM.yyyy")</small></div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+                                        }
+                                        else
+                    {
+                        <div class="text-center text-light w-100 p-4" style="background:#2a2a2a; border-radius:10px;">
+                            <i class="fas fa-comments fa-3x mb-3" style="color:#444;"></i>
+                            <p>Henüz yorum yapılmamış. İlk yorumu siz yapın!</p>
+                        </div>
+                    }
+                </div>
+
+                @if (Model != null && Model.Count > 2)
+                {
+                    <button class="carousel-control-prev" type="button" data-bs-target="#reviewsCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon"></span></button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#reviewsCarousel" data-bs-slide="next"><span class="carousel-control-next-icon"></span></button>
+                }
+            </div>
+
+            <div class="review-form-container mt-5" style="max-width: 700px; margin: 0 auto;">
+                <div class="card bg-dark text-white border-secondary shadow-lg" style="border-radius: 15px; overflow: hidden; border: 1px solid #333;">
+                    <div class="card-header text-center py-4" style="background: #1f1f1f; border-bottom: 1px solid #333;">
+                        <h3 class="mb-1" style="color: #e74c3c; letter-spacing: 1px;">Deneyiminizi Paylaşın</h3>
+                        <small style="color: #ccc; font-size: 0.9rem;">Görüşleriniz bizim için çok değerli.</small>
+                    </div>
+                    <div class="card-body p-4 p-md-5">
+                        <form action="/Home/YorumYap" method="post">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="input-group modern-input-group">
+                                        <span class="input-group-text border-0" style="background-color: #2c2c2c; color: #aaa;"><i class="fas fa-user"></i></span>
+                                        <input type="text" name="AdSoyad" class="form-control border-0 shadow-none" placeholder="Adınız Soyadınız" required style="background-color: #2c2c2c; color: #fff; padding: 12px;">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group modern-input-group">
+                                        <span class="input-group-text border-0" style="background-color: #2c2c2c; color: #aaa;"><i class="fas fa-star"></i></span>
+                                        <select name="Puan" class="form-select border-0 shadow-none" required style="background-color: #2c2c2c; color: #fff; padding: 12px; cursor: pointer;">
+                                            <option value="" disabled selected style="color: #aaa;">Puanınız...</option>
+                                            <option value="5" style="color: #000;">⭐⭐⭐⭐⭐ (Mükemmel)</option>
+                                            <option value="4" style="color: #000;">⭐⭐⭐⭐ (Çok İyi)</option>
+                                            <option value="3" style="color: #000;">⭐⭐⭐ (İyi)</option>
+                                            <option value="2" style="color: #000;">⭐⭐ (Orta)</option>
+                                            <option value="1" style="color: #000;">⭐ (Geliştirilmeli)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="input-group modern-input-group">
+                                        <span class="input-group-text border-0" style="background-color: #2c2c2c; color: #aaa; align-items: flex-start; padding-top: 15px;"><i class="fas fa-pen"></i></span>
+                                        <textarea name="Mesaj" class="form-control border-0 shadow-none" placeholder="Yorumunuzu buraya yazın..." required rows="4" style="background-color: #2c2c2c; color: #fff; padding: 12px; resize: none;"></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-12 text-center mt-2"><button type="submit" class="btn btn-danger w-100 py-3 fw-bold text-uppercase shadow" style="background-color: #e74c3c; border: none; border-radius: 10px;">Yorumu Gönder</button></div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="section-padding">
+        <div class="container">
+            <h2 class="section-title">İletişim & Adres</h2>
+            <div class="contact-top-wrapper">
+                <div class="contact-details">
+                    <h3>Bize Ulaşın</h3>
+                    <div class="info-item"><i class="fas fa-map-marker-alt"></i><div><strong>Adres:</strong><p>Yeni Mahalle, 21002 Sokak, No: 3B<br>10200 Bandırma/Balıkesir</p></div></div>
+                    <a href="tel:+902667121313" class="info-item-link"><div class="info-item"><i class="fas fa-phone"></i><div><strong>Telefon:</strong><p>+90 266 712 13 13</p></div></div></a>
+                    <div class="info-item"><i class="fas fa-clock"></i><div><strong>Çalışma Saatleri:</strong><p>Her Gün: 11:30 - 00:00</p></div></div>
+                    <a href="mailto:info@rossolounge.com" class="info-item-link"><div class="info-item"><i class="fas fa-envelope"></i><div><strong>E-Posta:</strong><p>info@rossolounge.com</p></div></div></a>
+                    <div class="social-links">
+                        <a href="https://www.instagram.com/rosso.lounge.bistro/" target="_blank"><i class="fab fa-instagram"></i></a>
+                        <a href="https://www.facebook.com/rossolounge" target="_blank"><i class="fab fa-facebook"></i></a>
+                    </div>
+                </div>
+                <div class="map-container"><iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d319.6543230992864!2d27.936944127683113!3d40.34053662812616!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14b5d3bd385d1797%3A0x887916a4f8a71e73!2sRosso%20lounge%20bistro!5e0!3m2!1str!2str!4v1763491907694!5m2!1str!2str" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe></div>
+            </div>
+
+            <div class="reservation-container" id="rezervasyon" style="margin-top: 60px;">
+                <div class="form-header">
+                    <h3>Masa Rezervasyonu</h3>
+                    <p>Özel günleriniz veya akşam yemeğiniz için yerinizi şimdiden ayırtın.</p>
+                </div>
+                <form id="reservation-form" class="reservation-form-horizontal" method="post" action="/Home/RezervasyonYap">
+                    <div class="form-group"><input type="text" name="AdSoyad" placeholder="Adınız Soyadınız" required></div>
+                    <div class="form-group"><input type="tel" id="phoneInput" name="Telefon" placeholder="5XX XXX XX XX (Başında 0 olmadan)" required><small style="color: #aaa; font-size: 0.8rem; display: block; margin-top: 5px;">Lütfen başında '0' olmadan giriniz.</small></div>
+                    <div class="form-group"><input type="text" id="datePicker" name="Tarih" placeholder="Tarih ve Saat Seçiniz" required></div>
+                    <div class="form-group"><input type="number" name="KisiSayisi" placeholder="Kişi Sayısı" min="1" required></div>
+                    <div class="form-group full-width"><textarea name="Not" placeholder="Özel notunuz var mı? (Doğum günü, alerji vb.)" rows="3"></textarea></div>
+                    <button type="submit" class="btn-main" style="width: 100%; margin-top: 10px;">Rezervasyon Yap</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>© 2025 Rosso Lounge Bistro. Tüm hakları saklıdır.</p>
+        <div class="footer-signature">Software & Design by <span class="developer-name">Mert CEREN</span></div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/tr.js"></script>
+    <script src="~/js/script.js"></script>
+</body>
+</html>

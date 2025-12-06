@@ -1,0 +1,243 @@
+﻿@model List<RossoLoungeWeb.Models.Kategori>
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <title>Kategori Yönetimi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f3f4f6;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        /* Sidebar (Standart) */
+        .sidebar {
+            height: 100vh;
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+            position: fixed;
+            width: 250px;
+            top: 0;
+            left: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 40px;
+            display: block;
+            color: white;
+            text-decoration: none;
+        }
+
+            .logo span {
+                color: #e74c3c;
+            }
+
+        .menu-item {
+            display: block;
+            padding: 12px 15px;
+            color: #bbb;
+            text-decoration: none;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+
+            .menu-item:hover, .menu-item.active {
+                background: #e74c3c;
+                color: white;
+            }
+
+        .content {
+            margin-left: 250px;
+            padding: 40px;
+        }
+
+        /* --- MODERN TABLO TASARIMI --- */
+        .custom-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            overflow: hidden; /* Köşeleri koru */
+            border: none;
+        }
+
+        .card-header-custom {
+            background: white;
+            padding: 25px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-custom thead th {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            border: none;
+            padding: 15px 20px;
+        }
+
+        .table-custom tbody td {
+            padding: 20px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f0f0f0;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .table-custom tbody tr {
+            transition: all 0.2s;
+        }
+
+            .table-custom tbody tr:hover {
+                background-color: #fff5f5; /* Hafif kırmızımsı hover */
+                transform: scale(1.005); /* Çok hafif büyüme */
+                box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+                z-index: 10;
+                position: relative;
+            }
+
+        /* Butonlar */
+        .btn-action {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+            border: none;
+        }
+
+        .btn-edit {
+            background: #e0f2fe;
+            color: #0ea5e9;
+        }
+
+            .btn-edit:hover {
+                background: #0ea5e9;
+                color: white;
+            }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+            .btn-delete:hover {
+                background: #ef4444;
+                color: white;
+            }
+
+        .badge-rank {
+            background: #e74c3c;
+            color: white;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        @@media (max-width: 768px) {
+            .sidebar
+
+        {
+            width: 100%;
+            height: auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .content {
+            margin-left: 0;
+            padding: 15px;
+        }
+
+        .menu-item {
+            width: 100%;
+            text-align: center;
+        }
+
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <a href="#" class="logo">ROSSO <span>PANEL</span></a>
+        <a href="/Admin/Index" class="menu-item"><i class="fas fa-home me-2"></i> Özet</a>
+        <a href="/Admin/Rezervasyonlar" class="menu-item"><i class="fas fa-calendar-check me-2"></i> Rezervasyonlar</a>
+        <a href="/Kategori/Index" class="menu-item active"><i class="fas fa-list me-2"></i> Kategoriler</a>
+        <a href="/Urun/Index" class="menu-item"><i class="fas fa-utensils me-2"></i> Ürünler</a>
+        <a href="/Admin/Yorumlar" class="menu-item"><i class="fas fa-comments me-2"></i> Yorumlar</a>
+        <a href="/Admin/MailAyarlari" class="menu-item"><i class="fas fa-envelope me-2"></i> Mail Ayarları</a>
+        <a href="/Admin/Profil" class="menu-item"><i class="fas fa-user-cog me-2"></i> Ayarlar</a>
+        <a href="/" target="_blank" class="menu-item"><i class="fas fa-globe me-2"></i> Siteye Git</a>
+        <a href="/Admin/CikisYap" class="menu-item bg-dark mt-3"><i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap</a>
+    </div>
+
+    <div class="content">
+        <div class="custom-card">
+            <div class="card-header-custom">
+                <div>
+                    <h4 class="m-0 fw-bold text-dark">Kategoriler</h4>
+                    <p class="text-muted small m-0">Menü kategorilerinizi buradan yönetin.</p>
+                </div>
+                <a href="/Kategori/Ekle" class="btn btn-dark px-4 py-2 rounded-pill">
+                    <i class="fas fa-plus me-2"></i> Yeni Ekle
+                </a>
+            </div>
+
+            <table class="table table-custom m-0">
+                <thead>
+                    <tr>
+                        <th>Sıra</th>
+                        <th>Kategori Adı</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td><div class="badge-rank">@item.SiraNo</div></td>
+                            <td style="font-size: 1.1rem;">@item.Ad</td>
+                            <td class="text-end">
+                                <a href="/Kategori/Duzenle/@item.Id" class="btn-action btn-edit me-2" title="Düzenle">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                                <form action="/Kategori/Sil/@item.Id" method="post" style="display:inline;" onsubmit="return confirm('Bu kategoriyi silmek istediğinize emin misiniz?');">
+                                    <button class="btn-action btn-delete" title="Sil">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if (Model.Count == 0)
+            {
+                <div class="p-5 text-center text-muted">Henüz kategori eklenmemiş.</div>
+            }
+        </div>
+    </div>
+</body>
+</html>

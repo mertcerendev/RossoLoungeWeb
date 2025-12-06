@@ -1,0 +1,45 @@
+﻿@model RossoLoungeWeb.Models.Kategori
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Yeni Kategori Ekle</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center" style="height: 100vh;">
+
+    <div class="card shadow p-4" style="width: 400px;">
+        <h4 class="mb-3 text-center">Yeni Kategori Ekle</h4>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                @Html.ValidationSummary(false, "", new { @class = "mb-0" })
+            </div>
+        }
+
+        <form action="/Kategori/Ekle" method="post">
+
+            <div class="mb-3">
+                <label class="form-label">Sıra No:</label>
+                <input type="number" name="SiraNo" class="form-control" required value="@Model?.SiraNo">
+                <small class="text-muted">Menüde hangi sırada görünsün? (1: En üst)</small>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Kategori Adı:</label>
+                <input type="text" name="Ad" class="form-control" required placeholder="Örn: Pizzalar">
+            </div>
+
+            <button type="submit" class="btn btn-danger w-100">Kaydet</button>
+        </form>
+
+        <a href="/Kategori/Index" class="btn btn-outline-secondary w-100 mt-2">İptal</a>
+    </div>
+
+</body>
+</html>
