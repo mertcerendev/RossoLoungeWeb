@@ -1,327 +1,162 @@
 ﻿@model List<RossoLoungeWeb.Models.Urun>
 @{
     Layout = null;
+    ViewBag.AktifMenu = "urunler";
 }
 
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <title>Ürün Yönetimi</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ürün Yönetimi | Rosso Lounge</title>
+    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* Genel Stiller */
-        body {
-            background-color: #f3f4f6;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            height: 100vh;
-            background: #1a1a1a;
-            color: white;
-            padding: 20px;
-            position: fixed;
-            width: 250px;
-            top: 0;
-            left: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 40px;
-            display: block;
-            color: white;
-            text-decoration: none;
-        }
-
-            .logo span {
-                color: #e74c3c;
-            }
-
-        .menu-item {
-            display: block;
-            padding: 12px 15px;
-            color: #bbb;
-            text-decoration: none;
-            margin-bottom: 5px;
-            border-radius: 8px;
-            transition: 0.3s;
-        }
-
-            .menu-item:hover, .menu-item.active {
-                background: #e74c3c;
-                color: white;
-            }
-
-        .content {
-            margin-left: 250px;
-            padding: 40px;
-        }
-
-        /* Kart ve Tablo */
-        .custom-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            overflow: hidden;
-            border: none;
-        }
-
-        .card-header-custom {
-            background: white;
-            padding: 25px;
-            border-bottom: 1px solid #f0f0f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .table-custom thead th {
-            background-color: #f8f9fa;
-            color: #6c757d;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            border: none;
-            padding: 15px 20px;
-        }
-
-        .table-custom tbody td {
-            padding: 15px 20px;
-            vertical-align: middle;
-            border-bottom: 1px solid #f0f0f0;
-            color: #333;
-        }
-
-        .table-custom tbody tr:hover {
-            background-color: #fffbfb;
-        }
-
-        /* Resim Kutusu */
-        .product-img-box {
-            width: 60px;
-            height: 60px;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            background-color: #eee;
-        }
-
-        .product-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Etiketler */
-        .badge-category {
-            background-color: #e0f2fe;
-            color: #0284c7;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .price-tag {
-            font-weight: bold;
-            color: #e74c3c;
-            font-size: 1.1rem;
-        }
-
-        /* Sıra No Rozeti (YENİ) */
-        .badge-rank {
-            background-color: #333;
-            color: #fff;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-
-        /* Aksiyon Butonları */
-        .btn-action {
-            width: 35px;
-            height: 35px;
-            border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.3s;
-            border: none;
-        }
-
-        .btn-edit {
-            background: #e0f2fe;
-            color: #0ea5e9;
-        }
-
-            .btn-edit:hover {
-                background: #0ea5e9;
-                color: white;
-            }
-
-        .btn-delete {
-            background: #fee2e2;
-            color: #ef4444;
-        }
-
-            .btn-delete:hover {
-                background: #ef4444;
-                color: white;
-            }
-
-        @@media (max-width: 768px) {
-            .sidebar
-
-        {
-            width: 100%;
-            height: auto;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .content {
-            margin-left: 0;
-            padding: 15px;
-        }
-
-        .menu-item {
-            width: 100%;
-            text-align: center;
-        }
-
-        }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/panel.css" asp-append-version="true">
 </head>
-<body>
-    <div class="sidebar">
-        <a href="#" class="logo">ROSSO <span>PANEL</span></a>
-        <a href="/Admin/Index" class="menu-item"><i class="fas fa-home me-2"></i> Özet</a>
-        <a href="/Admin/Rezervasyonlar" class="menu-item"><i class="fas fa-calendar-check me-2"></i> Rezervasyonlar</a>
-        <a href="/Kategori/Index" class="menu-item"><i class="fas fa-list me-2"></i> Kategoriler</a>
-        <a href="/Urun/Index" class="menu-item active"><i class="fas fa-utensils me-2"></i> Ürünler</a>
-        <a href="/Admin/Yorumlar" class="menu-item"><i class="fas fa-comments me-2"></i> Yorumlar</a>
-        <a href="/Admin/MailAyarlari" class="menu-item"><i class="fas fa-envelope me-2"></i> Mail Ayarları</a>
-        <a href="/Admin/Profil" class="menu-item"><i class="fas fa-user-cog me-2"></i> Ayarlar</a>
-        <a href="/" target="_blank" class="menu-item"><i class="fas fa-globe me-2"></i> Siteye Git</a>
-        <a href="/Admin/CikisYap" class="menu-item bg-dark mt-3"><i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap</a>
-    </div>
+<body class="panel">
+    <a href="#icerik" class="icerige-atla">İçeriğe atla</a>
 
-    <div class="content">
+    @await Html.PartialAsync("~/Views/Admin/_YanMenu.cshtml")
 
-        <div class="card border-0 shadow-sm p-3 mb-4 rounded-4">
-            <form method="get" action="/Urun/Index" class="row g-2 align-items-center">
-                <div class="col-auto"><i class="fas fa-filter text-secondary"></i></div>
-                <div class="col-auto">
-                    <select name="kategoriId" class="form-select border-0 bg-light fw-bold" onchange="this.form.submit()">
-                        <option value="">Tümü (Filtrele)</option>
-                        @if (ViewBag.Kategoriler != null)
+    <main class="content" id="icerik">
+        @await Html.PartialAsync("~/Views/Admin/_Bildirim.cshtml")
+
+        @* Kategori filtresi — method="get", antiforgery token GEREKMEZ *@
+        <form method="get" action="/Urun/Index" class="custom-card p-3 mb-4 d-flex flex-wrap align-items-end gap-3">
+            <div class="rs-alan mb-0">
+                <label class="rs-etiket" for="kategoriFiltre">
+                    <i class="fas fa-filter" aria-hidden="true"></i> Kategoriye göre filtrele
+                </label>
+                <select name="kategoriId" id="kategoriFiltre" class="rs-girdi" onchange="this.form.submit()">
+                    <option value="">Tümü</option>
+                    @if (ViewBag.Kategoriler != null)
+                    {
+                        foreach (var k in (SelectList)ViewBag.Kategoriler)
                         {
-                            foreach (var k in (SelectList)ViewBag.Kategoriler)
+                            if (ViewBag.SeciliKategoriId != null && k.Value == ViewBag.SeciliKategoriId.ToString())
                             {
-                                if (ViewBag.SeciliKategoriId != null && k.Value == ViewBag.SeciliKategoriId.ToString())
-                                {
-                                    <option value="@k.Value" selected>@k.Text</option>
-                                }
-                                else
-                                {
-                                    <option value="@k.Value">@k.Text</option>
-                                }
+                                <option value="@k.Value" selected>@k.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@k.Value">@k.Text</option>
                             }
                         }
-                    </select>
-                </div>
-                @if (ViewBag.SeciliKategoriId != null)
-                {
-                    <div class="col-auto"><a href="/Urun/Index" class="text-danger text-decoration-none small fw-bold">Filtreyi Temizle</a></div>
-                }
-            </form>
-        </div>
+                    }
+                </select>
+            </div>
+            <noscript>
+                <button type="submit" class="rs-btn rs-btn-ikincil rs-btn-sm">Filtrele</button>
+            </noscript>
+            @if (ViewBag.SeciliKategoriId != null)
+            {
+                <a href="/Urun/Index" class="rs-btn rs-btn-hayalet rs-btn-sm">Filtreyi Temizle</a>
+            }
+        </form>
 
         <div class="custom-card">
             <div class="card-header-custom">
                 <div>
-                    <h4 class="m-0 fw-bold text-dark">Menü Ürünleri</h4>
-                    <p class="text-muted small m-0">Toplam @Model.Count ürün listeleniyor.</p>
+                    <h2 class="m-0">Menü Ürünleri</h2>
+                    <p class="rs-soluk small m-0">Toplam @Model.Count ürün listeleniyor.</p>
                 </div>
-                <a href="/Urun/Ekle" class="btn btn-dark px-4 py-2 rounded-pill">
-                    <i class="fas fa-plus me-2"></i> Yeni Ürün
+                <a href="/Urun/Ekle" class="rs-btn rs-btn-birincil rs-btn-sm">
+                    <i class="fas fa-plus" aria-hidden="true"></i> Yeni Ürün
                 </a>
             </div>
 
-            <div class="table-responsive">
-                <table class="table table-custom m-0">
-                    <thead>
-                        <tr>
-                            <th class="text-center" style="width: 80px;">Sıra No</th>
-                            <th style="width: 100px;">Resim</th>
-                            <th>Ürün Adı</th>
-                            <th>Kategori</th>
-                            <th>Fiyat</th>
-                            <th class="text-end">İşlem</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td class="text-center">
-                                    <div class="badge-rank mx-auto">@item.SiraNo</div>
-                                </td>
-
-                                <td>
-                                    <div class="product-img-box">
-                                        @if (!string.IsNullOrEmpty(item.ResimUrl))
-                                        {
-                                            <img src="@item.ResimUrl" class="product-img" />
-                                        }
-                                        else
-                                        {
-
-                                            <img src="https://placehold.co/100" class="product-img" />
-                                        }
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="fw-bold">@item.Ad</div>
-                                    <div class="text-muted small">@(item.Aciklama != null && item.Aciklama.Length > 30 ? item.Aciklama.Substring(0, 30) + "..." : item.Aciklama)</div>
-                                </td>
-                                <td><span class="badge-category">@item.Kategori.Ad</span></td>
-                                <td>
-                                    <span class="price-tag">@item.Fiyat.ToString("N2") ₺</span>
-                                    @if (item.FiyatBuyuk != null)
-                                    {
-                                        <br>
-                                        <small class="text-muted">Büyük: @item.FiyatBuyuk</small>
-     }
-                                </td>
-                                <td class="text-end">
-                                    <a href="/Urun/Duzenle/@item.Id" class="btn-action btn-edit me-2" title="Düzenle"><i class="fas fa-pen"></i></a>
-                                    <form action="/Urun/Sil/@item.Id" method="post" style="display:inline;" onsubmit="return confirm('Silinsin mi?');">
-                                        <button class="btn-action btn-delete" title="Sil"><i class="fas fa-trash-alt"></i></button>
-                                    </form>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
             @if (Model.Count == 0)
             {
-                <div class="p-5 text-center text-muted">Ürün bulunamadı.</div>
+                <div class="rs-bos-durum">
+                    <i class="fas fa-utensils" aria-hidden="true"></i>
+                    <h3>Ürün bulunamadı</h3>
+                    <p>Seçtiğiniz filtreye uyan ürün yok ya da menüye henüz ürün eklenmemiş.</p>
+                    <a href="/Urun/Ekle" class="rs-btn rs-btn-ikincil rs-btn-sm">Yeni Ürün Ekle</a>
+                </div>
+            }
+            else
+            {
+                <div class="sira-durum" role="status" aria-live="polite"></div>
+                <div hidden>@Html.AntiForgeryToken()</div>
+                <div class="table-responsive">
+                    <table class="table table-custom m-0">
+                        <caption class="gorsel-gizli">Menüdeki ürünlerin listesi</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col" class="text-center">Sıra</th>
+                                <th scope="col">Resim</th>
+                                <th scope="col" style="min-width: 180px;">Ürün Adı</th>
+                                <th scope="col">Kategori</th>
+                                <th scope="col">Fiyat</th>
+                                <th scope="col" class="text-end" style="min-width: 120px;">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody class="siralanabilir" data-sira-url="/Urun/SiraGuncelle">
+                            @foreach (var item in Model)
+                            {
+                                <tr data-id="@item.Id">
+                                    <td class="text-center">
+                                        <div class="sira-hucre">
+                                            <button type="button" class="sira-tut"
+                                                    aria-label="@item.Ad sırasını değiştir. Sürükleyin veya yukarı/aşağı ok tuşlarını kullanın."
+                                                    title="Sürükleyerek sırala">
+                                                <i class="fas fa-grip-vertical" aria-hidden="true"></i>
+                                            </button>
+                                            <div class="badge-rank">@item.SiraNo</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="product-img-box">
+                                            <img src="@(string.IsNullOrEmpty(item.ResimUrl) ? "https://placehold.co/120" : item.ResimUrl)"
+                                                 class="product-img" alt="@item.Ad ürün görseli" loading="lazy">
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">@item.Ad</div>
+                                        <div class="rs-soluk small">
+                                            @(item.Aciklama != null && item.Aciklama.Length > 40 ? item.Aciklama.Substring(0, 40) + "..." : item.Aciklama)
+                                        </div>
+                                    </td>
+                                    <td><span class="badge-category">@item.Kategori?.Ad</span></td>
+                                    <td>
+                                        <span class="price-tag">@item.Fiyat.ToString("N2") ₺</span>
+                                        @if (item.FiyatBuyuk != null)
+                                        {
+                                            <small class="d-block rs-soluk">Büyük: @item.FiyatBuyuk.Value.ToString("N2") ₺</small>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex gap-2 justify-content-end">
+                                            <a href="/Urun/Duzenle/@item.Id" class="btn-action btn-edit"
+                                               aria-label="@item.Ad ürününü düzenle" title="Düzenle">
+                                                <i class="fas fa-pen" aria-hidden="true"></i>
+                                            </a>
+                                            <form action="/Urun/Sil/@item.Id" method="post"
+                                                  onsubmit="return confirm('Bu ürünü silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn-action btn-delete"
+                                                        aria-label="@item.Ad ürününü sil" title="Sil">
+                                                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             }
         </div>
-    </div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="~/js/ortak.js" asp-append-version="true"></script>
+    <script src="~/js/panel.js" asp-append-version="true"></script>
 </body>
 </html>

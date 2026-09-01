@@ -1,37 +1,69 @@
-﻿@model RossoLoungeWeb.Models.Kategori
+@model RossoLoungeWeb.Models.Kategori
 @{
     Layout = null;
+    ViewBag.AktifMenu = "kategoriler";
 }
 
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <title>Kategori Düzenle</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kategori Düzenle | Rosso Lounge</title>
+    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/panel.css" asp-append-version="true">
 </head>
-<body class="bg-light d-flex align-items-center justify-content-center" style="height: 100vh;">
+<body class="panel">
+    <a href="#icerik" class="icerige-atla">İçeriğe atla</a>
 
-    <div class="card shadow p-4" style="width: 400px;">
-        <h4 class="mb-3 text-center">Kategori Düzenle</h4>
+    @await Html.PartialAsync("~/Views/Admin/_YanMenu.cshtml")
 
-        <form action="/Kategori/Duzenle" method="post">
-            <input type="hidden" name="Id" value="@Model.Id" />
+    <main class="content" id="icerik">
+        <h2 class="mb-4">Kategori Düzenle</h2>
 
-            <div class="mb-3">
-                <label class="form-label">Sıra No:</label>
-                <input type="number" name="SiraNo" class="form-control" required value="@Model.SiraNo">
+        <div class="row">
+            <div class="col-12 col-lg-7 col-xxl-5">
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="rs-uyari rs-uyari-hata" role="alert">
+                        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                        <div>@Html.ValidationSummary(false, "", new { @class = "mb-0" })</div>
+                    </div>
+                }
+
+                <div class="custom-card">
+                    <form action="/Kategori/Duzenle" method="post" class="p-3 p-md-4">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id" value="@Model.Id" />
+
+                        <div class="rs-alan">
+                            <label class="rs-etiket" for="siraNo">Sıra no <span class="zorunlu">*</span></label>
+                            <input class="rs-girdi" type="number" id="siraNo" name="SiraNo"
+                                   value="@Model.SiraNo" min="1" required>
+                            <p class="rs-yardim">Menüde hangi sırada görünsün? (1: en üst)</p>
+                        </div>
+
+                        <div class="rs-alan">
+                            <label class="rs-etiket" for="ad">Kategori adı <span class="zorunlu">*</span></label>
+                            <input class="rs-girdi" type="text" id="ad" name="Ad" value="@Model.Ad" required>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="rs-btn rs-btn-birincil">Güncelle</button>
+                            <a href="/Kategori/Index" class="rs-btn rs-btn-hayalet">İptal</a>
+                        </div>
+                    </form>
+                </div>
             </div>
-
-            <div class="mb-3">
-                <label class="form-label">Kategori Adı:</label>
-                <input type="text" name="Ad" class="form-control" required value="@Model.Ad">
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100">Güncelle</button>
-        </form>
-
-        <a href="/Kategori/Index" class="btn btn-outline-secondary w-100 mt-2">İptal</a>
-    </div>
-
+        </div>
+    </main>
+    <script src="~/js/ortak.js" asp-append-version="true"></script>
+    <script src="~/js/panel.js" asp-append-version="true"></script>
 </body>
 </html>

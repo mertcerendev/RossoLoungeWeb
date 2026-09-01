@@ -1,6 +1,7 @@
-﻿@model List<RossoLoungeWeb.Models.Yorum>
+@model List<RossoLoungeWeb.Models.Yorum>
 @{
     Layout = null;
+    ViewBag.AktifMenu = "yorumlar";
 }
 
 <!DOCTYPE html>
@@ -8,234 +9,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yorum Yönetimi</title>
+    <title>Yorum Yönetimi | Rosso Lounge</title>
+    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body {
-            background-color: #f3f4f6;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        .sidebar {
-            height: 100vh;
-            background: #1a1a1a;
-            color: white;
-            padding: 20px;
-            position: fixed;
-            width: 250px;
-            top: 0;
-            left: 0;
-            z-index: 100;
-        }
-
-        .content {
-            margin-left: 250px;
-            padding: 40px;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 40px;
-            display: block;
-            color: white;
-            text-decoration: none;
-        }
-
-            .logo span {
-                color: #e74c3c;
-            }
-
-        .menu-item {
-            display: block;
-            padding: 12px 15px;
-            color: #bbb;
-            text-decoration: none;
-            margin-bottom: 5px;
-            border-radius: 8px;
-            transition: 0.3s;
-        }
-
-            .menu-item:hover, .menu-item.active {
-                background: #e74c3c;
-                color: white;
-            }
-
-        .custom-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            overflow: hidden;
-            border: none;
-        }
-
-        .table-custom thead th {
-            background-color: #f8f9fa;
-            color: #6c757d;
-            font-weight: 600;
-            border: none;
-            padding: 15px 20px;
-        }
-
-        .table-custom tbody td {
-            padding: 20px;
-            vertical-align: middle;
-            border-bottom: 1px solid #f0f0f0;
-            color: #333;
-        }
-
-        .unread {
-            background-color: #fffbf0 !important;
-        }
-
-        @@media (max-width: 768px) {
-            .sidebar
-
-        {
-            width: 100%;
-            height: auto;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .content {
-            margin-left: 0;
-            padding: 15px;
-        }
-
-        .menu-item {
-            width: 100%;
-            text-align: center;
-        }
-
-        }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/panel.css" asp-append-version="true">
 </head>
-<body>
-    <div class="sidebar">
-        <a href="#" class="logo">ROSSO <span>PANEL</span></a>
-        <a href="/Admin/Index" class="menu-item"><i class="fas fa-home me-2"></i> Özet</a>
-        <a href="/Admin/Rezervasyonlar" class="menu-item"><i class="fas fa-calendar-check me-2"></i> Rezervasyonlar</a>
-        <a href="/Kategori/Index" class="menu-item"><i class="fas fa-list me-2"></i> Kategoriler</a>
-        <a href="/Urun/Index" class="menu-item"><i class="fas fa-utensils me-2"></i> Ürünler</a>
-        <a href="/Admin/Yorumlar" class="menu-item active"><i class="fas fa-comments me-2"></i> Yorumlar</a>
-        <a href="/Admin/MailAyarlari" class="menu-item"><i class="fas fa-envelope me-2"></i> Mail Ayarları</a>
-        <a href="/Admin/Profil" class="menu-item"><i class="fas fa-user-cog me-2"></i> Ayarlar</a>
-        <a href="/" target="_blank" class="menu-item"><i class="fas fa-globe me-2"></i> Siteye Git</a>
-        <a href="/Admin/CikisYap" class="menu-item bg-dark mt-3"><i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap</a>
-    </div>
+<body class="panel">
+    <a href="#icerik" class="icerige-atla">İçeriğe atla</a>
 
-    <div class="content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="fw-bold text-dark">Müşteri Yorumları</h2>
-            <span class="badge bg-primary p-2 rounded-pill">Toplam: @Model.Count</span>
+    @await Html.PartialAsync("~/Views/Admin/_YanMenu.cshtml")
+
+    <main class="content" id="icerik">
+        @await Html.PartialAsync("~/Views/Admin/_Bildirim.cshtml")
+
+        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
+            <h2 class="m-0">Müşteri Yorumları</h2>
+            <span class="rs-rozet rs-rozet-bilgi">Toplam: @Model.Count</span>
         </div>
 
         <div class="custom-card">
-            <div class="table-responsive">
-                <table class="table table-custom m-0">
-                    <thead>
-                        <tr>
-                            <th>Müşteri</th>
-                            <th style="width: 40%;">Mesaj Özeti</th>
-                            <th>Puan</th>
-                            <th>Tarih</th>
-                            <th>Durum</th>
-                            <th>İşlem</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
-                            <tr class="@(item.OnaylandiMi ? "" : "unread")">
-                                <td class="fw-bold">@item.AdSoyad</td>
-                                <td>
-                                    <small class="text-muted">
-                                        @(item.Mesaj.Length > 60 ? item.Mesaj.Substring(0, 60) + "..." : item.Mesaj)
-                                    </small>
-                                </td>
-                                <td>
-                                    <div class="text-warning small">
-                                        @for (int i = 0; i < item.Puan; i++)
-                                        {
-                                            <i class="fas fa-star"></i>
-                                        }
-                                    </div>
-                                </td>
-                                <td>@item.Tarih.ToString("dd.MM.yyyy")</td>
-                                <td>
-                                    @if (item.OnaylandiMi)
-                                    {
-                                        <span class="badge bg-success rounded-pill px-3">Yayında</span>
-                                    }
-                                    else
-                                    {
-
-                                        <span class="badge bg-warning text-dark rounded-pill px-3">Onay Bekliyor</span>
-                                    }
-                                </td>
-                                <td>
-                                    <div class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-info text-white" title="Tamamını Oku"
-                                                onclick="openModal('@item.AdSoyad', '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(item.Mesaj))')">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-
-                                        @if (!item.OnaylandiMi)
-                                        {
-                                            <form action="/Admin/YorumOnayla/@item.Id" method="post">
-                                                <button class="btn btn-sm btn-success" title="Yayınla"><i class="fas fa-check"></i></button>
-                                            </form>
-                                        }
-
-                                        <form action="/Admin/YorumSil/@item.Id" method="post" onsubmit="return confirm('Silinsin mi?');">
-                                            <button class="btn btn-sm btn-danger" title="Sil"><i class="fas fa-trash"></i></button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
             @if (Model.Count == 0)
             {
-                <div class="p-5 text-center text-muted">Henüz yorum yok.</div>
+                <div class="rs-bos-durum">
+                    <i class="fas fa-comments" aria-hidden="true"></i>
+                    <h3>Henüz yorum yok</h3>
+                    <p>Ziyaretçilerin siteden bıraktığı yorumlar burada listelenir; onayladıklarınız sitede yayınlanır.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-custom m-0">
+                        <caption class="gorsel-gizli">Müşteri yorumları listesi</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Müşteri</th>
+                                <th scope="col" style="min-width: 220px;">Mesaj Özeti</th>
+                                <th scope="col">Puan</th>
+                                <th scope="col">Tarih</th>
+                                <th scope="col">Durum</th>
+                                <th scope="col" style="min-width: 140px;">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr class="@(item.OnaylandiMi ? "" : "unread")">
+                                    <td class="fw-bold">@item.AdSoyad</td>
+                                    <td>
+                                        <small>@(item.Mesaj.Length > 60 ? item.Mesaj.Substring(0, 60) + "..." : item.Mesaj)</small>
+                                    </td>
+                                    <td>
+                                        <span class="gorsel-gizli">5 üzerinden @item.Puan puan</span>
+                                        <span class="text-warning small" aria-hidden="true">
+                                            @for (int i = 0; i < item.Puan; i++)
+                                            {
+                                                <i class="fas fa-star"></i>
+                                            }
+                                        </span>
+                                    </td>
+                                    <td>@item.Tarih.ToString("dd.MM.yyyy")</td>
+                                    <td>
+                                        @if (item.OnaylandiMi)
+                                        {
+                                            <span class="rs-rozet rs-rozet-basari">Yayında</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="rs-rozet rs-rozet-uyari">Onay Bekliyor</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn-action btn-edit yorum-oku"
+                                                    data-ad="@item.AdSoyad" data-mesaj="@item.Mesaj"
+                                                    aria-label="@item.AdSoyad adlı ziyaretçinin yorumunun tamamını oku"
+                                                    title="Tamamını Oku">
+                                                <i class="fas fa-eye" aria-hidden="true"></i>
+                                            </button>
+
+                                            @if (!item.OnaylandiMi)
+                                            {
+                                                <form action="/Admin/YorumOnayla/@item.Id" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn-action bg-success text-white"
+                                                            aria-label="@item.AdSoyad adlı ziyaretçinin yorumunu yayınla"
+                                                            title="Yayınla">
+                                                        <i class="fas fa-check" aria-hidden="true"></i>
+                                                    </button>
+                                                </form>
+                                            }
+
+                                            <form action="/Admin/YorumSil/@item.Id" method="post"
+                                                  onsubmit="return confirm('Bu yorumu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn-action btn-delete"
+                                                        aria-label="@item.AdSoyad adlı ziyaretçinin yorumunu sil"
+                                                        title="Sil">
+                                                    <i class="fas fa-trash" aria-hidden="true"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             }
         </div>
-    </div>
+    </main>
 
-    <div class="modal fade" id="readModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="readModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-dark text-white">
                     <h5 class="modal-title" id="modalTitle">Yorum Detayı</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
                 </div>
                 <div class="modal-body">
-                    <p id="modalMessage" class="lead" style="font-size: 1rem; color: #333;"></p>
+                    <p id="modalMessage" class="mesaj-govde m-0"></p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    <button type="button" class="rs-btn rs-btn-hayalet rs-btn-sm" data-bs-dismiss="modal">Kapat</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function openModal(name, message) {
-            // Modal içindeki alanları doldur
-            document.getElementById('modalTitle').innerText = name + " diyor ki:";
-            document.getElementById('modalMessage').innerText = message;
-
-            // Modalı aç
-            var myModal = new bootstrap.Modal(document.getElementById('readModal'));
-            myModal.show();
-        }
-    </script>
+    <script src="~/js/ortak.js" asp-append-version="true"></script>
+    <script src="~/js/panel.js" asp-append-version="true"></script>
 </body>
 </html>

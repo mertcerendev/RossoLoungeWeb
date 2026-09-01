@@ -1,89 +1,125 @@
-﻿@model RossoLoungeWeb.Models.Urun
+@model RossoLoungeWeb.Models.Urun
 @{
     Layout = null;
+    ViewBag.AktifMenu = "urunler";
 }
 
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <title>Ürün Düzenle</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ürün Düzenle | Rosso Lounge</title>
+    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/panel.css" asp-append-version="true">
 </head>
-<body class="bg-light d-flex align-items-center justify-content-center" style="min-height: 100vh; padding: 20px;">
+<body class="panel">
+    <a href="#icerik" class="icerige-atla">İçeriğe atla</a>
 
-    <div class="card shadow p-4" style="width: 100%; max-width: 600px;">
-        <h4 class="mb-4 text-center">Ürün Düzenle</h4>
+    @await Html.PartialAsync("~/Views/Admin/_YanMenu.cshtml")
 
-        <form action="/Urun/Duzenle" method="post" enctype="multipart/form-data">
-            <input type="hidden" name="Id" value="@Model.Id" />
+    <main class="content" id="icerik">
+        <h2 class="mb-4">Ürün Düzenle</h2>
 
-            <div class="mb-3">
-                <label class="form-label fw-bold">Sıra No:</label>
-                <input type="number" name="SiraNo" class="form-control" value="@Model.SiraNo" required>
-                <small class="text-muted">Menüde kaçıncı sırada görünsün?</small>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label fw-bold">Ürün Adı:</label>
-                <input type="text" name="Ad" class="form-control" value="@Model.Ad" required>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label fw-bold">Kategori:</label>
-                @Html.DropDownList("KategoriId", (SelectList)ViewBag.Kategoriler, new { @class = "form-control" })
-            </div>
-
-            <div class="card bg-light border-0 mb-3 p-3">
-                <h6 class="text-muted mb-3 border-bottom pb-2">Fiyatlandırma Seçenekleri</h6>
-
-                <div class="row mb-2">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label small fw-bold">1. Fiyat (Zorunlu):</label>
-                        <input type="text" name="Fiyat" class="form-control"
-                               value="@Model.Fiyat.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label small fw-bold">2. Fiyat (Opsiyonel):</label>
-                        <input type="text" name="FiyatBuyuk" class="form-control"
-                               value="@(Model.FiyatBuyuk.HasValue? Model.FiyatBuyuk.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")">
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-2">
-                        <label class="form-label small">1. Fiyat İsmi (Opsiyonel):</label>
-                        <input type="text" name="FiyatTur" class="form-control form-control-sm" value="@Model.FiyatTur" placeholder="Örn: Orta, Kutu (Boşsa 'Orta')">
-                    </div>
-                    <div class="col-md-6 mb-2">
-                        <label class="form-label small">2. Fiyat İsmi (Opsiyonel):</label>
-                        <input type="text" name="FiyatBuyukTur" class="form-control form-control-sm" value="@Model.FiyatBuyukTur" placeholder="Örn: Büyük, Şişe (Boşsa 'Büyük')">
-                    </div>
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label fw-bold">Açıklama:</label>
-                <textarea name="Aciklama" class="form-control" rows="3">@Model.Aciklama</textarea>
-            </div>
-
-            <div class="mb-4">
-                <label class="form-label fw-bold">Yeni Resim (Opsiyonel):</label>
-                <input type="file" name="ResimDosyasi" class="form-control" accept="image/*">
-
-                @if (!string.IsNullOrEmpty(Model.ResimUrl))
+        <div class="row">
+            <div class="col-12 col-xl-9 col-xxl-7">
+                @if (!ViewData.ModelState.IsValid)
                 {
-                    <div class="mt-2 p-2 border rounded bg-white d-inline-block">
-                        <small class="d-block text-muted mb-1">Mevcut:</small>
-                        <img src="@Model.ResimUrl" width="80" style="border-radius: 5px;" />
+                    <div class="rs-uyari rs-uyari-hata" role="alert">
+                        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                        <div>@Html.ValidationSummary(false, "", new { @class = "mb-0" })</div>
                     </div>
                 }
+
+                <div class="custom-card">
+                    <form id="urunForm" action="/Urun/Duzenle" method="post" enctype="multipart/form-data" class="p-3 p-md-4">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id" value="@Model.Id" />
+
+                        <div class="rs-form-izgara">
+                            <div class="rs-alan">
+                                <label class="rs-etiket" for="siraNo">Sıra no <span class="zorunlu">*</span></label>
+                                <input class="rs-girdi" type="number" id="siraNo" name="SiraNo"
+                                       value="@Model.SiraNo" min="1" required>
+                                <p class="rs-yardim">Menüde kaçıncı sırada görünsün?</p>
+                            </div>
+
+                            <div class="rs-alan">
+                                <label class="rs-etiket" for="KategoriId">Kategori <span class="zorunlu">*</span></label>
+                                @Html.DropDownList("KategoriId", (SelectList)ViewBag.Kategoriler,
+                                         new { @class = "rs-girdi", required = "required" })
+                            </div>
+                        </div>
+
+                        <div class="rs-alan">
+                            <label class="rs-etiket" for="ad">Ürün adı <span class="zorunlu">*</span></label>
+                            <input class="rs-girdi" type="text" id="ad" name="Ad" value="@Model.Ad" required>
+                        </div>
+
+                        <fieldset class="rs-alan">
+                            <legend class="rs-etiket">Fiyatlandırma</legend>
+                            <div class="rs-form-izgara">
+                                <div class="rs-alan">
+                                    <label class="rs-etiket" for="fiyat">1. fiyat <span class="zorunlu">*</span></label>
+                                    <input class="rs-girdi" type="text" id="fiyat" name="Fiyat" inputmode="decimal"
+                                           value="@Model.Fiyat.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" required>
+                                </div>
+                                <div class="rs-alan">
+                                    <label class="rs-etiket" for="fiyatBuyuk">2. fiyat</label>
+                                    <input class="rs-girdi" type="text" id="fiyatBuyuk" name="FiyatBuyuk" inputmode="decimal"
+                                           value="@(Model.FiyatBuyuk.HasValue ? Model.FiyatBuyuk.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")">
+                                </div>
+                                <div class="rs-alan">
+                                    <label class="rs-etiket" for="fiyatTur">1. fiyat ismi</label>
+                                    <input class="rs-girdi" type="text" id="fiyatTur" name="FiyatTur"
+                                           value="@Model.FiyatTur" placeholder="Boşsa 'Orta'">
+                                </div>
+                                <div class="rs-alan">
+                                    <label class="rs-etiket" for="fiyatBuyukTur">2. fiyat ismi</label>
+                                    <input class="rs-girdi" type="text" id="fiyatBuyukTur" name="FiyatBuyukTur"
+                                           value="@Model.FiyatBuyukTur" placeholder="Boşsa 'Büyük'">
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <div class="rs-alan">
+                            <label class="rs-etiket" for="aciklama">Açıklama</label>
+                            <textarea class="rs-girdi" id="aciklama" name="Aciklama" rows="3">@Model.Aciklama</textarea>
+                        </div>
+
+                        <div class="rs-alan">
+                            <label class="rs-etiket" for="resimDosyasi">Yeni resim (opsiyonel)</label>
+                            <input class="rs-girdi" type="file" id="resimDosyasi" name="ResimDosyasi" accept="image/*">
+                            <p class="rs-yardim">JPG, PNG, WEBP veya GIF · en fazla 5 MB. Boş bırakırsanız mevcut görsel korunur.</p>
+
+                            @if (!string.IsNullOrEmpty(Model.ResimUrl))
+                            {
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="product-img-box">
+                                        <img src="@Model.ResimUrl" class="product-img" alt="@Model.Ad ürününün mevcut görseli">
+                                    </div>
+                                    <span class="rs-soluk small">Mevcut görsel</span>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="rs-btn rs-btn-birincil">Değişiklikleri Kaydet</button>
+                            <a href="/Urun/Index" class="rs-btn rs-btn-hayalet">İptal</a>
+                        </div>
+                    </form>
+                </div>
             </div>
+        </div>
+    </main>
 
-            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Değişiklikleri Kaydet</button>
-        </form>
-
-        <a href="/Urun/Index" class="btn btn-outline-secondary w-100 mt-2">İptal</a>
-    </div>
-
+    <script src="~/js/ortak.js" asp-append-version="true"></script>
+    <script src="~/js/panel.js" asp-append-version="true"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema; // ForeignKey için gerekli
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema; // ForeignKey / Column için gerekli
 
 namespace RossoLoungeWeb.Models
 {
@@ -8,37 +8,60 @@ namespace RossoLoungeWeb.Models
         [Key]
         public int Id { get; set; }
 
+        [Range(0, 9999, ErrorMessage = "Sıra numarası 0 ile 9999 arasında olmalıdır.")]
+        [Display(Name = "Sıra No")]
         public int SiraNo { get; set; } // Sıralama
 
         [Required(ErrorMessage = "Ürün adı zorunludur.")]
-        public string Ad { get; set; } // Örn: "Margherita Pizza"
+        [MaxLength(100, ErrorMessage = "Ürün adı en fazla 100 karakter olabilir.")]
+        [Display(Name = "Ürün Adı")]
+        public string Ad { get; set; } = string.Empty; // Örn: "Margherita Pizza"
 
+        // Sütun tipi nvarchar(max) kalıyor (bkz. ApplicationDbContext.OnModelCreating).
+        [StringLength(1000, ErrorMessage = "Açıklama en fazla 1000 karakter olabilir.")]
+        [Display(Name = "Açıklama")]
         public string? Aciklama { get; set; } // Örn: "Mozzarella, domates sos..."
 
-        [Required]
+        // decimal için sütun tipi açıkça belirtilmezse EF uyarı verir ve fiyatlar
+        // sessizce yuvarlanabilir ("No store type was specified for the decimal property").
+        [Required(ErrorMessage = "Fiyat zorunludur.")]
+        [Column(TypeName = "decimal(18,2)")]
+        [Range(0, 100000, ErrorMessage = "Fiyat 0 ile 100000 arasında olmalıdır.")]
+        [Display(Name = "Fiyat")]
         public decimal Fiyat { get; set; } // Varsayılan (veya Orta Boy) Fiyat
 
         // Büyük Boy Fiyatı (Boş bırakılabilir)
+        [Column(TypeName = "decimal(18,2)")]
+        [Range(0, 100000, ErrorMessage = "Fiyat 0 ile 100000 arasında olmalıdır.")]
+        [Display(Name = "Büyük Boy Fiyatı")]
         public decimal? FiyatBuyuk { get; set; }
 
-        // --- YENİ EKLENEN ETİKETLER ---
-        [MaxLength(50)]
+        // --- FİYAT ETİKETLERİ ---
+        [MaxLength(50, ErrorMessage = "Fiyat etiketi en fazla 50 karakter olabilir.")]
+        [Display(Name = "Fiyat Etiketi")]
         public string? FiyatTur { get; set; } // Örn: "Orta", "Kutu", "Kadeh"
 
-        [MaxLength(50)]
+        [MaxLength(50, ErrorMessage = "Fiyat etiketi en fazla 50 karakter olabilir.")]
+        [Display(Name = "Büyük Boy Etiketi")]
         public string? FiyatBuyukTur { get; set; } // Örn: "Büyük", "Şişe", "Sürahi"
         // ------------------------------
 
+        [MaxLength(300, ErrorMessage = "Görsel yolu en fazla 300 karakter olabilir.")]
+        [Display(Name = "Görsel")]
         public string? ResimUrl { get; set; } // Resmin dosya yolu
 
         // --- İLİŞKİ AYARLARI ---
 
         // Hangi kategoriye ait? (Foreign Key)
+        [Required(ErrorMessage = "Kategori seçimi zorunludur.")]
         [Display(Name = "Kategori")]
         public int KategoriId { get; set; }
 
-        // Bağlantı nesnesi
+        // Bağlantı nesnesi.
+        // DİKKAT: Burası bilinçli olarak `required` DEĞİL. Form gönderiminde bu nesne
+        // dolmaz; `required` yapılırsa model binding kırılır. Controller'lar zaten
+        // ModelState.Remove("Kategori") çağırıyor.
         [ForeignKey("KategoriId")]
-        public virtual Kategori Kategori { get; set; }
+        public virtual Kategori Kategori { get; set; } = null!;
     }
 }

@@ -1,0 +1,19 @@
+@*
+    Panel bildirim bloğu — controller'ların ürettiği TempData["Mesaj"] (başarı)
+    ve TempData["Hata"] (hata) mesajlarını gösterir.
+    Çağrı: @await Html.PartialAsync("~/Views/Admin/_Bildirim.cshtml")
+*@
+@if (TempData["Mesaj"] != null)
+{
+    <div class="rs-uyari rs-uyari-basari" role="status">
+        <i class="fas fa-circle-check" aria-hidden="true"></i>
+        <div>@TempData["Mesaj"]</div>
+    </div>
+}
+@if (TempData["Hata"] != null)
+{
+    <div class="rs-uyari rs-uyari-hata" role="alert">
+        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+        <div>@TempData["Hata"]</div>
+    </div>
+}

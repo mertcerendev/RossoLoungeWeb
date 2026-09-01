@@ -1,0 +1,449 @@
+﻿/* =============================================================
+   ROSSO LOUNGE — BİLEŞENLER (BEM)
+   rosso-tema.css'ten SONRA yüklenir.
+   ============================================================= */
+
+/* =============================================================
+   NAVBAR
+   ============================================================= */
+.rosso-nav {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline: 0;
+    z-index: var(--rs-kat-navbar);
+    padding-block: var(--rs-bo-5);
+    background: transparent;
+    border-block-end: 1px solid transparent;
+    transition: padding-block var(--rs-hiz-2) var(--rs-egri),
+                background var(--rs-hiz-2) var(--rs-egri),
+                border-color var(--rs-hiz-2) var(--rs-egri);
+}
+
+.rosso-nav--sabit {
+    padding-block: var(--rs-bo-3);
+    background: rgba(10, 10, 12, 0.82);
+    border-block-end-color: var(--rs-cizgi);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    backdrop-filter: blur(14px) saturate(1.2);
+}
+
+.rosso-nav__ic {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--rs-bo-6);
+}
+
+.rosso-nav__marka {
+    font-family: var(--rs-font-baslik);
+    font-size: var(--rs-yazi-lg);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--rs-metin);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+    .rosso-nav__marka span {
+        color: var(--rs-kirmizi);
+    }
+
+.rosso-nav__menu {
+    display: flex;
+    align-items: center;
+    gap: clamp(1rem, 2.2vw, 2.25rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rosso-nav__link {
+    position: relative;
+    display: inline-block;
+    padding-block: var(--rs-bo-2);
+    color: var(--rs-metin-yumusak);
+    font-size: var(--rs-yazi-sm);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    transition: color var(--rs-hiz-1) var(--rs-egri);
+}
+
+    .rosso-nav__link::after {
+        content: "";
+        position: absolute;
+        inset-inline-start: 0;
+        inset-block-end: 0;
+        width: 0;
+        height: 1px;
+        background: var(--rs-gold);
+        transition: width var(--rs-hiz-2) var(--rs-egri);
+    }
+
+    .rosso-nav__link:hover,
+    .rosso-nav__link--aktif {
+        color: var(--rs-metin);
+    }
+
+        .rosso-nav__link:hover::after,
+        .rosso-nav__link--aktif::after {
+            width: 100%;
+        }
+
+.rosso-nav__eylem {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding-inline: var(--rs-bo-6);
+    border: 1px solid var(--rs-gold);
+    border-radius: var(--rs-yaricap-tam);
+    color: var(--rs-gold-acik);
+    font-size: var(--rs-yazi-sm);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background var(--rs-hiz-2) var(--rs-egri),
+                color var(--rs-hiz-2) var(--rs-egri),
+                transform var(--rs-hiz-2) var(--rs-egri);
+}
+
+    .rosso-nav__eylem:hover {
+        background: var(--rs-gold);
+        color: #171103;
+    }
+
+/* Menü içindeki rezervasyon butonu yalnızca mobilde; masaüstünde
+   sağdaki ayrı buton kullanılır (ikisi aynı anda görünmemeli). */
+.rosso-nav__mobil-eylem {
+    display: none;
+}
+
+.rosso-nav__hamburger {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--rs-dokunma);
+    height: var(--rs-dokunma);
+    background: none;
+    border: none;
+    color: var(--rs-metin);
+    font-size: 1.25rem;
+    cursor: pointer;
+}
+
+@media (max-width: 900px) {
+    .rosso-nav__hamburger {
+        display: inline-flex;
+    }
+
+    .rosso-nav__menu {
+        position: fixed;
+        inset-block-start: 0;
+        inset-inline-end: 0;
+        z-index: var(--rs-kat-menu);
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        gap: var(--rs-bo-6);
+        width: min(320px, 84vw);
+        height: 100dvh;
+        padding: var(--rs-bo-16) var(--rs-bo-8);
+        background: var(--rs-yuzey);
+        border-inline-start: 1px solid var(--rs-cizgi);
+        transform: translateX(100%);
+        visibility: hidden;
+        transition: transform var(--rs-hiz-2) var(--rs-egri), visibility 0s linear var(--rs-hiz-2);
+    }
+
+    .rosso-nav__menu--acik {
+        transform: none;
+        visibility: visible;
+        transition: transform var(--rs-hiz-2) var(--rs-egri);
+    }
+
+    .rosso-nav__link {
+        font-size: var(--rs-yazi-lg);
+    }
+
+    .rosso-nav__eylem--masaustu {
+        display: none;
+    }
+
+    .rosso-nav__mobil-eylem {
+        display: block;
+        margin-block-start: var(--rs-bo-4);
+    }
+}
+
+/* Mobil menü açıkken arkayı karart */
+.rosso-perde {
+    position: fixed;
+    inset: 0;
+    z-index: var(--rs-kat-basik);
+    background: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--rs-hiz-2) var(--rs-egri), visibility 0s linear var(--rs-hiz-2);
+}
+
+.rosso-perde--acik {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity var(--rs-hiz-2) var(--rs-egri);
+}
+
+/* =============================================================
+   HERO
+   ============================================================= */
+.rosso-hero {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 100svh;
+    padding-block: var(--rs-bo-24) var(--rs-bo-16);
+    overflow: hidden;
+    text-align: center;
+}
+
+/* Arka plan ayrı katman: yavaş yakınlaşma ve parallax burada çalışır,
+   içerik metni asla ölçeklenmez (okunabilirlik bozulmasın). */
+.rosso-hero__zemin {
+    position: absolute;
+    inset: -6% -2%;
+    z-index: var(--rs-kat-zemin);
+    background-image: url('/img/site/hero-lounge.jpg');
+    background-size: cover;
+    background-position: center;
+    transform: scale(1.06) translate3d(0, var(--rs-parallax, 0px), 0);
+    animation: rosso-yavas-yakinlas 26s ease-in-out infinite alternate;
+    will-change: transform;
+}
+
+.rosso-hero__perde {
+    position: absolute;
+    inset: 0;
+    z-index: var(--rs-kat-zemin);
+    background:
+        radial-gradient(120% 90% at 50% 40%, rgba(10, 10, 12, 0.35) 0%, rgba(10, 10, 12, 0.82) 70%),
+        linear-gradient(180deg, rgba(10, 10, 12, 0.7) 0%, rgba(10, 10, 12, 0.25) 35%, rgba(10, 10, 12, 0.92) 100%);
+}
+
+.rosso-hero__ic {
+    position: relative;
+    z-index: var(--rs-kat-icerik);
+    width: 100%;
+    max-width: 52rem;
+    margin-inline: auto;
+    padding-inline: var(--rs-kap-yan);
+}
+
+.rosso-hero__ustbaslik {
+    margin: 0 0 var(--rs-bo-6);
+    color: var(--rs-gold);
+    font-size: var(--rs-yazi-xs);
+    font-weight: 600;
+    letter-spacing: var(--rs-aralik-genis);
+    text-transform: uppercase;
+}
+
+.rosso-hero__baslik {
+    margin: 0 0 var(--rs-bo-6);
+    font-family: var(--rs-font-baslik);
+    font-size: var(--rs-yazi-dev);
+    font-weight: 600;
+    line-height: var(--rs-satir-sik);
+    letter-spacing: -0.015em;
+    color: var(--rs-metin);
+    text-wrap: balance;
+}
+
+    .rosso-hero__baslik em {
+        display: block;
+        font-style: italic;
+        color: var(--rs-gold-acik);
+    }
+
+.rosso-hero__alt {
+    max-width: 42ch;
+    margin: 0 auto;
+    color: var(--rs-metin-yumusak);
+    font-size: var(--rs-yazi-lg);
+    font-weight: 300;
+    line-height: var(--rs-satir-genis);
+}
+
+.rosso-hero__eylemler {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--rs-bo-4);
+    margin-block-start: var(--rs-bo-10);
+}
+
+.rosso-hero__durum {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--rs-bo-4);
+    margin-block-start: var(--rs-bo-10);
+    padding-block-start: var(--rs-bo-6);
+    border-block-start: 1px solid var(--rs-cizgi);
+}
+
+.rosso-hero__saat {
+    color: var(--rs-metin-silik);
+    font-size: var(--rs-yazi-sm);
+    letter-spacing: 0.03em;
+}
+
+.rosso-hero__kaydir {
+    position: absolute;
+    inset-block-end: var(--rs-bo-8);
+    inset-inline-start: 50%;
+    z-index: var(--rs-kat-icerik);
+    display: grid;
+    place-items: center;
+    width: var(--rs-dokunma);
+    height: var(--rs-dokunma);
+    margin-inline-start: calc(var(--rs-dokunma) / -2);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.1rem;
+    text-decoration: none;
+    animation: rosso-zipla 2.4s var(--rs-egri-yumusak) infinite;
+    transition: color var(--rs-hiz-1) var(--rs-egri);
+}
+
+    .rosso-hero__kaydir:hover {
+        color: var(--rs-gold);
+    }
+
+@keyframes rosso-yavas-yakinlas {
+    from { transform: scale(1.04) translate3d(0, var(--rs-parallax, 0px), 0); }
+    to { transform: scale(1.14) translate3d(0, var(--rs-parallax, 0px), 0); }
+}
+
+@keyframes rosso-zipla {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(9px); }
+}
+
+/* =============================================================
+   BUTON
+   ============================================================= */
+.rosso-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--rs-bo-2);
+    min-width: 12rem;
+    min-height: 54px;
+    padding-inline: var(--rs-bo-8);
+    border: 1px solid transparent;
+    border-radius: var(--rs-yaricap-tam);
+    font-family: var(--rs-font-govde);
+    font-size: var(--rs-yazi-md);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform var(--rs-hiz-2) var(--rs-egri),
+                background var(--rs-hiz-2) var(--rs-egri),
+                border-color var(--rs-hiz-2) var(--rs-egri),
+                box-shadow var(--rs-hiz-2) var(--rs-egri);
+}
+
+.rosso-btn--altin {
+    background: var(--rs-gold);
+    border-color: var(--rs-gold);
+    color: #171103;
+}
+
+    .rosso-btn--altin:hover {
+        background: var(--rs-gold-acik);
+        border-color: var(--rs-gold-acik);
+        box-shadow: var(--rs-golge-gold);
+    }
+
+.rosso-btn--cam {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.38);
+    color: var(--rs-metin);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+    .rosso-btn--cam:hover {
+        background: rgba(255, 255, 255, 0.14);
+        border-color: var(--rs-metin);
+    }
+
+/* Manyetik etki — JS imleç yakınlığına göre --rs-mx/--rs-my yazar */
+.rosso-btn--manyetik {
+    transform: translate3d(var(--rs-mx, 0), var(--rs-my, 0), 0);
+}
+
+/* =============================================================
+   DURUM ROZETİ
+   ============================================================= */
+.rosso-rozet {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--rs-bo-2);
+    padding: var(--rs-bo-1) var(--rs-bo-4);
+    border-radius: var(--rs-yaricap-tam);
+    font-size: var(--rs-yazi-xs);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.rosso-rozet--acik {
+    background: rgba(38, 138, 78, 0.2);
+    border: 1px solid rgba(127, 212, 160, 0.28);
+    color: #8fdcac;
+}
+
+.rosso-rozet--kapali {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--rs-cizgi);
+    color: var(--rs-metin-yumusak);
+}
+
+.rosso-rozet__nokta {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.rosso-rozet--acik .rosso-rozet__nokta {
+    animation: rosso-nabiz 2.4s var(--rs-egri-yumusak) infinite;
+}
+
+@keyframes rosso-nabiz {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(1.4); }
+}
+
+/* İçeriğe atla — klavye kullanıcıları için */
+.rosso-atla {
+    position: absolute;
+    inset-block-start: -100px;
+    inset-inline-start: var(--rs-bo-4);
+    z-index: calc(var(--rs-kat-preloader) + 1);
+    padding: var(--rs-bo-3) var(--rs-bo-5);
+    background: var(--rs-gold);
+    border-radius: var(--rs-yaricap-sm);
+    color: #171103;
+    font-weight: 600;
+    text-decoration: none;
+    transition: inset-block-start var(--rs-hiz-1) var(--rs-egri);
+}
+
+    .rosso-atla:focus {
+        inset-block-start: var(--rs-bo-4);
+    }

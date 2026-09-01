@@ -1,0 +1,769 @@
+﻿/* =========================================================
+   ROSSO LOUNGE BISTRO — TASARIM SİSTEMİ ÇEKİRDEĞİ
+   ---------------------------------------------------------
+   Bu dosya SADECE tokenlar (CSS değişkenleri), sıfırlama ve
+   bileşen ilkellerini içerir. Sayfaya özel kural YAZMA.
+
+   Yükleme sırası:  bootstrap.min.css → theme.css → style.css / panel.css
+
+   Kırılım noktaları (media query'de değişken kullanılamaz,
+   bu yüzden sabit yazılır — hepsi max-width mantığıyla):
+     xs  ≤ 480px   telefon (dar)
+     sm  ≤ 767px   telefon
+     md  ≤ 991px   tablet
+     lg  ≤ 1199px  küçük masaüstü
+     xl  ≥ 1200px  masaüstü
+   ========================================================= */
+
+/* =========================================
+   1. TOKENLAR
+   ========================================= */
+:root {
+    /* ---- Marka renkleri ---- */
+    --renk-marka: #e74c3c; /* Rosso kırmızısı — ana marka rengi */
+    --renk-marka-koyu: #c0392b; /* Hover + AÇIK zeminde metin (beyaza 5.4:1) */
+    --renk-marka-daha-koyu: #96281b;
+    --renk-marka-acik: #f1705f;
+    /* KOYU zeminde metin için. #e74c3c koyu gri üstünde 3.31:1 kalıyor,
+       #f1705f ise 4.34 — ikisi de AA'nın altında. Bu ton 5.3:1 veriyor. */
+    --renk-marka-metin-koyu: #f58a7a;
+    --renk-marka-zemin: #fdecea; /* açık zeminde yumuşak kırmızı yüzey */
+    --renk-marka-saydam-10: rgba(231, 76, 60, 0.10);
+    --renk-marka-saydam-25: rgba(231, 76, 60, 0.25);
+    --renk-marka-saydam-45: rgba(231, 76, 60, 0.45);
+
+    /* ---- Nötr gri skalası ---- */
+    --beyaz: #ffffff;
+    --gri-50: #f8f9fa;
+    --gri-100: #f3f4f6;
+    --gri-200: #e5e7eb;
+    --gri-300: #d1d5db;
+    --gri-400: #9ca3af;
+    --gri-500: #6b7280; /* beyaza 4.8:1 — soluk metin için en açık güvenli ton */
+    --gri-600: #4b5563;
+    --gri-700: #374151;
+    --gri-800: #262626;
+    --gri-900: #1f2937;
+    --siyah: #1a1a1a; /* marka koyu zemini */
+    --siyah-2: #222222; /* koyu yüzey (kart) */
+    --siyah-3: #2a2a2a; /* koyu girdi zemini */
+    --siyah-kenar: #3a3a3a;
+
+    /* ---- Durum renkleri ---- */
+    --renk-basari: #1a6f3c; /* açık başarı zemininde 5.57:1 (AA); #1e8449 4.23 kalıyordu */
+    --renk-basari-zemin: #e6f4ea;
+    --renk-uyari: #a35c00; /* açık uyarı zemininde 4.71:1 (AA); #b26a00 3.89 kalıyordu */
+    --renk-uyari-zemin: #fff4e0;
+    --renk-hata: #c0392b;
+    --renk-hata-zemin: #fdecea;
+    --renk-bilgi: #0e6ba8;
+    --renk-bilgi-zemin: #e3f1fb;
+
+    /* ---- Tipografi ---- */
+    --font-baslik: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    --font-govde: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+    /* Akıcı ölçek: 360px telefondan 1440px masaüstüne clamp() ile */
+    --olcek-xs: clamp(0.75rem, 0.72rem + 0.15vw, 0.8125rem); /* 12 → 13 */
+    --olcek-sm: clamp(0.8125rem, 0.78rem + 0.2vw, 0.875rem); /* 13 → 14 */
+    --olcek-md: clamp(0.9375rem, 0.90rem + 0.25vw, 1rem); /* 15 → 16  (gövde) */
+    --olcek-lg: clamp(1.0625rem, 1.00rem + 0.30vw, 1.125rem); /* 17 → 18 */
+    --olcek-xl: clamp(1.1875rem, 1.10rem + 0.45vw, 1.375rem); /* 19 → 22  (h3) */
+    --olcek-2xl: clamp(1.375rem, 1.20rem + 0.80vw, 1.75rem); /* 22 → 28  (h2) */
+    --olcek-3xl: clamp(1.75rem, 1.45rem + 1.50vw, 2.5rem); /* 28 → 40  (bölüm başlığı) */
+    --olcek-4xl: clamp(2.25rem, 1.60rem + 3.20vw, 3.75rem); /* 36 → 60  (hero h1) */
+
+    --satir-sik: 1.2;
+    --satir-normal: 1.6;
+    --satir-genis: 1.75;
+
+    /* ---- Boşluk ölçeği (4px tabanlı) ---- */
+    --bosluk-1: 0.25rem; /*  4px */
+    --bosluk-2: 0.5rem; /*  8px */
+    --bosluk-3: 0.75rem; /* 12px */
+    --bosluk-4: 1rem; /* 16px */
+    --bosluk-5: 1.25rem; /* 20px */
+    --bosluk-6: 1.5rem; /* 24px */
+    --bosluk-8: 2rem; /* 32px */
+    --bosluk-10: 2.5rem; /* 40px */
+    --bosluk-12: 3rem; /* 48px */
+    --bosluk-16: 4rem; /* 64px */
+    --bosluk-20: 5rem; /* 80px */
+
+    /* Bölüm dikey boşluğu — ekranla birlikte büyür */
+    --bolum-bosluk: clamp(2.5rem, 1.5rem + 4vw, 5rem);
+    --kapsayici-genislik: 1100px;
+    --kapsayici-yan: clamp(1rem, 0.5rem + 2vw, 1.5rem);
+
+    /* ---- Köşe yarıçapı ---- */
+    --yaricap-sm: 6px;
+    --yaricap-md: 10px;
+    --yaricap-lg: 15px;
+    --yaricap-xl: 24px;
+    --yaricap-tam: 999px;
+
+    /* ---- Gölge katmanları ---- */
+    --golge-1: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --golge-2: 0 4px 15px rgba(0, 0, 0, 0.07);
+    --golge-3: 0 10px 30px rgba(0, 0, 0, 0.10);
+    --golge-4: 0 18px 45px rgba(0, 0, 0, 0.18);
+    --golge-koyu-2: 0 4px 15px rgba(0, 0, 0, 0.35);
+    --golge-koyu-3: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --golge-marka: 0 10px 30px var(--renk-marka-saydam-45);
+
+    /* ---- Hareket ---- */
+    --sure-hizli: 0.2s;
+    --sure-normal: 0.35s;
+    --sure-yavas: 0.7s;
+    --gecis: cubic-bezier(0.22, 1, 0.36, 1); /* MEVCUT AD — değiştirme */
+    --gecis-yumusak: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ---- z-index katmanları ---- */
+    --z-zemin: 0;
+    --z-icerik: 1;
+    --z-panel-sidebar: 100;
+    --z-mobil-menu: 998;
+    --z-header: 1000;
+    --z-header-logo: 1001;
+    --z-ustkatman: 1500;
+    --z-toast: 2000;
+    --z-buyutec: 2500; /* görsel büyüteç, toast'in üstünde */
+
+    /* ---- Odak halkası ---- */
+    --odak-renk: var(--renk-marka);
+    --odak-kalinlik: 3px;
+
+    /* ---- Dokunma hedefi (mobil, min 44px) ---- */
+    --dokunma-min: 44px;
+
+    /* =====================================
+       YÜZEY TOKENLARI — AÇIK ZEMİN (varsayılan)
+       Bileşenler yalnızca bunlara bakar; koyu zemine
+       geçmek için .rs-koyu sınıfı bu değerleri ezer.
+       ===================================== */
+    --yz-zemin: var(--beyaz);
+    --yz-zemin-alt: var(--gri-50);
+    --yz-zemin-vurgu: var(--gri-100);
+    --yz-kenar: var(--gri-200);
+    --yz-kenar-guclu: var(--gri-300);
+    --yz-metin: var(--gri-900);
+    --yz-metin-soluk: var(--gri-500);
+    --yz-metin-vurgu: var(--renk-marka-koyu);
+    --yz-girdi-zemin: var(--beyaz);
+    --yz-girdi-kenar: var(--gri-300);
+    --yz-girdi-metin: var(--gri-900);
+    --yz-girdi-yer-tutucu: var(--gri-400);
+    --yz-golge: var(--golge-2);
+
+    /* ---- Geriye dönük uyumluluk (eski değişken adları) ----
+       Mevcut CSS ve .cshtml içi satır-içi stiller bunları
+       kullanıyor. SİLME. */
+    --primary-color: var(--renk-marka);
+    --secondary-color: #2c3e50;
+    --text-color: var(--gri-900);
+    --bg-light: var(--gri-100);
+    --bg-dark: var(--siyah);
+    --white: var(--beyaz);
+}
+
+/* Koyu yüzey kapsamı — içindeki tüm rs- bileşenleri koyu zemine uyum sağlar */
+.rs-koyu,
+.bg-dark,
+header,
+footer,
+.reservation-container {
+    --yz-zemin: var(--siyah-2);
+    --yz-zemin-alt: var(--siyah-3);
+    --yz-zemin-vurgu: #333333;
+    --yz-kenar: var(--siyah-kenar);
+    --yz-kenar-guclu: #4a4a4a;
+    --yz-metin: #f2f2f2;
+    --yz-metin-soluk: #b8b8b8;
+    --yz-metin-vurgu: var(--renk-marka);
+    --yz-girdi-zemin: var(--siyah-3);
+    --yz-girdi-kenar: #444444;
+    --yz-girdi-metin: #ffffff;
+    --yz-girdi-yer-tutucu: #8d8d8d;
+    --yz-golge: var(--golge-koyu-2);
+}
+
+/* =========================================
+   2. SIFIRLAMA
+   ========================================= */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-govde);
+    font-size: var(--olcek-md);
+    line-height: var(--satir-normal);
+}
+
+/* Form elemanları fontu miras almaz — açıkça devret */
+button,
+input,
+select,
+textarea {
+    font: inherit;
+    color: inherit;
+}
+
+img,
+video,
+svg,
+iframe {
+    max-width: 100%;
+}
+
+img,
+video {
+    height: auto;
+}
+
+/* 360px'te yatay kaydırmanın en sık sebebi: taşan uzun kelime/URL */
+h1, h2, h3, h4, h5, h6, p, li, td, th, dd, dt {
+    overflow-wrap: break-word;
+}
+
+/* =========================================
+   3. ERİŞİLEBİLİRLİK
+   ========================================= */
+
+/* Görünür odak halkası — sadece klavye ile gezinirken */
+:focus-visible {
+    outline: var(--odak-kalinlik) solid var(--odak-renk);
+    outline-offset: 2px;
+    border-radius: var(--yaricap-sm);
+}
+
+/* Fare tıklamasında halka çıkmasın (tarayıcı varsayılanını bastır) */
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Yalnızca ekran okuyucular için — görsel olarak gizli */
+.gorsel-gizli {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* İçeriğe atla bağlantısı — odaklanınca görünür olur */
+.icerige-atla {
+    position: absolute;
+    top: -100px;
+    left: var(--bosluk-4);
+    z-index: var(--z-toast);
+    padding: var(--bosluk-3) var(--bosluk-5);
+    background: var(--renk-marka-koyu); /* beyaz metinle 5.44:1 (AA) */
+    color: #fff;
+    border-radius: var(--yaricap-sm);
+    font-weight: 600;
+    transition: top var(--sure-hizli) var(--gecis-yumusak);
+}
+
+    .icerige-atla:focus {
+        top: var(--bosluk-4);
+    }
+
+/* =========================================
+   4. BUTON İLKELİ
+   =========================================
+   Kullanım: <a class="rs-btn rs-btn-birincil">…</a>
+   Varyant:  -birincil | -ikincil | -hayalet | -tehlike
+   Boyut:    -sm | (varsayılan) | -lg | -blok
+   NOT: Kırmızı dolgu üzerinde beyaz metin 3.8:1'dir; bu yüzden
+   buton metni en az 1.0625rem / 600 ağırlıktadır (AA büyük metin).
+   Küçük kırmızı METİN için --renk-marka-koyu kullan. */
+.rs-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bosluk-2);
+    min-height: var(--dokunma-min);
+    padding: var(--bosluk-3) var(--bosluk-6);
+    border: 2px solid transparent;
+    border-radius: var(--yaricap-sm);
+    font-family: var(--font-govde);
+    /* Varsayilan buton 18px cok iriydi; buyuk CTA'lar ziyaretci sitesinde
+       .btn-main kullaniyor, o boyutunu koruyor. */
+    font-size: var(--olcek-md);
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    background: none;
+    transition: background-color var(--sure-normal) var(--gecis), color var(--sure-normal) var(--gecis), border-color var(--sure-normal) var(--gecis), transform var(--sure-normal) var(--gecis), box-shadow var(--sure-normal) var(--gecis);
+}
+
+    .rs-btn:disabled,
+    .rs-btn[aria-disabled="true"] {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+
+/* Zemin bilinçli olarak koyu ton: beyaz metin #e74c3c üzerinde 3.82:1 kalıyor
+   ve WCAG AA eşiğini (4.5) geçmiyordu. --renk-marka-koyu ile 5.4:1 oluyor. */
+.rs-btn-birincil {
+    background-color: var(--renk-marka-koyu);
+    border-color: var(--renk-marka-koyu);
+    color: #fff;
+}
+
+    .rs-btn-birincil:hover,
+    .rs-btn-birincil:focus-visible {
+        background-color: var(--renk-marka-daha-koyu);
+        border-color: var(--renk-marka-daha-koyu);
+        color: #fff;
+        box-shadow: var(--golge-marka);
+    }
+
+.rs-btn-ikincil {
+    background-color: transparent;
+    border-color: var(--renk-marka);
+    color: var(--yz-metin-vurgu);
+}
+
+    .rs-btn-ikincil:hover,
+    .rs-btn-ikincil:focus-visible {
+        background-color: var(--renk-marka);
+        color: #fff;
+    }
+
+.rs-btn-hayalet {
+    background-color: transparent;
+    border-color: var(--yz-kenar-guclu);
+    color: var(--yz-metin);
+}
+
+    .rs-btn-hayalet:hover,
+    .rs-btn-hayalet:focus-visible {
+        background-color: var(--yz-zemin-vurgu);
+        border-color: var(--yz-metin-soluk);
+        color: var(--yz-metin);
+    }
+
+.rs-btn-tehlike {
+    background-color: var(--renk-hata);
+    border-color: var(--renk-hata);
+    color: #fff;
+}
+
+    .rs-btn-tehlike:hover,
+    .rs-btn-tehlike:focus-visible {
+        background-color: var(--renk-marka-daha-koyu);
+        border-color: var(--renk-marka-daha-koyu);
+        color: #fff;
+    }
+
+.rs-btn-sm {
+    min-height: 36px;
+    padding: var(--bosluk-2) var(--bosluk-4);
+    font-size: var(--olcek-sm);
+    font-weight: 600;
+}
+
+.rs-btn-lg {
+    padding: var(--bosluk-4) var(--bosluk-10);
+    font-size: var(--olcek-xl);
+    border-radius: var(--yaricap-tam);
+}
+
+.rs-btn-blok {
+    display: flex;
+    width: 100%;
+}
+
+/* İkon-only buton — mutlaka aria-label ver */
+.rs-btn-ikon {
+    min-height: var(--dokunma-min);
+    min-width: var(--dokunma-min);
+    padding: var(--bosluk-2);
+    border-radius: var(--yaricap-sm);
+}
+
+/* =========================================
+   5. FORM İLKELLERİ
+   =========================================
+   <div class="rs-alan">
+     <label class="rs-etiket" for="ad">Ad</label>
+     <input class="rs-girdi" id="ad">
+     <p class="rs-yardim">Yardım metni</p>
+   </div> */
+.rs-alan {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bosluk-2);
+    margin-bottom: var(--bosluk-5);
+    min-width: 0; /* grid içinde taşmayı engeller */
+}
+
+.rs-etiket {
+    font-size: var(--olcek-sm);
+    font-weight: 600;
+    color: var(--yz-metin);
+}
+
+    .rs-etiket .zorunlu {
+        color: var(--yz-metin-vurgu);
+        margin-left: 2px;
+    }
+
+.rs-girdi {
+    width: 100%;
+    min-height: var(--dokunma-min);
+    padding: var(--bosluk-3) var(--bosluk-4);
+    background-color: var(--yz-girdi-zemin);
+    border: 1px solid var(--yz-girdi-kenar);
+    border-radius: var(--yaricap-sm);
+    color: var(--yz-girdi-metin);
+    font-size: var(--olcek-md);
+    line-height: 1.4;
+    transition: border-color var(--sure-hizli) var(--gecis-yumusak), box-shadow var(--sure-hizli) var(--gecis-yumusak);
+}
+
+textarea.rs-girdi {
+    min-height: 120px;
+    resize: vertical;
+}
+
+select.rs-girdi {
+    appearance: none;
+    padding-right: var(--bosluk-10);
+    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: calc(100% - 20px) calc(50% + 2px), calc(100% - 14px) calc(50% + 2px);
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+}
+
+.rs-girdi::placeholder {
+    color: var(--yz-girdi-yer-tutucu);
+    opacity: 1;
+}
+
+.rs-girdi:focus {
+    outline: none;
+    border-color: var(--renk-marka);
+    box-shadow: 0 0 0 3px var(--renk-marka-saydam-25);
+}
+
+.rs-girdi:focus-visible {
+    outline: none; /* halkayı box-shadow ile veriyoruz */
+}
+
+.rs-girdi:disabled {
+    background-color: var(--yz-zemin-vurgu);
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Hata durumu */
+.rs-girdi.hatali,
+.rs-girdi[aria-invalid="true"] {
+    border-color: var(--renk-hata);
+}
+
+    .rs-girdi.hatali:focus,
+    .rs-girdi[aria-invalid="true"]:focus {
+        box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.25);
+    }
+
+.rs-hata-metin {
+    margin: 0;
+    font-size: var(--olcek-sm);
+    font-weight: 500;
+    color: var(--renk-hata);
+}
+
+.rs-koyu .rs-hata-metin,
+.bg-dark .rs-hata-metin {
+    color: var(--renk-marka-acik);
+}
+
+.rs-yardim {
+    margin: 0;
+    font-size: var(--olcek-sm);
+    color: var(--yz-metin-soluk);
+}
+
+/* İki sütunlu form ızgarası — 767px altında tek sütuna düşer */
+.rs-form-izgara {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 var(--bosluk-6);
+}
+
+@media (max-width: 767px) {
+    .rs-form-izgara {
+        grid-template-columns: 1fr;
+    }
+}
+
+.rs-tam-genislik {
+    grid-column: 1 / -1;
+}
+
+/* =========================================
+   6. KART
+   ========================================= */
+.rs-kart {
+    background-color: var(--yz-zemin);
+    border: 1px solid var(--yz-kenar);
+    border-radius: var(--yaricap-lg);
+    box-shadow: var(--yz-golge);
+    color: var(--yz-metin);
+    overflow: hidden;
+}
+
+.rs-kart-baslik {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bosluk-4);
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--bosluk-6);
+    border-bottom: 1px solid var(--yz-kenar);
+}
+
+.rs-kart-govde {
+    padding: var(--bosluk-6);
+}
+
+.rs-kart-alt {
+    padding: var(--bosluk-4) var(--bosluk-6);
+    border-top: 1px solid var(--yz-kenar);
+    background-color: var(--yz-zemin-alt);
+}
+
+/* =========================================
+   7. ROZET
+   ========================================= */
+.rs-rozet {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--bosluk-1);
+    padding: var(--bosluk-1) var(--bosluk-3);
+    border-radius: var(--yaricap-tam);
+    font-size: var(--olcek-xs);
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+    background-color: var(--yz-zemin-vurgu);
+    color: var(--yz-metin);
+}
+
+.rs-rozet-marka {
+    background-color: var(--renk-marka-zemin);
+    color: var(--renk-marka-koyu);
+}
+
+.rs-rozet-basari {
+    background-color: var(--renk-basari-zemin);
+    color: var(--renk-basari);
+}
+
+.rs-rozet-uyari {
+    background-color: var(--renk-uyari-zemin);
+    color: var(--renk-uyari);
+}
+
+.rs-rozet-hata {
+    background-color: var(--renk-hata-zemin);
+    color: var(--renk-hata);
+}
+
+.rs-rozet-bilgi {
+    background-color: var(--renk-bilgi-zemin);
+    color: var(--renk-bilgi);
+}
+
+/* =========================================
+   8. TABLO
+   ========================================= */
+.rs-tablo-sarmal {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.rs-tablo {
+    width: 100%;
+    border-collapse: collapse;
+    color: var(--yz-metin);
+}
+
+    .rs-tablo thead th {
+        padding: var(--bosluk-4) var(--bosluk-5);
+        background-color: var(--yz-zemin-alt);
+        color: var(--yz-metin-soluk);
+        font-size: var(--olcek-xs);
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        text-align: left;
+        border: none;
+        white-space: nowrap;
+    }
+
+    .rs-tablo tbody td {
+        padding: var(--bosluk-4) var(--bosluk-5);
+        border-bottom: 1px solid var(--yz-kenar);
+        vertical-align: middle;
+    }
+
+    .rs-tablo tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .rs-tablo tbody tr {
+        transition: background-color var(--sure-hizli) var(--gecis-yumusak);
+    }
+
+        .rs-tablo tbody tr:hover {
+            background-color: var(--yz-zemin-alt);
+        }
+
+/* =========================================
+   9. UYARI KUTUSU
+   ========================================= */
+.rs-uyari {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--bosluk-3);
+    padding: var(--bosluk-4) var(--bosluk-5);
+    border-radius: var(--yaricap-md);
+    border-left: 4px solid currentColor;
+    font-size: var(--olcek-md);
+    margin-bottom: var(--bosluk-5);
+}
+
+    .rs-uyari i {
+        flex-shrink: 0;
+        margin-top: 0.2em;
+    }
+
+    .rs-uyari > div,
+    .rs-uyari > p {
+        min-width: 0;
+    }
+
+.rs-uyari-basari {
+    background-color: var(--renk-basari-zemin);
+    color: var(--renk-basari);
+}
+
+.rs-uyari-uyari {
+    background-color: var(--renk-uyari-zemin);
+    color: var(--renk-uyari);
+}
+
+.rs-uyari-hata {
+    background-color: var(--renk-hata-zemin);
+    color: var(--renk-hata);
+}
+
+.rs-uyari-bilgi {
+    background-color: var(--renk-bilgi-zemin);
+    color: var(--renk-bilgi);
+}
+
+/* =========================================
+   10. BOŞ DURUM
+   ========================================= */
+.rs-bos-durum {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--bosluk-3);
+    padding: var(--bosluk-16) var(--bosluk-6);
+    text-align: center;
+    color: var(--yz-metin-soluk);
+}
+
+    .rs-bos-durum i {
+        font-size: 2.75rem;
+        opacity: 0.35;
+    }
+
+    .rs-bos-durum h3 {
+        margin: 0;
+        font-family: var(--font-baslik);
+        font-size: var(--olcek-xl);
+        color: var(--yz-metin);
+    }
+
+    .rs-bos-durum p {
+        margin: 0;
+        max-width: 46ch;
+        font-size: var(--olcek-md);
+    }
+
+/* =========================================
+   11. KÜÇÜK YARDIMCILAR
+   ========================================= */
+.rs-yigin {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bosluk-4);
+}
+
+.rs-satir {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--bosluk-3);
+}
+
+.rs-soluk {
+    color: var(--yz-metin-soluk);
+}
+
+.rs-vurgu {
+    color: var(--yz-metin-vurgu);
+}
+
+/* =========================================
+   12. HAREKET AZALTMA TERCİHİ
+   ========================================= */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* =========================================
+   DOKUNMATİKTE HEDEF BOYUTU
+   =========================================
+   .rs-btn-sm masaüstünde bilinçli olarak 36px (yoğun arayüz), ama dokunmatikte
+   parmakla isabet ettirmek için en az 44px gerekiyor. */
+@media (max-width: 767.98px) {
+    .rs-btn-sm {
+        min-height: var(--dokunma-min);
+        padding-top: var(--bosluk-2);
+        padding-bottom: var(--bosluk-2);
+    }
+}

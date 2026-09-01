@@ -1,0 +1,216 @@
+/* =============================================================
+   ROSSO LOUNGE — TASARIM ŞABLONU
+   -------------------------------------------------------------
+   Tek kaynak: renk, tipografi, boşluk, hareket ve katman ölçekleri.
+   Yeni bileşenler BEM ile yazılır:  .rosso-blok__eleman--durum
+   Yalnızca ziyaretçi sitesi için; yönetim paneli panel.css kullanır.
+   ============================================================= */
+
+:root {
+    /* ---------- Yüzeyler (Onyx → kömür) ---------- */
+    --rs-onyx: #0a0a0c;
+    --rs-yuzey: #101014;
+    --rs-yuzey-2: #16161b;
+    --rs-yuzey-3: #1e1e25;
+    --rs-cizgi: rgba(255, 255, 255, 0.08);
+    --rs-cizgi-guclu: rgba(255, 255, 255, 0.16);
+
+    /* ---------- Marka ---------- */
+    --rs-kirmizi: #e74c3c; /* logo ve marka işareti */
+    --rs-gold: #c9a961;
+    --rs-gold-acik: #e4cf9a;
+    --rs-gold-koyu: #a8873f;
+    --rs-gold-sis: rgba(201, 169, 97, 0.14);
+
+    /* ---------- Metin ---------- */
+    --rs-metin: #f6f4f0;
+    --rs-metin-yumusak: #bdb9b2;
+    --rs-metin-silik: #949089; /* koyu kart üstünde 5.39:1 (AA) */
+
+    /* ---------- Tipografi ---------- */
+    --rs-font-baslik: 'Playfair Display', Georgia, serif;
+    --rs-font-govde: 'Inter', 'Segoe UI', system-ui, sans-serif;
+
+    /* Akıcı ölçek — 360px'ten 1920px'e kesintisiz */
+    --rs-yazi-xs: clamp(0.75rem, 0.72rem + 0.14vw, 0.8125rem);
+    --rs-yazi-sm: clamp(0.8125rem, 0.78rem + 0.18vw, 0.875rem);
+    --rs-yazi-md: clamp(0.9375rem, 0.90rem + 0.22vw, 1rem);
+    --rs-yazi-lg: clamp(1.0625rem, 1.00rem + 0.30vw, 1.1875rem);
+    --rs-yazi-xl: clamp(1.25rem, 1.12rem + 0.60vw, 1.5rem);
+    --rs-yazi-2xl: clamp(1.625rem, 1.35rem + 1.20vw, 2.25rem);
+    --rs-yazi-3xl: clamp(2rem, 1.55rem + 2.00vw, 3rem);
+    --rs-yazi-dev: clamp(2.5rem, 1.60rem + 3.90vw, 4.5rem);
+
+    --rs-satir-sik: 1.1;
+    --rs-satir-normal: 1.55;
+    --rs-satir-genis: 1.75;
+    --rs-aralik-genis: 0.28em; /* üst başlıklar */
+
+    /* ---------- Boşluk (4px tabanlı) ---------- */
+    --rs-bo-1: 0.25rem;
+    --rs-bo-2: 0.5rem;
+    --rs-bo-3: 0.75rem;
+    --rs-bo-4: 1rem;
+    --rs-bo-5: 1.25rem;
+    --rs-bo-6: 1.5rem;
+    --rs-bo-8: 2rem;
+    --rs-bo-10: 2.5rem;
+    --rs-bo-12: 3rem;
+    --rs-bo-16: 4rem;
+    --rs-bo-20: 5rem;
+    --rs-bo-24: 6rem;
+
+    /* Bölüm nefesi — premium his büyük ölçüde buradan gelir */
+    --rs-bolum-bosluk: clamp(4.5rem, 3rem + 6vw, 9rem);
+    --rs-kap-genislik: 1180px;
+    --rs-kap-yan: clamp(1.25rem, 4vw, 2.5rem);
+
+    /* ---------- Biçim ---------- */
+    --rs-yaricap-sm: 8px;
+    --rs-yaricap: 14px;
+    --rs-yaricap-lg: 22px;
+    --rs-yaricap-tam: 999px;
+
+    /* ---------- Gölge ---------- */
+    --rs-golge-1: 0 2px 10px rgba(0, 0, 0, 0.3);
+    --rs-golge-2: 0 12px 34px rgba(0, 0, 0, 0.42);
+    --rs-golge-3: 0 26px 60px rgba(0, 0, 0, 0.55);
+    --rs-golge-gold: 0 14px 38px rgba(201, 169, 97, 0.26);
+
+    /* ---------- Hareket ---------- */
+    --rs-hiz-1: 180ms;
+    --rs-hiz-2: 340ms;
+    --rs-hiz-3: 620ms;
+    --rs-hiz-4: 1100ms;
+    --rs-egri: cubic-bezier(0.22, 1, 0.36, 1); /* yumuşak çıkış */
+    --rs-egri-yumusak: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ---------- Katman ---------- */
+    --rs-kat-zemin: 0;
+    --rs-kat-icerik: 1;
+    --rs-kat-basik: 900;
+    --rs-kat-navbar: 1000;
+    --rs-kat-menu: 1100;
+    --rs-kat-buyutec: 2500;
+    --rs-kat-preloader: 3000;
+
+    /* Dokunma hedefi alt sınırı */
+    --rs-dokunma: 44px;
+}
+
+/* =============================================================
+   KAP
+   ============================================================= */
+.rosso-kap {
+    width: 100%;
+    max-width: var(--rs-kap-genislik);
+    margin-inline: auto;
+    padding-inline: var(--rs-kap-yan);
+}
+
+/* =============================================================
+   PRELOADER
+   -------------------------------------------------------------
+   Sayfa hazır olunca .rosso-onyukleyici--bitti eklenir ve öğe
+   DOM'dan kaldırılır. JS çalışmazsa 2.5sn sonra CSS ile de kaybolur,
+   yani içerik hiçbir koşulda perde arkasında kalmaz.
+   ============================================================= */
+.rosso-onyukleyici {
+    position: fixed;
+    inset: 0;
+    z-index: var(--rs-kat-preloader);
+    display: grid;
+    place-items: center;
+    background: var(--rs-onyx);
+    animation: rosso-guvenlik-perdesi 0s linear 2.5s forwards;
+}
+
+.rosso-onyukleyici__marka {
+    font-family: var(--rs-font-baslik);
+    font-size: var(--rs-yazi-2xl);
+    letter-spacing: 0.14em;
+    color: var(--rs-metin);
+    opacity: 0;
+    animation: rosso-marka-belir var(--rs-hiz-4) var(--rs-egri) forwards;
+}
+
+    .rosso-onyukleyici__marka span {
+        color: var(--rs-gold);
+    }
+
+.rosso-onyukleyici__cizgi {
+    width: min(220px, 50vw);
+    height: 1px;
+    margin-top: var(--rs-bo-6);
+    background: var(--rs-cizgi-guclu);
+    overflow: hidden;
+}
+
+    .rosso-onyukleyici__cizgi::after {
+        content: "";
+        display: block;
+        width: 40%;
+        height: 100%;
+        background: var(--rs-gold);
+        animation: rosso-cizgi-kos 1.2s var(--rs-egri-yumusak) infinite;
+    }
+
+.rosso-onyukleyici--bitti {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--rs-hiz-3) var(--rs-egri), visibility 0s linear var(--rs-hiz-3);
+}
+
+@keyframes rosso-marka-belir {
+    0% { opacity: 0; transform: translateY(12px); letter-spacing: 0.34em; }
+    100% { opacity: 1; transform: none; letter-spacing: 0.14em; }
+}
+
+@keyframes rosso-cizgi-kos {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(350%); }
+}
+
+@keyframes rosso-guvenlik-perdesi {
+    to { opacity: 0; visibility: hidden; }
+}
+
+/* =============================================================
+   GİRİŞ ANİMASYONU (fade-up)
+   -------------------------------------------------------------
+   JS kancası: .rosso-belir → görünür olunca .rosso-belir--acik
+   ============================================================= */
+.rosso-belir {
+    opacity: 0;
+    transform: translateY(26px);
+    transition: opacity var(--rs-hiz-3) var(--rs-egri), transform var(--rs-hiz-3) var(--rs-egri);
+    transition-delay: var(--rs-gecikme, 0ms);
+}
+
+.rosso-belir--acik {
+    opacity: 1;
+    transform: none;
+}
+
+/* =============================================================
+   HAREKET AZALTMA
+   ============================================================= */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .rosso-belir {
+        opacity: 1;
+        transform: none;
+    }
+
+    .rosso-onyukleyici {
+        display: none;
+    }
+}

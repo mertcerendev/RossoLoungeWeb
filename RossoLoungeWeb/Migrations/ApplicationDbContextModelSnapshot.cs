@@ -22,6 +22,46 @@ namespace RossoLoungeWeb.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("RossoLoungeWeb.Models.Iletisim", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdSoyad")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Mesaj")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("OkunduMu")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("Tarih")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Telefon")
+                        .HasMaxLength(25)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OkunduMu");
+
+                    b.ToTable("IletisimMesajlari");
+                });
+
             modelBuilder.Entity("RossoLoungeWeb.Models.Kategori", b =>
                 {
                     b.Property<int>("Id")
@@ -53,12 +93,14 @@ namespace RossoLoungeWeb.Migrations
 
                     b.Property<string>("AdSoyad")
                         .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("KisiSayisi")
                         .HasColumnType("int");
 
                     b.Property<string>("Not")
+                        .HasMaxLength(500)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("OlusturulmaTarihi")
@@ -72,9 +114,12 @@ namespace RossoLoungeWeb.Migrations
 
                     b.Property<string>("Telefon")
                         .IsRequired()
+                        .HasMaxLength(25)
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Tarih");
 
                     b.ToTable("Rezervasyons");
                 });
@@ -89,10 +134,12 @@ namespace RossoLoungeWeb.Migrations
 
                     b.Property<string>("GonderenMail")
                         .IsRequired()
+                        .HasMaxLength(150)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("GonderenSifre")
                         .IsRequired()
+                        .HasMaxLength(200)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("SmtpPort")
@@ -100,6 +147,7 @@ namespace RossoLoungeWeb.Migrations
 
                     b.Property<string>("SmtpSunucu")
                         .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -116,10 +164,12 @@ namespace RossoLoungeWeb.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Aciklama")
+                        .HasMaxLength(1000)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Ad")
                         .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Fiyat")
@@ -140,6 +190,7 @@ namespace RossoLoungeWeb.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("ResimUrl")
+                        .HasMaxLength(300)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("SiraNo")
@@ -148,6 +199,8 @@ namespace RossoLoungeWeb.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("KategoriId");
+
+                    b.HasIndex("SiraNo");
 
                     b.ToTable("Urunler");
                 });
@@ -162,6 +215,7 @@ namespace RossoLoungeWeb.Migrations
 
                     b.Property<string>("Eposta")
                         .IsRequired()
+                        .HasMaxLength(150)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("KullaniciAdi")
@@ -189,10 +243,12 @@ namespace RossoLoungeWeb.Migrations
 
                     b.Property<string>("AdSoyad")
                         .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Mesaj")
                         .IsRequired()
+                        .HasMaxLength(1000)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("OnaylandiMi")
@@ -206,6 +262,8 @@ namespace RossoLoungeWeb.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("OnaylandiMi");
+
                     b.ToTable("Yorumlar");
                 });
 
@@ -214,7 +272,7 @@ namespace RossoLoungeWeb.Migrations
                     b.HasOne("RossoLoungeWeb.Models.Kategori", "Kategori")
                         .WithMany("Urunler")
                         .HasForeignKey("KategoriId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Kategori");
