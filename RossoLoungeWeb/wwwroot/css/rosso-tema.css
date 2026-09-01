@@ -404,7 +404,9 @@ html:not(.rosso-kinetik) .sahne-perde__panel {
     position: absolute;
     width: 1px;
     height: 15px;
-    margin: -7.5px 0 0 0;
+    /* margin YOK: merkezleme GSAP'in yPercent/xPercent -50'siyle
+       yapılıyor. Eski imleçten kalan -7.5px margin ikinci bir
+       kaydırma yaratıyordu; tik kadrajın 7px yukarısında duruyordu. */
     background: var(--sampanya);
     transition: opacity var(--h1) var(--egri), height var(--h2) var(--egri);
 }
