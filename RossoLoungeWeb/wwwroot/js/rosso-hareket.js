@@ -398,10 +398,35 @@
        Ofset navbarın CANLI yüksekliğinden hesaplanıyor; sabit sayı
        yazılsaydı navbar kompakt duruma geçtiğinde kayardı.
        ========================================================= */
-    function capaOfseti() {
+    /* Navbarın KOMPAKT yüksekliği. Ofset bununla hesaplanmalı: hedefe
+       varıldığında sayfa kaydırılmış olacağı için navbar her zaman
+       kompakt oluyor. Anlık yükseklik kullanılınca sayfa başından
+       tıklayınca 24px fazla kaydırılıyor ve aynı link iki farklı yere
+       iniyordu (ölçüldü: tepeden 92px, ortadan 68px boşluk).
+
+       Ölçüm sırasında geçiş kapatılıyor: sınıf eklenip hemen okunursa
+       CSS geçişi henüz ilerlemediği için eski değer dönerdi. */
+    var kompaktNavYuk = 0;
+
+    function navOlcusunuAl() {
         var nav = document.querySelector('.nav');
-        var yukseklik = nav ? nav.getBoundingClientRect().height : 0;
-        return yukseklik + 12;
+        if (!nav) return;
+
+        var sabitMiydi = nav.classList.contains('nav--sabit');
+        var eskiGecis = nav.style.transition;
+
+        nav.style.transition = 'none';
+        nav.classList.add('nav--sabit');
+        kompaktNavYuk = nav.getBoundingClientRect().height;
+
+        if (!sabitMiydi) nav.classList.remove('nav--sabit');
+        void nav.offsetWidth;              // geçiş geri açılmadan durumu sabitle
+        nav.style.transition = eskiGecis;
+    }
+
+    function capaOfseti() {
+        if (!kompaktNavYuk) navOlcusunuAl();
+        return kompaktNavYuk + 12;
     }
 
     /* 'tepe' döner: aynı sayfaya giden hash'siz bağlantı (Ana Sayfa,
@@ -478,6 +503,9 @@
     };
 
     function capaBagla() {
+        navOlcusunuAl();
+        window.addEventListener('resize', navOlcusunuAl);
+
         document.addEventListener('click', function (olay) {
             var bag = olay.target.closest ? olay.target.closest('a[href]') : null;
             if (!bag || bag.target === '_blank') return;
