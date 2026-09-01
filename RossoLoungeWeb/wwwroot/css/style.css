@@ -11,11 +11,8 @@
    SINIF ADLARI DEĞİŞTİRİLEMEZ — wwwroot/js/script.js ve
    .cshtml görünümleri şu adlara bağlıdır:
      .hamburger .nav-links .active #navbar .kaydirildi
-     .reveal .gorunur .toast-bildirim .toast-kapat .kapaniyor
-     .hata .basarili .section-title .about-text .about-image
-     .menu-card .gallery-item .contact-details
-     .map-container .reservation-container
-     .menu-category
+     .toast-bildirim .toast-kapat .kapaniyor .hata .basarili
+     .alan .form-sekmeler .form-sekme .aktif
 
    İÇİNDEKİLER
      1. Temel / kapsayıcı
@@ -34,7 +31,6 @@
     14. Footer
     15. Kaydırma hizalama (scroll-margin)
     16. Bildirim (toast)
-    17. Kaydırma animasyonları (.reveal)
     18. Responsive
     19. Hareket azaltma tercihi
    ========================================================= */
@@ -504,7 +500,6 @@ section.bg-dark,
     font-size: var(--olcek-xl);
 }
 
-/* Ana sayfadaki öne çıkan ürün kartı (script.js .reveal ekler) */
 .menu-card {
     transition: transform var(--sure-normal) var(--gecis), box-shadow var(--sure-normal) var(--gecis);
 }
@@ -764,55 +759,6 @@ section.bg-dark,
     gap: var(--bosluk-6);
 }
 
-.form-group {
-    min-width: 0;
-}
-
-    .form-group label {
-        display: block;
-        margin-bottom: var(--bosluk-2);
-        font-size: var(--olcek-sm);
-        font-weight: 600;
-    }
-
-    .form-group input,
-    .form-group textarea,
-    .form-group select {
-        width: 100%;
-        min-height: var(--dokunma-min);
-        padding: var(--bosluk-3);
-        background: var(--siyah-3);
-        border: 1px solid #444;
-        border-radius: var(--yaricap-sm);
-        color: var(--beyaz);
-        font-size: var(--olcek-md);
-        transition: border-color var(--sure-hizli) var(--gecis-yumusak), box-shadow var(--sure-hizli) var(--gecis-yumusak);
-    }
-
-        .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--renk-marka);
-            box-shadow: 0 0 0 3px var(--renk-marka-saydam-25);
-        }
-
-        .form-group input::placeholder,
-        .form-group textarea::placeholder {
-            color: #8d8d8d;
-            opacity: 1;
-        }
-
-.full-width {
-    grid-column: 1 / -1;
-}
-
-/* Bootstrap form alanları için yer tutucu rengi (yorum formu) */
-.form-control::placeholder {
-    color: #bbbbbb !important;
-    opacity: 1;
-}
-
 /* =========================================
    12. FLATPICKR (TAKVİM) KIRMIZI TEMA
    ========================================= */
@@ -1000,22 +946,6 @@ section[id],
 }
 
 /* =========================================
-   17. KAYDIRMA ANİMASYONLARI  — script.js'e bağlı
-   ========================================= */
-.reveal {
-    opacity: 0;
-    transform: translateY(28px);
-    transition: opacity 0.8s var(--gecis), transform 0.8s var(--gecis);
-    transition-delay: var(--reveal-gecikme, 0s);
-    will-change: opacity, transform;
-}
-
-    .reveal.gorunur {
-        opacity: 1;
-        transform: none;
-    }
-
-/* =========================================
    18. RESPONSIVE
    -----------------------------------------
    xl  ≥1200  masaüstü (varsayılan kurallar)
@@ -1197,11 +1127,6 @@ section[id],
         scroll-behavior: auto !important;
     }
 
-    .reveal {
-        opacity: 1;
-        transform: none;
-    }
-
     .hero::before {
         animation: none;
     }
@@ -1223,152 +1148,6 @@ section[id],
 .bg-dark .bolum-ustbaslik,
 .rs-koyu .bolum-ustbaslik {
     color: var(--renk-marka-metin-koyu);
-}
-
-/* =========================================
-   21. İLETİŞİM DÜZENİ
-   =========================================
-   Daha önce üç blok alt alta duruyordu (bilgi+harita, mesaj formu,
-   rezervasyon formu). İki neredeyse aynı görünen form arka arkaya
-   geliyordu. Artık bilgi solda, tek bir sekmeli form sağda. */
-.iletisim-duzen {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-    gap: var(--bosluk-8);
-    align-items: start;
-}
-
-.iletisim-bilgi {
-    display: flex;
-    flex-direction: column;
-    gap: var(--bosluk-6);
-}
-
-.bilgi-kart {
-    padding: var(--bosluk-8);
-    background: var(--beyaz);
-    border: 1px solid var(--gri-200);
-    border-radius: var(--yaricap-lg);
-    box-shadow: var(--golge-2);
-}
-
-.bilgi-liste {
-    display: flex;
-    flex-direction: column;
-    gap: var(--bosluk-6);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-    .bilgi-liste li {
-        display: flex;
-        gap: var(--bosluk-4);
-        align-items: flex-start;
-    }
-
-    .bilgi-liste strong {
-        display: block;
-        margin-bottom: var(--bosluk-1);
-        font-size: var(--olcek-xs);
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--gri-500);
-    }
-
-    .bilgi-liste p {
-        margin: 0;
-        color: var(--text-color);
-        line-height: var(--satir-genis);
-    }
-
-    .bilgi-liste a {
-        color: inherit;
-        text-decoration: none;
-        border-bottom: 1px solid transparent;
-        transition: border-color var(--sure-hizli) var(--gecis), color var(--sure-hizli) var(--gecis);
-    }
-
-        .bilgi-liste a:hover {
-            color: var(--renk-marka-koyu);
-            border-bottom-color: currentColor;
-        }
-
-.bilgi-ikon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    width: 44px;
-    height: 44px;
-    background: var(--renk-marka-zemin);
-    border-radius: var(--yaricap-md);
-    color: var(--renk-marka-koyu);
-    font-size: var(--olcek-md);
-}
-
-.bilgi-eylem {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--bosluk-2);
-    margin-top: var(--bosluk-2);
-    color: var(--renk-marka-koyu) !important;
-    font-size: var(--olcek-sm);
-    font-weight: 600;
-}
-
-    .bilgi-eylem i {
-        transition: transform var(--sure-normal) var(--gecis);
-    }
-
-    .bilgi-eylem:hover i {
-        transform: translateX(4px);
-    }
-
-/* Açık / kapalı rozeti */
-.durum-rozet {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--bosluk-2);
-    margin-top: var(--bosluk-2);
-    padding: var(--bosluk-1) var(--bosluk-3);
-    border-radius: var(--yaricap-tam);
-    font-size: var(--olcek-xs);
-    font-weight: 600;
-}
-
-    .durum-rozet.acik {
-        background: var(--renk-basari-zemin);
-        color: var(--renk-basari);
-    }
-
-    .durum-rozet.kapali {
-        background: var(--gri-100);
-        color: var(--gri-600);
-    }
-
-.durum-nokta {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: currentColor;
-}
-
-.durum-rozet.acik .durum-nokta {
-    animation: nabiz 2.4s ease-in-out infinite;
-}
-
-@keyframes nabiz {
-    0%, 100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-
-    50% {
-        opacity: 0.45;
-        transform: scale(1.35);
-    }
 }
 
 .sosyal-satir {
@@ -1396,124 +1175,6 @@ section[id],
             color: var(--beyaz);
             transform: translateY(-3px);
         }
-
-.harita-kutu {
-    overflow: hidden;
-    height: 260px;
-    border-radius: var(--yaricap-lg);
-    box-shadow: var(--golge-2);
-}
-
-    .harita-kutu iframe {
-        width: 100%;
-        height: 100%;
-        border: 0;
-        filter: grayscale(0.35);
-        transition: filter var(--sure-yavas) var(--gecis);
-    }
-
-    .harita-kutu:hover iframe {
-        filter: grayscale(0);
-    }
-
-/* =========================================
-   22. SEKMELİ FORM PANELİ
-   ========================================= */
-.form-panel {
-    overflow: hidden;
-    background: var(--beyaz);
-    border: 1px solid var(--gri-200);
-    border-radius: var(--yaricap-lg);
-    box-shadow: var(--golge-3);
-}
-
-.form-sekmeler {
-    display: flex;
-    background: var(--gri-100);
-    border-bottom: 1px solid var(--gri-200);
-}
-
-.form-sekme {
-    flex: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--bosluk-2);
-    min-height: 56px;
-    padding: var(--bosluk-3) var(--bosluk-4);
-    background: none;
-    border: none;
-    border-bottom: 3px solid transparent;
-    color: var(--gri-600);
-    font-family: var(--font-govde);
-    font-size: var(--olcek-md);
-    font-weight: 600;
-    cursor: pointer;
-    transition: color var(--sure-hizli) var(--gecis), background var(--sure-hizli) var(--gecis), border-color var(--sure-hizli) var(--gecis);
-}
-
-    .form-sekme:hover {
-        color: var(--renk-marka-koyu);
-        background: rgba(255, 255, 255, 0.6);
-    }
-
-    .form-sekme.aktif {
-        background: var(--beyaz);
-        border-bottom-color: var(--renk-marka-koyu);
-        color: var(--renk-marka-koyu);
-    }
-
-.form-govde {
-    padding: var(--bosluk-8);
-    animation: sekmeGir var(--sure-normal) var(--gecis) both;
-}
-
-@keyframes sekmeGir {
-    from {
-        opacity: 0;
-        transform: translateY(8px);
-    }
-
-    to {
-        opacity: 1;
-        transform: none;
-    }
-}
-
-.form-aciklama {
-    margin: 0 0 var(--bosluk-6);
-    color: var(--gri-600);
-    font-size: var(--olcek-sm);
-    line-height: var(--satir-genis);
-}
-
-/* Form alanları ızgarası */
-.alan-izgara {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--bosluk-5);
-}
-
-    .alan-izgara .full-width {
-        grid-column: 1 / -1;
-    }
-
-    .alan-izgara .btn-main {
-        grid-column: 1 / -1;
-        margin-top: var(--bosluk-1);
-    }
-
-@media (max-width: 640px) {
-    .alan-izgara {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
-
-@media (max-width: 992px) {
-    .iletisim-duzen {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
 
 /* =========================================
    23. HAKKIMIZDA — EDİTÖRYEL DÜZEN
@@ -1829,11 +1490,6 @@ section[id],
     color: rgba(255, 255, 255, 0.85);
 }
 
-/* =========================================
-   27. KATLANABİLİR YORUM FORMU
-   =========================================
-   Daha önce karuselin altında ikinci bir büyük form bloğu duruyordu.
-   Artık varsayılan olarak kapalı; isteyen açıyor. */
 /* ==========================================================================
    28. KOYU & LÜKS DİL
    ==========================================================================
@@ -1972,9 +1628,7 @@ body:not(.panel) .hero-alt {
 }
 
 /* --- Kartlar (menü, yorum, bilgi) --- */
-body:not(.panel) .menu-card,
-body:not(.panel) .bilgi-kart,
-body:not(.panel) .form-panel {
+body:not(.panel) .menu-card {
     background: var(--sahne-3);
     border: 1px solid var(--sahne-cizgi);
     box-shadow: none;
@@ -2057,24 +1711,6 @@ body:not(.panel) .rakam-serit {
     }
 
 /* --- İletişim --- */
-body:not(.panel) .bilgi-liste strong {
-    color: var(--altin);
-}
-
-body:not(.panel) .bilgi-liste p,
-body:not(.panel) .bilgi-liste a {
-    color: var(--metin-2);
-}
-
-body:not(.panel) .bilgi-ikon {
-    background: var(--altin-soluk);
-    color: var(--altin-acik);
-}
-
-body:not(.panel) .bilgi-eylem {
-    color: var(--altin-acik) !important;
-}
-
 body:not(.panel) .sosyal-satir {
     border-top-color: var(--sahne-cizgi);
 }
@@ -2088,68 +1724,6 @@ body:not(.panel) .sosyal-satir {
             background: var(--altin);
             color: #1a1408;
         }
-
-body:not(.panel) .harita-kutu iframe {
-    filter: grayscale(1) invert(0.9) contrast(0.85);
-}
-
-body:not(.panel) .harita-kutu:hover iframe {
-    filter: grayscale(0.4) invert(0.88) contrast(0.9);
-}
-
-/* --- Sekmeli form --- */
-body:not(.panel) .form-sekmeler {
-    background: rgba(0, 0, 0, 0.25);
-    border-bottom-color: var(--sahne-cizgi);
-}
-
-body:not(.panel) .form-sekme {
-    color: var(--metin-3);
-}
-
-    body:not(.panel) .form-sekme:hover {
-        background: rgba(255, 255, 255, 0.03);
-        color: var(--metin-1);
-    }
-
-    body:not(.panel) .form-sekme.aktif {
-        background: transparent;
-        border-bottom-color: var(--altin);
-        color: var(--altin-acik);
-    }
-
-body:not(.panel) .form-aciklama {
-    color: var(--metin-3);
-}
-
-/* --- Form alanları (koyu) --- */
-body:not(.panel) .form-group label {
-    color: var(--metin-2);
-    font-size: var(--olcek-sm);
-    font-weight: 500;
-}
-
-body:not(.panel) .form-group input,
-body:not(.panel) .form-group select,
-body:not(.panel) .form-group textarea {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--sahne-cizgi);
-    color: var(--metin-1);
-}
-
-    body:not(.panel) .form-group input::placeholder,
-    body:not(.panel) .form-group textarea::placeholder {
-        color: var(--metin-3);
-    }
-
-    body:not(.panel) .form-group input:focus,
-    body:not(.panel) .form-group select:focus,
-    body:not(.panel) .form-group textarea:focus {
-        background: rgba(255, 255, 255, 0.07);
-        border-color: var(--altin);
-        outline: none;
-        box-shadow: 0 0 0 3px var(--altin-soluk);
-    }
 
 /* --- Butonlar --- */
 body:not(.panel) .btn-main {

@@ -7,7 +7,6 @@
    style.css'in bağlı olduğu kancalar (DEĞİŞTİRMEYİN):
    #navbar  .kaydirildi  .hamburger  .nav-links  .active  .scroll-ipucu
    .toast-bildirim  .toast-kapat  .kapaniyor  .basarili  .hata
-   .reveal  .gorunur  --reveal-gecikme
    #reservation-form  #datePicker  #phoneInput
    .menu-filtre-btn  .menu-category  .menu-item
 
@@ -175,44 +174,6 @@
     })();
 
     // ============================================================
-    // 4. KAYDIRMA ANİMASYONLARI (.reveal → .gorunur)
-    //    IntersectionObserver yoksa ya da kullanıcı hareket azaltma
-    //    istiyorsa .reveal hiç eklenmez; içerik olduğu gibi görünür.
-    // ============================================================
-    (function () {
-        var hedefler = document.querySelectorAll(
-            '.section-title, .bolum-ustbaslik, .menu-card, .menu-category,' +
-            ' .hakkimizda-gorseller, .hakkimizda-metin, .rakam-serit,' +
-            ' .bilgi-kart, .harita-kutu, .form-panel'
-        );
-
-        if (!hedefler.length) return;
-        if (azHareket() || !('IntersectionObserver' in window)) return;
-
-        Array.prototype.forEach.call(hedefler, function (el) {
-            el.classList.add('reveal');
-        });
-
-        var gozlemci = new IntersectionObserver(function (girisler) {
-            girisler.forEach(function (giris) {
-                if (!giris.isIntersecting) return;
-
-                // Yan yana duran kartlar sırayla belirsin
-                var kardesler = Array.prototype.slice.call(giris.target.parentElement.children);
-                var sira = kardesler.indexOf(giris.target);
-                giris.target.style.setProperty('--reveal-gecikme', Math.min(sira, 5) * 0.08 + 's');
-
-                giris.target.classList.add('gorunur');
-                gozlemci.unobserve(giris.target);
-            });
-        }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
-
-        Array.prototype.forEach.call(hedefler, function (el) {
-            gozlemci.observe(el);
-        });
-    })();
-
-    // ============================================================
     // 5. AKTİF MENÜ BAĞLANTISI (sadece tek sayfalık ana sayfada)
     // ============================================================
     (function () {
@@ -274,6 +235,14 @@
             fp.altInput.id = 'datePickerGorunen';
             var etiket = document.querySelector('label[for="datePicker"]');
             if (etiket) etiket.setAttribute('for', 'datePickerGorunen');
+
+            // Yüzen etiket görünen alana taşınıyor. Asıl girdi type=hidden'a
+            // dönüyor ve :placeholder-shown ile eşleşmiyor; üzerinde
+            // .alan__girdi kalırsa :not(:placeholder-shown) tutuyor ve etiket
+            // kalıcı olarak yukarıda takılı kalıyor.
+            tarihGirdisi.classList.remove('alan__girdi');
+            fp.altInput.classList.add('alan__girdi');
+            fp.altInput.setAttribute('placeholder', ' ');
         }
 
         // ---- Telefon ------------------------------------------------
@@ -292,7 +261,7 @@
         var HATA_ISARETI = 'data-rez-hata';
 
         function hataKutusu(girdi, olustur) {
-            var grup = girdi.closest('.form-group') || girdi.parentElement;
+            var grup = girdi.closest('.alan') || girdi.parentElement;
             if (!grup) return null;
 
             var kutu = grup.querySelector('[' + HATA_ISARETI + ']');

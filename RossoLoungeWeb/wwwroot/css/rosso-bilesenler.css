@@ -2043,14 +2043,16 @@ html:not(.rosso-imlec) .defter--tutuluyor .defter__sahne {
     transition: transform var(--h2) var(--egri), color var(--h2) var(--egri);
 }
 
-.alan__girdi:focus + .alan__etiket,
-.alan__girdi:not(:placeholder-shown) + .alan__etiket {
+/* ~ kullanılıyor (+ değil): flatpickr altInput'u asıl girdinin
+   hemen ardına eklediği için doğrudan kardeşlik zinciri kopuyor. */
+.alan__girdi:focus ~ .alan__etiket,
+.alan__girdi:not(:placeholder-shown) ~ .alan__etiket {
     color: var(--sampanya);
     transform: translateY(-1.55rem) scale(0.76);
 }
 
 /* Odak dışında ama dolu: vurgu rengi yerine sakin ton */
-.alan__girdi:not(:focus):not(:placeholder-shown) + .alan__etiket {
+.alan__girdi:not(:focus):not(:placeholder-shown) ~ .alan__etiket {
     color: var(--metin-3);
 }
 
@@ -2062,7 +2064,8 @@ html:not(.rosso-imlec) .defter--tutuluyor .defter__sahne {
     height: 1px;
     background: var(--sampanya);
     transform: scaleX(0);
-    transform-origin: left center;
+    /* Merkezden dışa doğru dolar */
+    transform-origin: center;
     transition: transform var(--h3) var(--egri);
 }
 
@@ -2183,7 +2186,8 @@ html:not(.rosso-imlec) .defter--tutuluyor .defter__sahne {
 /* =============================================================
    GÖNDER — manyetik buton + iletim durumu
    ============================================================= */
-.paylas__gonder {
+.paylas__gonder,
+.konsiyer__gonder {
     position: relative;
     align-self: flex-start;
     overflow: hidden;
@@ -2202,25 +2206,27 @@ html:not(.rosso-imlec) .defter--tutuluyor .defter__sahne {
     will-change: transform;
 }
 
-    .paylas__gonder:hover {
+    .paylas__gonder:hover,
+    .konsiyer__gonder:hover {
         background: var(--metin);
         border-color: var(--metin);
     }
 
-    .paylas__gonder:disabled {
+    .paylas__gonder:disabled,
+    .konsiyer__gonder:disabled {
         cursor: default;
     }
 
 /* İletim durumu: gerçek metin görünmez olur (ekran okuyucu için DOM'da
    kalır, ortak.js aria-busy ekler), görünen yazıyı ::before üstlenir.
    Böylece ortak.js'in textContent'i değiştirmesi görüntüyü bozmuyor. */
-.paylas__gonder--iletiliyor {
+.rosso-iletiliyor {
     background: var(--sampanya);
     border-color: var(--sampanya);
     color: transparent;
 }
 
-    .paylas__gonder--iletiliyor::before {
+    .rosso-iletiliyor::before {
         content: 'İletiliyor';
         position: absolute;
         inset: 0;
@@ -2231,7 +2237,7 @@ html:not(.rosso-imlec) .defter--tutuluyor .defter__sahne {
     }
 
     /* Belirsiz ilerleme: ince bir çizgi butonun altında gidip gelir */
-    .paylas__gonder--iletiliyor::after {
+    .rosso-iletiliyor::after {
         content: '';
         position: absolute;
         inset-inline: 0;
@@ -2252,7 +2258,7 @@ html:not(.rosso-imlec) .defter--tutuluyor .defter__sahne {
 
 /* Hareket azaltmada animasyon süresi 0.01ms'e iniyor; çizgi kaybolmasın */
 @media (prefers-reduced-motion: reduce) {
-    .paylas__gonder--iletiliyor::after {
+    .rosso-iletiliyor::after {
         transform: scaleX(1);
     }
 }
@@ -2333,4 +2339,335 @@ html:not(.rosso-imlec) .defter--tutuluyor .defter__sahne {
     .paylas__gonder {
         align-self: stretch;
     }
+}
+
+/* =============================================================
+   KONSİYER — iletişim
+   -------------------------------------------------------------
+   Asimetrik bölünme: solda devasa serif başlık + mekân bilgileri,
+   sağda sekmeli form paneli (rezervasyon + mesaj).
+
+   Bilgi satırları .kn-maske taşıyor: gizleme yalnızca
+   html.rosso-kinetik altında geçerli ve gorunurlukEmniyeti bu
+   sınıfın inline gizlemelerini zaten temizliyor.
+   ============================================================= */
+.konsiyer {
+    position: relative;
+    padding-block: var(--bolum);
+    background: var(--obsidyen);
+}
+
+.konsiyer__izgara {
+    display: grid;
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    gap: clamp(2.5rem, 6vw, 6rem);
+    align-items: start;
+}
+
+@media (max-width: 980px) {
+    .konsiyer__izgara {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* --- Sol sütun --- */
+.konsiyer__ustbaslik {
+    margin-block-end: var(--b4);
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: var(--harf-genis);
+    text-transform: uppercase;
+}
+
+.konsiyer__baslik {
+    margin-block-end: var(--b5);
+    font-size: clamp(2.5rem, 1.4rem + 3.8vw, 5.5rem);
+    font-weight: 300;
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+}
+
+    .konsiyer__baslik em {
+        font-style: italic;
+        color: var(--sampanya);
+    }
+
+.konsiyer__alt {
+    max-width: 38ch;
+    color: var(--metin-2);
+    line-height: var(--satir-genis);
+}
+
+/* --- Bilgi listesi --- */
+.konsiyer__bilgi {
+    margin: clamp(2.25rem, 5vw, 3.5rem) 0 0;
+}
+
+.konsiyer__satir {
+    display: grid;
+    grid-template-columns: minmax(0, 10rem) minmax(0, 1fr);
+    gap: var(--b4);
+    padding-block: clamp(1rem, 2.2vw, 1.5rem);
+    border-block-start: 1px solid var(--cizgi);
+}
+
+    .konsiyer__satir:last-of-type {
+        border-block-end: 1px solid var(--cizgi);
+    }
+
+@media (max-width: 560px) {
+    .konsiyer__satir {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--b2);
+    }
+}
+
+.konsiyer__etiket {
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+.konsiyer__deger {
+    margin: 0;
+    color: var(--metin);
+    line-height: 1.65;
+}
+
+    .konsiyer__deger a {
+        display: inline-flex;
+        align-items: center;
+        min-height: var(--dokunma);
+        color: inherit;
+        text-decoration: none;
+        transition: color var(--h2) var(--egri);
+    }
+
+        .konsiyer__deger a:hover {
+            color: var(--sampanya);
+        }
+
+.konsiyer__telefon {
+    font-family: var(--f-serif);
+    font-size: var(--t-xl);
+    letter-spacing: 0.01em;
+}
+
+.konsiyer__eylem {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--b2);
+    /* Dokunma hedefi 44px'in altına düşmesin */
+    min-height: var(--dokunma);
+    margin-block-start: var(--b1);
+    color: var(--sampanya) !important;
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.konsiyer__ok {
+    display: inline-block;
+    transition: transform var(--h2) var(--egri);
+}
+
+.konsiyer__eylem:hover .konsiyer__ok {
+    transform: translate(3px, -3px);
+}
+
+.konsiyer__sosyal {
+    margin-block-start: clamp(1.75rem, 4vw, 2.5rem);
+}
+
+/* =============================================================
+   HARİTA — monokrom
+   -------------------------------------------------------------
+   Gömülü harita renkli hâliyle koyu dili bozuyordu. Filtre onu
+   obsidyen paletine indiriyor; üstüne gelince biraz canlanıyor.
+   ============================================================= */
+.harita {
+    position: relative;
+    overflow: hidden;
+    margin: clamp(2rem, 4vw, 3rem) 0 0;
+    aspect-ratio: 16 / 10;
+    background: var(--antrasit-2);
+    border: 1px solid var(--cizgi);
+}
+
+.harita__cerceve {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    filter: grayscale(1) invert(0.92) contrast(0.82) brightness(0.96);
+    transition: filter var(--h3) var(--egri);
+}
+
+.harita:hover .harita__cerceve,
+.harita:focus-within .harita__cerceve {
+    filter: grayscale(0.7) invert(0.9) contrast(0.9) brightness(1);
+}
+
+.harita__perde {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    padding: var(--b5);
+    background: linear-gradient(to top, rgba(8, 8, 10, 0.9), rgba(8, 8, 10, 0));
+    pointer-events: none;
+    transition: opacity var(--h3) var(--egri);
+}
+
+.harita:hover .harita__perde {
+    opacity: 0.55;
+}
+
+.harita__yer {
+    color: var(--metin-2);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+/* =============================================================
+   FORM PANELİ — sekmeler
+   ============================================================= */
+.form-panel {
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+    background: var(--antrasit);
+    border: 1px solid var(--cizgi);
+}
+
+.form-sekmeler {
+    display: flex;
+    gap: clamp(1.25rem, 3vw, 2.25rem);
+    margin-block-end: clamp(1.5rem, 3vw, 2.25rem);
+    background: none;
+    border-block-end: 1px solid var(--cizgi);
+}
+
+.form-sekme {
+    position: relative;
+    min-height: var(--dokunma);
+    padding: 0 0 var(--b3);
+    background: none;
+    border: 0;
+    color: var(--metin-3);
+    font-family: var(--f-sans);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color var(--h2) var(--egri);
+}
+
+    .form-sekme::after {
+        content: "";
+        position: absolute;
+        inset-inline: 0;
+        inset-block-end: -1px;
+        height: 1px;
+        background: var(--sampanya);
+        transform: scaleX(0);
+        transform-origin: center;
+        transition: transform var(--h2) var(--egri);
+    }
+
+    .form-sekme:hover {
+        color: var(--metin-2);
+    }
+
+    .form-sekme:hover::after {
+        transform: scaleX(0.5);
+    }
+
+.form-sekme.aktif {
+    color: var(--metin);
+}
+
+    .form-sekme.aktif::after {
+        transform: scaleX(1);
+    }
+
+.form-govde:focus-visible {
+    outline: 2px solid var(--sampanya);
+    outline-offset: 4px;
+}
+
+.konsiyer__form-alt {
+    margin-block-end: clamp(1.5rem, 3vw, 2rem);
+    color: var(--metin-3);
+    font-size: var(--t-sm);
+    line-height: var(--satir-genis);
+}
+
+/* --- Alan ızgarası --- */
+.konsiyer__form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(1.75rem, 3vw, 2.25rem) clamp(1rem, 2.5vw, 1.75rem);
+    align-items: start;
+}
+
+@media (max-width: 560px) {
+    .konsiyer__form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.alan--tam {
+    grid-column: 1 / -1;
+}
+
+/* =============================================================
+   ALAN — konsiyer eklentileri
+   ============================================================= */
+.alan__yardim {
+    display: block;
+    margin-block-start: var(--b2);
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    line-height: 1.5;
+}
+
+.alan__istege-bagli {
+    color: var(--metin-3);
+    font-size: 0.85em;
+}
+
+/* Sayı alanındaki tarayıcı okları minimal dili bozuyor */
+.alan__girdi[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+    .alan__girdi::-webkit-outer-spin-button,
+    .alan__girdi::-webkit-inner-spin-button {
+        margin: 0;
+        -webkit-appearance: none;
+    }
+
+/* script.js'in eklediği satır içi hata kutusu alanın altına otursun */
+.alan [data-rez-hata] {
+    margin-block-start: var(--b2);
+}
+
+.alan__girdi[aria-invalid="true"] {
+    border-block-end-color: var(--renk-marka-acik, #e57373);
+}
+
+/* flatpickr altInput'u görünen alan; yüzen etiket ona bağlanıyor
+   (bkz. script.js §6 — asıl girdiden .alan__girdi sınıfı alınıyor) */
+.alan .flatpickr-alt-input {
+    cursor: pointer;
+}
+
+.konsiyer__gonder {
+    margin-block-start: var(--b2);
 }

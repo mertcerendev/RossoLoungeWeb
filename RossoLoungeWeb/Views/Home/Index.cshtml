@@ -621,151 +621,192 @@
             </div>
         </section>
 
-        <section id="contact" class="section-padding">
-            <div class="container">
-                <div class="bolum-basi">
-                    <p class="bolum-ustbaslik">İletişim</p>
-                    <h2 class="section-title">Sizi Bekliyoruz</h2>
-                    <p class="bolum-alt-metin">Masanızı ayırtın ya da aklınıza takılanı sorun — aynı gün dönüş yapıyoruz.</p>
+        @* =========================================================
+           KONSİYER — iletişim
+           Asimetrik bölünme: solda devasa başlık + mekân bilgileri,
+           sağda form. Bilgi satırları kaydırmada maskeyle sırayla
+           beliriyor (.kn-maske, yalnızca html.rosso-kinetik altında
+           gizli — GSAP düşerse hepsi açık gelir).
+
+           İKİ FORM KORUNDU: rezervasyon ve mesaj sekmeli panelde.
+           Sunucu tarafı değişmedi — action, name'ler, token, id'ler
+           (#reservation-form, #datePicker, #phoneInput) aynı.
+           ========================================================= *@
+        <section id="contact" class="konsiyer" aria-labelledby="konsiyer-baslik">
+            <div class="kap konsiyer__izgara">
+
+                <div class="konsiyer__sol">
+                    <p class="konsiyer__ustbaslik kn-maske">Konsiyer</p>
+                    <h2 class="konsiyer__baslik" id="konsiyer-baslik" data-kelime-acilis>Bize <em>Ulaşın</em></h2>
+                    <p class="konsiyer__alt kn-maske">Masanızı ayırtın ya da aklınıza takılanı sorun — aynı gün dönüş yapıyoruz.</p>
+
+                    <dl class="konsiyer__bilgi">
+                        <div class="konsiyer__satir kn-maske">
+                            <dt class="konsiyer__etiket">Adres</dt>
+                            <dd class="konsiyer__deger">
+                                Yeni Mahalle, 21002 Sokak No: 3B<br>
+                                10200 Bandırma / Balıkesir
+                                <a class="konsiyer__eylem" target="_blank" rel="noopener"
+                                   href="https://www.google.com/maps/dir/?api=1&amp;destination=Rosso+lounge+bistro+Bandırma">
+                                    Yol tarifi al
+                                    <span class="konsiyer__ok" aria-hidden="true">&#8599;</span>
+                                </a>
+                            </dd>
+                        </div>
+
+                        <div class="konsiyer__satir kn-maske">
+                            <dt class="konsiyer__etiket">Rezervasyon hattı</dt>
+                            <dd class="konsiyer__deger">
+                                <a class="konsiyer__telefon" href="tel:+902667121313">+90 266 712 13 13</a>
+                            </dd>
+                        </div>
+
+                        <div class="konsiyer__satir kn-maske">
+                            <dt class="konsiyer__etiket">Çalışma saatleri</dt>
+                            <dd class="konsiyer__deger">
+                                Her gün 11.30 – 00.00
+                                @if (ViewBag.SuAnAcik is bool acikMi)
+                                {
+                                    <span class="durum-rozet @(acikMi ? "acik" : "kapali")">
+                                        <span class="durum-nokta" aria-hidden="true"></span>
+                                        @(acikMi ? "Şu an açığız" : "Şu an kapalıyız")
+                                    </span>
+                                }
+                            </dd>
+                        </div>
+
+                        <div class="konsiyer__satir kn-maske">
+                            <dt class="konsiyer__etiket">E-posta</dt>
+                            <dd class="konsiyer__deger">
+                                <a href="mailto:info@@rossolounge.com">info@@rossolounge.com</a>
+                            </dd>
+                        </div>
+                    </dl>
+
+                    @* Monokrom harita: renkli gömülü harita koyu dili bozuyordu.
+                       Filtre + obsidyen perde ile sahneye uyduruldu; perde
+                       üstüne gelince/odaklanınca açılıyor. *@
+                    <figure class="harita kn-maske">
+                        <iframe class="harita__cerceve" title="Rosso Lounge Bistro konumu"
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d319.6543230992864!2d27.936944127683113!3d40.34053662812616!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14b5d3bd385d1797%3A0x887916a4f8a71e73!2sRosso%20lounge%20bistro!5e0!3m2!1str!2str!4v1763491907694!5m2!1str!2str"
+                                loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+                        <figcaption class="harita__perde">
+                            <span class="harita__yer">Bandırma · Marmara kıyısı</span>
+                        </figcaption>
+                    </figure>
+
+                    <div class="sosyal-satir konsiyer__sosyal kn-maske">
+                        <a href="https://www.instagram.com/rosso.lounge.bistro/" target="_blank" rel="noopener" aria-label="Instagram sayfamız">
+                            <i class="fab fa-instagram" aria-hidden="true"></i>
+                        </a>
+                        <a href="https://www.facebook.com/rossolounge" target="_blank" rel="noopener" aria-label="Facebook sayfamız">
+                            <i class="fab fa-facebook-f" aria-hidden="true"></i>
+                        </a>
+                    </div>
                 </div>
 
-                <div class="iletisim-duzen">
-                    <aside class="iletisim-bilgi">
-                        <div class="bilgi-kart">
-                            <ul class="bilgi-liste">
-                                <li>
-                                    <span class="bilgi-ikon"><i class="fas fa-location-dot" aria-hidden="true"></i></span>
-                                    <div>
-                                        <strong>Adres</strong>
-                                        <p>Yeni Mahalle, 21002 Sokak No: 3B<br>10200 Bandırma / Balıkesir</p>
-                                        <a class="bilgi-eylem" target="_blank" rel="noopener"
-                                           href="https://www.google.com/maps/dir/?api=1&amp;destination=Rosso+lounge+bistro+Bandırma">
-                                            Yol tarifi al <i class="fas fa-arrow-right" aria-hidden="true"></i>
-                                        </a>
-                                    </div>
-                                </li>
-                                <li>
-                                    <span class="bilgi-ikon"><i class="fas fa-phone" aria-hidden="true"></i></span>
-                                    <div>
-                                        <strong>Telefon</strong>
-                                        <p><a href="tel:+902667121313">+90 266 712 13 13</a></p>
-                                    </div>
-                                </li>
-                                <li>
-                                    <span class="bilgi-ikon"><i class="fas fa-clock" aria-hidden="true"></i></span>
-                                    <div>
-                                        <strong>Çalışma Saatleri</strong>
-                                        <p>Her gün 11.30 – 00.00</p>
-                                        @if (ViewBag.SuAnAcik is bool acikMi)
-                                        {
-                                            <span class="durum-rozet @(acikMi ? "acik" : "kapali")">
-                                                <span class="durum-nokta" aria-hidden="true"></span>
-                                                @(acikMi ? "Şu an açığız" : "Şu an kapalıyız")
-                                            </span>
-                                        }
-                                    </div>
-                                </li>
-                                <li>
-                                    <span class="bilgi-ikon"><i class="fas fa-envelope" aria-hidden="true"></i></span>
-                                    <div>
-                                        <strong>E-Posta</strong>
-                                        <p><a href="mailto:info@@rossolounge.com">info@@rossolounge.com</a></p>
-                                    </div>
-                                </li>
-                            </ul>
-
-                            <div class="sosyal-satir">
-                                <a href="https://www.instagram.com/rosso.lounge.bistro/" target="_blank" rel="noopener" aria-label="Instagram sayfamız">
-                                    <i class="fab fa-instagram" aria-hidden="true"></i>
-                                </a>
-                                <a href="https://www.facebook.com/rossolounge" target="_blank" rel="noopener" aria-label="Facebook sayfamız">
-                                    <i class="fab fa-facebook-f" aria-hidden="true"></i>
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="harita-kutu">
-                            <iframe title="Rosso Lounge Bistro konumu"
-                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d319.6543230992864!2d27.936944127683113!3d40.34053662812616!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14b5d3bd385d1797%3A0x887916a4f8a71e73!2sRosso%20lounge%20bistro!5e0!3m2!1str!2str!4v1763491907694!5m2!1str!2str"
-                                    loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
-                        </div>
-                    </aside>
-
+                <div class="konsiyer__sag">
                     <div class="form-panel" id="rezervasyon">
                         <div class="form-sekmeler" role="tablist" aria-label="İletişim biçimi">
                             <button type="button" class="form-sekme aktif" role="tab" id="sekme-rezervasyon"
                                     aria-selected="true" aria-controls="panel-rezervasyon">
-                                <i class="fas fa-calendar-check" aria-hidden="true"></i> Masa Ayırt
+                                Masa Ayırt
                             </button>
                             <button type="button" class="form-sekme" role="tab" id="sekme-mesaj"
                                     aria-selected="false" aria-controls="panel-mesaj" tabindex="-1">
-                                <i class="fas fa-paper-plane" aria-hidden="true"></i> Mesaj Gönder
+                                Mesaj Gönder
                             </button>
                         </div>
 
                         <div class="form-govde" role="tabpanel" id="panel-rezervasyon" aria-labelledby="sekme-rezervasyon" tabindex="0">
-                            <p class="form-aciklama">Özel günleriniz veya akşam yemeğiniz için yerinizi şimdiden ayırtın.</p>
-                            <form id="reservation-form" class="alan-izgara" method="post" action="/Home/RezervasyonYap">
+                            <p class="konsiyer__form-alt">Özel günleriniz veya akşam yemeğiniz için yerinizi şimdiden ayırtın.</p>
+
+                            <form id="reservation-form" class="konsiyer__form" method="post" action="/Home/RezervasyonYap">
                                 @Html.AntiForgeryToken()
-                                <div class="form-group">
-                                    <label for="rez-ad">Ad Soyad <span class="rs-vurgu" aria-hidden="true">*</span></label>
-                                    <input type="text" id="rez-ad" name="AdSoyad" placeholder="Adınız ve soyadınız"
-                                           autocomplete="name" maxlength="100" required>
+
+                                <div class="alan">
+                                    <input class="alan__girdi" type="text" id="rez-ad" name="AdSoyad"
+                                           placeholder=" " autocomplete="name" maxlength="100" required>
+                                    <label class="alan__etiket" for="rez-ad">Ad Soyad</label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
                                 </div>
-                                <div class="form-group">
-                                    <label for="phoneInput">Telefon <span class="rs-vurgu" aria-hidden="true">*</span></label>
-                                    <input type="tel" id="phoneInput" name="Telefon" placeholder="5XX XXX XX XX"
-                                           autocomplete="tel" inputmode="numeric" maxlength="10"
+
+                                <div class="alan">
+                                    <input class="alan__girdi" type="tel" id="phoneInput" name="Telefon"
+                                           placeholder=" " autocomplete="tel" inputmode="numeric" maxlength="10"
                                            aria-describedby="telefon-yardim" required>
-                                    <small id="telefon-yardim" class="rs-soluk">Başında '0' olmadan 10 hane.</small>
+                                    <label class="alan__etiket" for="phoneInput">Telefon</label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
+                                    <small class="alan__yardim" id="telefon-yardim">Başında sıfır olmadan 10 hane</small>
                                 </div>
-                                <div class="form-group">
-                                    <label for="datePicker">Tarih ve Saat <span class="rs-vurgu" aria-hidden="true">*</span></label>
-                                    <input type="text" id="datePicker" name="Tarih" placeholder="Tarih ve saat seçiniz" required>
+
+                                <div class="alan">
+                                    <input class="alan__girdi" type="text" id="datePicker" name="Tarih"
+                                           placeholder=" " required>
+                                    <label class="alan__etiket" for="datePicker">Tarih ve Saat</label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
                                 </div>
-                                <div class="form-group">
-                                    <label for="rez-kisi">Kişi Sayısı <span class="rs-vurgu" aria-hidden="true">*</span></label>
-                                    <input type="number" id="rez-kisi" name="KisiSayisi" placeholder="Örn: 4" min="1" max="100" required>
+
+                                <div class="alan">
+                                    <input class="alan__girdi" type="number" id="rez-kisi" name="KisiSayisi"
+                                           placeholder=" " min="1" max="100" required>
+                                    <label class="alan__etiket" for="rez-kisi">Kişi Sayısı</label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
                                 </div>
-                                <div class="form-group full-width">
-                                    <label for="rez-not">Özel Notunuz <span class="rs-soluk">(opsiyonel)</span></label>
-                                    <textarea id="rez-not" name="Not" rows="3" placeholder="Doğum günü, alerji, pencere kenarı..." maxlength="500"></textarea>
+
+                                <div class="alan alan--tam alan--govde">
+                                    <textarea class="alan__girdi" id="rez-not" name="Not" rows="3"
+                                              placeholder=" " maxlength="500"></textarea>
+                                    <label class="alan__etiket" for="rez-not">Özel notunuz <span class="alan__istege-bagli">(opsiyonel)</span></label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
                                 </div>
-                                <button type="submit" class="btn-main full-width">Rezervasyonu Tamamla</button>
+
+                                <button type="submit" class="konsiyer__gonder alan--tam">Rezervasyonu Tamamla</button>
                             </form>
                         </div>
 
                         <div class="form-govde" role="tabpanel" id="panel-mesaj" aria-labelledby="sekme-mesaj" tabindex="0" hidden>
-                            <p class="form-aciklama">Soru, öneri veya özel organizasyon talepleriniz için yazın.</p>
-                            <form class="alan-izgara" method="post" action="/Home/IletisimGonder">
+                            <p class="konsiyer__form-alt">Soru, öneri veya özel organizasyon talepleriniz için yazın.</p>
+
+                            <form class="konsiyer__form" method="post" action="/Home/IletisimGonder">
                                 @Html.AntiForgeryToken()
-                                <div class="form-group">
-                                    <label for="iletisim-ad">Ad Soyad <span class="rs-vurgu" aria-hidden="true">*</span></label>
-                                    <input type="text" id="iletisim-ad" name="AdSoyad" placeholder="Adınız ve soyadınız"
-                                           autocomplete="name" maxlength="100" required>
+
+                                <div class="alan">
+                                    <input class="alan__girdi" type="text" id="iletisim-ad" name="AdSoyad"
+                                           placeholder=" " autocomplete="name" maxlength="100" required>
+                                    <label class="alan__etiket" for="iletisim-ad">Ad Soyad</label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
                                 </div>
-                                <div class="form-group">
-                                    <label for="iletisim-eposta">E-Posta <span class="rs-vurgu" aria-hidden="true">*</span></label>
-                                    <input type="email" id="iletisim-eposta" name="Email" placeholder="ornek@@eposta.com"
-                                           autocomplete="email" maxlength="150" required>
+
+                                <div class="alan">
+                                    <input class="alan__girdi" type="email" id="iletisim-eposta" name="Email"
+                                           placeholder=" " autocomplete="email" maxlength="150" required>
+                                    <label class="alan__etiket" for="iletisim-eposta">E-Posta</label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
                                 </div>
-                                <div class="form-group full-width">
-                                    <label for="iletisim-telefon">Telefon <span class="rs-soluk">(opsiyonel)</span></label>
-                                    <input type="tel" id="iletisim-telefon" name="Telefon" placeholder="0 5XX XXX XX XX"
-                                           autocomplete="tel" maxlength="25">
+
+                                <div class="alan alan--tam">
+                                    <input class="alan__girdi" type="tel" id="iletisim-telefon" name="Telefon"
+                                           placeholder=" " autocomplete="tel" maxlength="25">
+                                    <label class="alan__etiket" for="iletisim-telefon">Telefon <span class="alan__istege-bagli">(opsiyonel)</span></label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
                                 </div>
-                                <div class="form-group full-width">
-                                    <label for="iletisim-mesaj">Mesajınız <span class="rs-vurgu" aria-hidden="true">*</span></label>
-                                    <textarea id="iletisim-mesaj" name="Mesaj" rows="5" placeholder="Size nasıl yardımcı olabiliriz?"
-                                              minlength="5" maxlength="2000" required></textarea>
+
+                                <div class="alan alan--tam alan--govde">
+                                    <textarea class="alan__girdi" id="iletisim-mesaj" name="Mesaj" rows="5"
+                                              placeholder=" " minlength="5" maxlength="2000" required></textarea>
+                                    <label class="alan__etiket" for="iletisim-mesaj">Mesajınız</label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
                                 </div>
-                                <button type="submit" class="btn-main full-width">Mesajı Gönder</button>
+
+                                <button type="submit" class="konsiyer__gonder alan--tam">Mesajı Gönder</button>
                             </form>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
+
     </main>
 
     <footer>

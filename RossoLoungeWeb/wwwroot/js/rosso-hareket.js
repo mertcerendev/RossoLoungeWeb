@@ -1285,17 +1285,17 @@
        bu yüzden görünen yazıyı CSS ::before üstleniyor, biz yalnızca
        sınıfı ekliyoruz. Tarayıcı doğrulaması gönderimi engellerse
        submit olayı hiç tetiklenmez, buton da durum değiştirmez. */
-    function gonderimDurumu(form) {
-        var dugme = form.querySelector('.paylas__gonder');
+    function gonderimDurumu(form, dugme) {
+        dugme = dugme || form.querySelector('.paylas__gonder');
         if (!dugme) return;
 
         form.addEventListener('submit', function () {
-            dugme.classList.add('paylas__gonder--iletiliyor');
+            dugme.classList.add('rosso-iletiliyor');
         });
 
         // Geri tuşuyla önbellekten dönülünce buton takılı kalmasın
         window.addEventListener('pageshow', function (olay) {
-            if (olay.persisted) dugme.classList.remove('paylas__gonder--iletiliyor');
+            if (olay.persisted) dugme.classList.remove('rosso-iletiliyor');
         });
     }
 
@@ -1434,6 +1434,70 @@
     }
 
     /* =========================================================
+       15. KONSİYER — iletişim bölümü
+       -------------------------------------------------------------
+       - Başlık kelime kelime maskeden yükseliyor (SplitText)
+       - Bilgi satırları kaydırmada sırayla, aşağıdan yukarı
+         maskelenerek açılıyor (.kn-maske → clip-path)
+       - İki formun gönder butonu manyetik + "İletiliyor" durumlu
+
+       .kn-maske gizlemesi yalnızca html.rosso-kinetik altında
+       geçerli ve gorunurlukEmniyeti onu zaten temizliyor; GSAP
+       düşerse bilgiler olduğu gibi açık gelir.
+       ========================================================= */
+    function konsiyerBolumu() {
+        var bolum = document.querySelector('.konsiyer');
+        if (!bolum) return;
+
+        // Formlar kinetik moddan bağımsız çalışmalı
+        Array.prototype.slice.call(bolum.querySelectorAll('.konsiyer__form')).forEach(function (form) {
+            var dugme = form.querySelector('.konsiyer__gonder');
+            manyetikDugme(dugme);
+            gonderimDurumu(form, dugme);
+        });
+
+        if (!kinetik) return;
+
+        var sol = bolum.querySelector('.konsiyer__sol');
+        if (!sol) return;
+
+        /* --- Başlık: kelime kelime maskeden --- */
+        var baslik = bolum.querySelector('[data-kelime-acilis]');
+        if (baslik && typeof window.SplitText !== 'undefined') {
+            var bol = new SplitText(baslik, { type: 'words' });
+
+            bol.words.forEach(function (kelime) {
+                var kap = document.createElement('span');
+                kap.className = 'kelime-kap';
+                kelime.parentNode.insertBefore(kap, kelime);
+                kap.appendChild(kelime);
+            });
+
+            gsap.from(bol.words, {
+                yPercent: 118,
+                duration: 1.05,
+                ease: 'expo.out',
+                stagger: 0.05,
+                scrollTrigger: { trigger: baslik, start: 'top 86%' }
+            });
+        }
+
+        /* --- Bilgi satırları: kademeli maske ---
+           Tek bir ritim olsun diye soldaki tüm .kn-maske öğeleri
+           aynı zaman çizgisinde, yukarıdan aşağı sırayla açılıyor. */
+        var maskeliler = sol.querySelectorAll('.kn-maske');
+        if (maskeliler.length) {
+            gsap.to(maskeliler, {
+                clipPath: 'inset(0 0 0% 0)',
+                duration: 1,
+                ease: 'expo.out',
+                stagger: 0.085,
+                scrollTrigger: { trigger: sol, start: 'top 74%' }
+            });
+        }
+    }
+
+    /* =========================================================
        10. GÖRÜNÜRLÜK EMNİYETİ
        -------------------------------------------------------------
        rosso-kinetik sınıfı GSAP'in YÜKLENDİĞİNİ doğrular, ÇALIŞTIĞINI
@@ -1460,6 +1524,17 @@
 
             kok.classList.remove('rosso-kinetik', 'rosso-kilit');
 
+            /* ÖNCE tween'leri öldür. gsap.from(...) immediateRender ile
+               "gizli" başlangıç durumunu geri yazıyor: inline stilleri
+               temizlesek bile maskeli başlık kelimeleri yPercent 118'de
+               kalıp taşan kabın dışında görünmez oluyordu. Ölçümle
+               yakalandı — hem konsiyer hem hakkımızda başlığı etkiliyordu. */
+            var kinetikOgeler = document.querySelectorAll('.kelime-kap > *, .kn-satir-ic');
+            if (kinetikOgeler.length) {
+                gsap.killTweensOf(kinetikOgeler);
+                gsap.set(kinetikOgeler, { clearProps: 'all' });
+            }
+
             // GSAP'in inline yazdığı gizlemeleri de temizle
             document.querySelectorAll(
                 '.hakkinda__govde, .hakkinda__olcut, .hakkinda__eylemler, .hakkinda__yil,' +
@@ -1469,7 +1544,8 @@
                 ' .vitrin__kart, .vitrin__bas > *, .vitrin__eylem,' +
                 ' .defter__yaprak, .defter__satir, .defter__isaret, .defter__imza,' +
                 ' .paylas__panel, .paylas__zemin, .paylas__ustbaslik, .paylas__baslik,' +
-                ' .paylas__alt, .paylas__form > *'
+                ' .paylas__alt, .paylas__form > *,' +
+                ' .kelime-kap > *, .konsiyer__satir, .konsiyer__baslik'
             ).forEach(function (oge) {
                 oge.style.opacity = '';
                 oge.style.visibility = '';
@@ -1530,7 +1606,7 @@
         if (acildi) return;
         acildi = true;
 
-        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, gorunurlukEmniyeti]
+        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, gorunurlukEmniyeti]
             .forEach(function (modul) {
                 try { modul(); } catch (h) {
                     if (window.console) console.error('rosso:', modul.name, h);
