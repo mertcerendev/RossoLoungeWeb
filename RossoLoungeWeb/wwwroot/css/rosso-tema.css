@@ -108,6 +108,58 @@ html {
     -webkit-text-size-adjust: 100%;
     /* Lenis kendi kaydırmasını yönetir; native smooth kapatılmalı */
     scroll-behavior: auto;
+
+    /* Kaydırma oluğu HER ZAMAN ayrılı.
+       Açılışta .rosso-kilit "overflow: hidden" veriyor, çubuk yok;
+       kilit kalkınca çubuk beliriyor ve içerik alanı ~15px daralıp
+       ortalanmış yazılar sola kayıyordu. Ayrıca aşağıdaki
+       ::-webkit-scrollbar genişliği çubuğu kaplama olmaktan çıkarıp
+       yer kaplar hâle getiriyor — oluk olmadan kayma kesindi. */
+    scrollbar-gutter: stable;
+}
+
+/* =============================================================
+   KAYDIRMA ÇUBUĞU
+
+   Bu dosya yalnızca ziyaretçi kabuğundan (_Layout) yükleniyor,
+   dolayısıyla panel sayfaları kendi çubuğuyla kalıyor.
+
+   Firefox bilerek ayrı bir @supports bloğunda: scrollbar-color
+   ayarlanınca Chrome 121+ ::-webkit-scrollbar stillerini tamamen
+   yok sayıyor ve menü filtresi ile galeri rayındaki gizli yatay
+   çubuklar geri gelirdi.
+   ============================================================= */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--obsidyen);
+    border-inline-start: 1px solid var(--cizgi);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bronz);
+    /* Zemin renginde kenarlık: tutamak ince bir çubuk gibi görünsün */
+    border: 3px solid var(--obsidyen);
+    border-radius: 999px;
+    transition: background var(--h2) var(--egri);
+}
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--sampanya);
+    }
+
+::-webkit-scrollbar-corner {
+    background: var(--obsidyen);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    html {
+        scrollbar-width: thin;
+        scrollbar-color: var(--bronz) var(--obsidyen);
+    }
 }
 
 /* :not(.panel) — style.css'teki eski katman aynı özgüllükte kural
