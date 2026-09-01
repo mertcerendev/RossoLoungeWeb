@@ -218,7 +218,9 @@
     display: grid;
     place-items: center;
     min-height: 100svh;
-    padding-block: var(--b10) var(--b9);
+    /* Dolgu da yüksekliğe göre esner; sabit 128px kısa ekranlarda
+       içeriği aşağı itip butonları ekran dışına taşıyordu. */
+    padding-block: clamp(4.5rem, 11vh, 8rem) clamp(3.5rem, 8vh, 6rem);
     overflow: hidden;
     text-align: center;
 }
@@ -254,7 +256,7 @@
 }
 
 .hero__ustbaslik {
-    margin-block-end: var(--b6);
+    margin-block-end: clamp(0.75rem, 2vh, 2rem);
     color: var(--sampanya);
     font-size: var(--t-xs);
     font-weight: 500;
@@ -263,8 +265,11 @@
 }
 
 .hero__baslik {
-    margin-block-end: var(--b6);
-    font-size: var(--t-dev);
+    margin-block-end: clamp(1rem, 2.5vh, 2rem);
+    /* Boyut hem genişlik hem YÜKSEKLİK ile sınırlı.
+       Önce yalnızca vw'ye bağlıydı: 1366x768 gibi geniş-kısa ekranlarda
+       başlık 123px'e çıkıp içeriği 32px taşırıyor, butonları kesiyordu. */
+    font-size: min(clamp(2.5rem, 1.35rem + 5.6vw, 7.5rem), 15vh);
     font-weight: 300;
     line-height: var(--satir-sik);
     letter-spacing: -0.035em;
@@ -291,7 +296,7 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: var(--b4);
-    margin-block-start: var(--b7);
+    margin-block-start: clamp(1.5rem, 4vh, 3rem);
 }
 
 .hero__durum {
@@ -300,8 +305,8 @@
     align-items: center;
     justify-content: center;
     gap: var(--b4);
-    margin-block-start: var(--b7);
-    padding-block-start: var(--b5);
+    margin-block-start: clamp(1.25rem, 3.5vh, 3rem);
+    padding-block-start: clamp(0.75rem, 2vh, 1.5rem);
     border-block-start: 1px solid var(--cizgi);
 }
 
