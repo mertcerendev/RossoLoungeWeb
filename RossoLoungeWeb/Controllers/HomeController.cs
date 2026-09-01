@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RossoLoungeWeb.Data;   // Veritabanı bağlantısı için
 using RossoLoungeWeb.Models; // Rezervasyon sınıfı için
@@ -153,6 +153,44 @@ namespace RossoLoungeWeb.Controllers
             }
 
             return RedirectToAction("Index", "Home", null, "contact");
+        }
+
+        // 4. E-BÜLTEN KAYDI (alt bilgideki tek alanlı form)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult BultenKayit(BultenAbone yeniAbone)
+        {
+            if (ModelState.IsValid)
+            {
+                string eposta = yeniAbone.Email.Trim();
+
+                // Koleksiyon CI olduğu için karşılaştırma zaten büyük/küçük harf duyarsız
+                bool zatenKayitli = _context.BultenAboneleri.Any(a => a.Email == eposta);
+
+                if (zatenKayitli)
+                {
+                    TempData["Mesaj"] = "Bu e-posta zaten kayıtlı, tekrar eklemedik.";
+                }
+                else
+                {
+                    yeniAbone.Email = eposta;
+                    yeniAbone.Tarih = TurkiyeSaati.Simdi;
+                    yeniAbone.AktifMi = true;
+
+                    _context.BultenAboneleri.Add(yeniAbone);
+
+                    if (GuvenliKaydet("Bülten kaydı"))
+                        TempData["Mesaj"] = "Bültene kaydolundunuz. Yeni menü ve etkinliklerden haberdar olacaksınız.";
+                    else
+                        TempData["Hata"] = "Kaydınız şu anda alınamadı. Lütfen biraz sonra tekrar deneyin.";
+                }
+            }
+            else
+            {
+                TempData["Hata"] = "Geçerli bir e-posta adresi girin.";
+            }
+
+            return RedirectToAction("Index", "Home", null, "finale");
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

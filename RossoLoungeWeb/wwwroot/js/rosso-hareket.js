@@ -1299,6 +1299,111 @@
         });
     }
 
+    /* =========================================================
+       FİNALE — sinematik perde
+
+       Perde: footer sabitlenir (CSS'te body.finale-acik), .finale-bosluk
+       onun yüksekliği kadar yer ayırır. Böylece son bölüm yukarı kayarken
+       footer altta duruyormuş gibi açığa çıkar. Mod YALNIZCA JS ile açılır;
+       script çalışmazsa footer normal akışta kalır.
+
+       İki emniyet: footer ekrandan uzunsa sabitlemek onu okunamaz yapar,
+       sayfa kısaysa sabit footer içeriğin üstüne biner — ikisinde de
+       perde açılmaz.
+       ========================================================= */
+    var finaleOlcuZaman = null;
+
+    function finaleBolumu() {
+        var finale = document.querySelector('.finale');
+        var bosluk = document.querySelector('.finale-bosluk');
+        if (!finale || !bosluk) return;
+
+        var govde = document.body;
+
+        function perdeKapat() {
+            govde.classList.remove('finale-acik');
+            bosluk.style.height = '';
+        }
+
+        function perdeOlc() {
+            // Önce kapat: sabitken ölçersek boşluk kendi kendini besler
+            perdeKapat();
+
+            if (document.documentElement.scrollHeight < window.innerHeight * 1.5) return;
+
+            govde.classList.add('finale-acik');
+
+            // Yükseklik sabit konumdayken ölçülmeli — genişlik değişebiliyor
+            /* Footer ekrandan UZUNSA sabitlemek onu okunamaz yapar.
+               Tam ekranı doldurması sorun değil — finalin amacı bu. */
+            var yukseklik = finale.offsetHeight;
+            if (yukseklik > window.innerHeight) {
+                perdeKapat();
+                return;
+            }
+
+            bosluk.style.height = yukseklik + 'px';
+        }
+
+        perdeOlc();
+
+        function yenidenOlc() {
+            perdeOlc();
+            if (stVar) ScrollTrigger.refresh();
+        }
+
+        window.addEventListener('resize', function () {
+            clearTimeout(finaleOlcuZaman);
+            finaleOlcuZaman = setTimeout(yenidenOlc, 180);
+        });
+
+        // Serif font geç yüklenirse imza yüksekliği değişir
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(yenidenOlc).catch(function () { /* yoksay */ });
+        }
+
+        /* ---------- Giriş animasyonu ----------
+           Perde açıkken footer sabit; tetikleyici olarak kendisi
+           kullanılamaz (konumu hiç değişmediği için sayfa açılır
+           açılmaz tetiklenir). Kayan öğe boşluk, tetik o. */
+        if (!kinetik) return;
+
+        var tetik = govde.classList.contains('finale-acik') ? bosluk : finale;
+
+        var harfler = finale.querySelectorAll('.finale__harf > span');
+        if (harfler.length) {
+            gsap.fromTo(harfler,
+                { yPercent: 105 },
+                {
+                    yPercent: 0,
+                    duration: 1.15,
+                    ease: 'expo.out',
+                    stagger: 0.035,
+                    scrollTrigger: { trigger: tetik, start: 'top 88%' }
+                });
+        }
+
+        var seritler = finale.querySelectorAll('.finale__ust, .finale__alt');
+        if (seritler.length) {
+            gsap.fromTo(seritler,
+                { autoAlpha: 0, y: 28 },
+                {
+                    autoAlpha: 1,
+                    y: 0,
+                    duration: 0.9,
+                    ease: 'power2.out',
+                    stagger: 0.12,
+                    scrollTrigger: { trigger: tetik, start: 'top 92%' }
+                });
+        }
+
+        /* ---------- Manyetik sosyal kısaltmalar ---------- */
+        Array.prototype.forEach.call(
+            finale.querySelectorAll('.finale__rumuz'),
+            function (rumuz) { manyetikDugme(rumuz); }
+        );
+    }
+
     /* ---------- Katman modu ---------- */
     function katmanKur(kat, panel) {
         var acDugme = document.getElementById('paylas-ac');
@@ -1529,7 +1634,7 @@
                temizlesek bile maskeli başlık kelimeleri yPercent 118'de
                kalıp taşan kabın dışında görünmez oluyordu. Ölçümle
                yakalandı — hem konsiyer hem hakkımızda başlığı etkiliyordu. */
-            var kinetikOgeler = document.querySelectorAll('.kelime-kap > *, .kn-satir-ic');
+            var kinetikOgeler = document.querySelectorAll('.kelime-kap > *, .kn-satir-ic, .finale__harf > span');
             if (kinetikOgeler.length) {
                 gsap.killTweensOf(kinetikOgeler);
                 gsap.set(kinetikOgeler, { clearProps: 'all' });
@@ -1545,7 +1650,8 @@
                 ' .defter__yaprak, .defter__satir, .defter__isaret, .defter__imza,' +
                 ' .paylas__panel, .paylas__zemin, .paylas__ustbaslik, .paylas__baslik,' +
                 ' .paylas__alt, .paylas__form > *,' +
-                ' .kelime-kap > *, .konsiyer__satir, .konsiyer__baslik'
+                ' .kelime-kap > *, .konsiyer__satir, .konsiyer__baslik,' +
+                ' .finale__ust, .finale__alt, .finale__harf > span'
             ).forEach(function (oge) {
                 oge.style.opacity = '';
                 oge.style.visibility = '';
@@ -1606,7 +1712,7 @@
         if (acildi) return;
         acildi = true;
 
-        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, gorunurlukEmniyeti]
+        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, finaleBolumu, gorunurlukEmniyeti]
             .forEach(function (modul) {
                 try { modul(); } catch (h) {
                     if (window.console) console.error('rosso:', modul.name, h);

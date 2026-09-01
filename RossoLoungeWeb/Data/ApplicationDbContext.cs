@@ -16,6 +16,7 @@ namespace RossoLoungeWeb.Data
         public DbSet<Urun> Urunler { get; set; }
         public DbSet<Yorum> Yorumlar { get; set; }
         public DbSet<Iletisim> IletisimMesajlari { get; set; }
+        public DbSet<BultenAbone> BultenAboneleri { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
