@@ -118,36 +118,48 @@
         kok.classList.add('rosso-kilit');
         if (lenis) lenis.stop();
 
+        /* Hero girişi perde KAPANDIKTAN sonra değil, paneller yırtılmaya
+           başlarken tetiklenir. Arka arkaya çalışınca yazılar ancak
+           ~4.5sn'de oturuyordu; iç içe girince ~1.8sn'ye iniyor. */
+        var girisBasladi = false;
+        function girisiBaslat() {
+            if (girisBasladi) return;
+            girisBasladi = true;
+            if (sonra) sonra();
+        }
+
         var bitti = false;
         function tamamla() {
             if (bitti) return;
             bitti = true;
             perdeyiKaldir();
-            if (sonra) sonra();
+            girisiBaslat();
             ScrollTrigger.refresh();
         }
 
         // Emniyet: rAF durursa (arka plan sekmesi, ağır cihaz) perde
         // duvar saatiyle yine de kalkar. Kullanıcı asla siyah ekranda kalmaz.
-        setTimeout(tamamla, 4200);
+        setTimeout(tamamla, 1800);
 
         var ilerleme = { deger: 0 };
         var zc = gsap.timeline({ onComplete: tamamla });
 
         zc.to(ilerleme, {
             deger: 100,
-            duration: 1.1,
+            duration: 0.35,
             ease: 'power2.inOut',
             onUpdate: function () {
                 if (sayac) sayac.textContent = Math.round(ilerleme.deger).toString().padStart(3, '0');
             }
         })
-          .to('.sahne-perde__marka', { opacity: 0, y: -18, duration: 0.45, ease: 'power2.in' }, '-=0.15')
-          .to(sayac, { opacity: 0, duration: 0.35, ease: 'power2.in' }, '<')
+          .to('.sahne-perde__marka', { opacity: 0, y: -14, duration: 0.2, ease: 'power2.in' }, '-=0.1')
+          .to(sayac, { opacity: 0, duration: 0.18, ease: 'power2.in' }, '<')
           .set(perde, { autoAlpha: 0 })
           // Perde ortadan yırtılır
-          .to(ustPanel, { yPercent: -100, duration: 1.0, ease: 'expo.inOut' }, 'yirt')
-          .to(altPanel, { yPercent: 100, duration: 1.0, ease: 'expo.inOut' }, 'yirt');
+          .to(ustPanel, { yPercent: -100, duration: 0.45, ease: 'expo.inOut' }, 'yirt')
+          .to(altPanel, { yPercent: 100, duration: 0.45, ease: 'expo.inOut' }, 'yirt')
+          // Yazılar paneller açılırken yükselmeye başlasın
+          .add(girisiBaslat, 'yirt-=0.12');
 
         return zc;
     }
@@ -173,10 +185,10 @@
                 kap.appendChild(satir);
             });
             gsap.set(baslik, { autoAlpha: 1 });
-            zc.from(bolunmus.lines, { yPercent: 115, duration: 1.25, stagger: 0.09 });
+            zc.from(bolunmus.lines, { yPercent: 115, duration: 0.85, stagger: 0.06 });
         } else if (baslik) {
             zc.fromTo(baslik, { yPercent: 20, autoAlpha: 0 },
-                      { yPercent: 0, autoAlpha: 1, duration: 1.1 });
+                      { yPercent: 0, autoAlpha: 1, duration: 0.8 });
         }
 
         /* fromTo ŞART, from DEĞİL.
@@ -184,16 +196,16 @@
            çünkü perde yırtılınca hazır sayfa görünüyordu. gsap.from()
            mevcut değeri BİTİŞ olarak okur; CSS 0 dediği için animasyon
            0'dan 0'a giderdi ve hero hiç açılmazdı. Bitişi açıkça yazıyoruz. */
-        zc.fromTo('.hero__ustbaslik', { autoAlpha: 0, y: 18 },
-                  { autoAlpha: 1, y: 0, duration: 0.9 }, 0.15)
-          .fromTo('.hero__alt', { autoAlpha: 0, y: 22 },
-                  { autoAlpha: 1, y: 0, duration: 0.9 }, '-=0.85')
-          .fromTo('.hero__eylemler > *', { autoAlpha: 0, y: 24 },
-                  { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.1 }, '-=0.7')
+        zc.fromTo('.hero__ustbaslik', { autoAlpha: 0, y: 16 },
+                  { autoAlpha: 1, y: 0, duration: 0.55 }, 0.08)
+          .fromTo('.hero__alt', { autoAlpha: 0, y: 18 },
+                  { autoAlpha: 1, y: 0, duration: 0.55 }, '-=0.42')
+          .fromTo('.hero__eylemler > *', { autoAlpha: 0, y: 20 },
+                  { autoAlpha: 1, y: 0, duration: 0.5, stagger: 0.07 }, '-=0.38')
           .fromTo('.hero__durum', { autoAlpha: 0 },
-                  { autoAlpha: 1, duration: 0.7 }, '-=0.5')
-          .fromTo('.nav__marka, .nav__menu > li, .nav__eylem', { autoAlpha: 0, y: -14 },
-                  { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.06 }, 0.3);
+                  { autoAlpha: 1, duration: 0.45 }, '-=0.3')
+          .fromTo('.nav__marka, .nav__menu > li, .nav__eylem', { autoAlpha: 0, y: -12 },
+                  { autoAlpha: 1, y: 0, duration: 0.45, stagger: 0.04 }, 0.1);
 
         return zc;
     }
