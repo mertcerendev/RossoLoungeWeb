@@ -823,7 +823,11 @@ section.bg-dark,
 /* =========================================
    14. FOOTER
    ========================================= */
-footer {
+/* "body > footer": YALNIZCA sayfa alt bilgisi. Çıplak seçici
+   içerikteki her <footer> öğesini de yakalıyordu — yorum
+   kartlarındaki .defter__imza bu zemini, dolguyu ve rengi
+   miras alıyordu. */
+body > footer {
     margin-top: var(--bosluk-8);
     padding: var(--bosluk-8) 0;
     background: #111111;
@@ -1774,8 +1778,12 @@ body:not(.panel) .rs-btn-ikincil {
         color: var(--altin-acik);
     }
 
-/* --- Alt bilgi --- */
-body:not(.panel) footer {
+/* --- Alt bilgi ---
+   "> footer": YALNIZCA sayfa alt bilgisi. Seçici çıplak olduğunda
+   içerikteki her <footer> de yakalanıyordu; yorum kartlarındaki
+   .defter__imza bu yüzden eski footer'ın zeminini, üst çizgisini,
+   48px dolgusunu ve sola hizasını miras alıyordu. */
+body:not(.panel) > footer {
     background: var(--sahne);
     border-top: 1px solid var(--sahne-cizgi);
     color: var(--metin-3);
@@ -1795,7 +1803,7 @@ body:not(.panel) .durum-rozet.kapali {
 /* =========================================
    29. ALT BİLGİ (footer)
    ========================================= */
-body:not(.panel) footer {
+body:not(.panel) > footer {
     margin-top: 0;
     padding: var(--bosluk-12) 0 var(--bosluk-6);
     text-align: left;
