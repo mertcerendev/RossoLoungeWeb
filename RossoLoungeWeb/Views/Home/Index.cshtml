@@ -27,11 +27,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
+    @* Yeni sahne mimarisi en sonda: eski katmanı bilinçli olarak ezer *@
     <link rel="stylesheet" href="~/css/rosso-tema.css" asp-append-version="true">
     <link rel="stylesheet" href="~/css/rosso-bilesenler.css" asp-append-version="true">
-    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
 
     <style>
         /* SADECE bu sayfaya (ve Menu.cshtml'e) özgü kurallar.
@@ -100,75 +101,82 @@
 </head>
 
 <body>
-    <div class="rosso-onyukleyici" aria-hidden="true">
-        <div class="rosso-onyukleyici__marka">ROSSO <span>LOUNGE</span></div>
-        <div class="rosso-onyukleyici__cizgi"></div>
+    @* ---- Sinematik perde: sayaç dolar, ardından iki panel yırtılır ---- *@
+    <div class="sahne-perde" aria-hidden="true">
+        <div class="sahne-perde__marka">ROSSO <span>LOUNGE</span></div>
+        <div class="sahne-perde__sayac">000</div>
+    </div>
+    <div class="sahne-perde__panel sahne-perde__panel--ust" aria-hidden="true"></div>
+    <div class="sahne-perde__panel sahne-perde__panel--alt" aria-hidden="true"></div>
+
+    @* ---- Sıvı imleç (yalnızca fare olan cihazlarda görünür) ---- *@
+    <div class="imlec" aria-hidden="true">
+        <span class="imlec__halka"></span>
+        <span class="imlec__nokta"></span>
     </div>
 
-    <a href="#icerik" class="rosso-atla">İçeriğe atla</a>
-    <div class="rosso-perde" aria-hidden="true"></div>
+    <a href="#icerik" class="atla">İçeriğe atla</a>
+    <div class="nav-perde" aria-hidden="true"></div>
 
-    <header class="rosso-nav" id="navbar">
-        <div class="rosso-kap rosso-nav__ic">
-            <a href="#home" class="rosso-nav__marka">ROSSO <span>LOUNGE</span></a>
+    <header class="nav" id="navbar">
+        <div class="kap nav__ic">
+            <a href="#home" class="nav__marka">ROSSO <span>LOUNGE</span></a>
 
             <nav aria-label="Ana menü">
-                <ul class="rosso-nav__menu">
-                    <li><a href="#home" class="rosso-nav__link rosso-nav__link--aktif">Ana Sayfa</a></li>
-                    <li><a href="#about" class="rosso-nav__link">Hakkımızda</a></li>
-                    <li><a href="/Home/Menu" class="rosso-nav__link">Menü</a></li>
-                    <li><a href="#gallery" class="rosso-nav__link">Galeri</a></li>
-                    <li><a href="#reviews" class="rosso-nav__link">Yorumlar</a></li>
-                    <li><a href="#contact" class="rosso-nav__link">İletişim</a></li>
-                    <li class="rosso-nav__mobil-eylem"><a href="#rezervasyon" class="rosso-nav__eylem">Rezervasyon Yap</a></li>
+                <ul class="nav__menu">
+                    <li><a href="#home" class="nav__link nav__link--aktif">Ana Sayfa</a></li>
+                    <li><a href="#about" class="nav__link">Hakkımızda</a></li>
+                    <li><a href="/Home/Menu" class="nav__link">Menü</a></li>
+                    <li><a href="#gallery" class="nav__link">Galeri</a></li>
+                    <li><a href="#reviews" class="nav__link">Yorumlar</a></li>
+                    <li><a href="#contact" class="nav__link">İletişim</a></li>
+                    <li class="nav__mobil"><a href="#rezervasyon" class="nav__eylem">Rezervasyon</a></li>
                 </ul>
             </nav>
 
-            <a href="#rezervasyon" class="rosso-nav__eylem rosso-nav__eylem--masaustu">Rezervasyon Yap</a>
+            <a href="#rezervasyon" class="nav__eylem nav__eylem--masaustu">Rezervasyon</a>
 
-            <button type="button" class="rosso-nav__hamburger" aria-label="Menüyü aç veya kapat" aria-expanded="false">
-                <i class="fas fa-bars" aria-hidden="true"></i>
+            <button type="button" class="nav__hamburger" aria-label="Menüyü aç veya kapat" aria-expanded="false">
+                <span class="nav__cizgi"></span>
             </button>
         </div>
     </header>
 
     <main id="icerik">
-        <section id="home" class="rosso-hero">
-            <div class="rosso-hero__zemin" aria-hidden="true"></div>
-            <div class="rosso-hero__perde" aria-hidden="true"></div>
+        <section id="home" class="hero">
+            <div class="hero__zemin" aria-hidden="true"></div>
+            <div class="hero__perde" aria-hidden="true"></div>
 
-            <div class="rosso-hero__ic">
-                <p class="rosso-hero__ustbaslik rosso-belir">Bandırma · Marmara kıyısında</p>
+            <div class="hero__ic">
+                <p class="hero__ustbaslik">Bandırma · Marmara kıyısında</p>
 
-                <h1 class="rosso-hero__baslik rosso-belir">
-                    Lezzetin ve Konforun
-                    <em>Buluşma Noktası</em>
+                <h1 class="hero__baslik">
+                    Lezzetin ve konforun
+                    <em>buluşma noktası</em>
                 </h1>
 
-                <p class="rosso-hero__alt rosso-belir">
+                <p class="hero__alt">
                     Sıcak bir ışık, iyi bir sohbet ve hak ettiği tabaklar.
                 </p>
 
-                <div class="rosso-hero__eylemler rosso-belir">
-                    <a href="#rezervasyon" class="rosso-btn rosso-btn--altin rosso-btn--manyetik">Masa Ayırt</a>
-                    <a href="/Home/Menu" class="rosso-btn rosso-btn--cam rosso-btn--manyetik">Menüyü Keşfet</a>
+                <div class="hero__eylemler">
+                    <a href="#rezervasyon" class="btn btn--sampanya">Masa Ayırt</a>
+                    <a href="/Home/Menu" class="btn btn--hat">Menüyü Keşfet</a>
                 </div>
 
                 @if (ViewBag.SuAnAcik is bool heroAcik)
                 {
-                    <p class="rosso-hero__durum rosso-belir">
-                        <span class="rosso-rozet @(heroAcik ? "rosso-rozet--acik" : "rosso-rozet--kapali")">
-                            <span class="rosso-rozet__nokta" aria-hidden="true"></span>
+                    <p class="hero__durum">
+                        <span class="rozet @(heroAcik ? "rozet--acik" : "rozet--kapali")">
+                            <span class="rozet__nokta" aria-hidden="true"></span>
                             @(heroAcik ? "Şu an açığız" : "Şu an kapalıyız")
                         </span>
-                        <span class="rosso-hero__saat">Her gün 11.30 – 00.00</span>
+                        <span class="hero__saat">Her gün 11.30 – 00.00</span>
                     </p>
                 }
             </div>
 
-            <a href="#about" class="rosso-hero__kaydir" aria-label="Aşağı kaydır">
-                <i class="fas fa-chevron-down" aria-hidden="true"></i>
-            </a>
+            <a href="#about" class="hero__kaydir" aria-label="Aşağı kaydır"></a>
         </section>
 
         <section id="about" class="section-padding">
@@ -666,6 +674,13 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/tr.js"></script>
+    <!-- Sahne motoru bagimliliklar — rosso-hareket.js'ten ONCE.
+         Yuklenemezlerse site animasyonsuz ama tam okunur acilir. -->
+    <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
     <script src="~/js/rosso-hareket.js" asp-append-version="true"></script>
     <script src="~/js/ortak.js" asp-append-version="true"></script>
     <script src="~/js/script.js" asp-append-version="true"></script>

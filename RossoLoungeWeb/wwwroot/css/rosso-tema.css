@@ -1,195 +1,381 @@
 /* =============================================================
-   ROSSO LOUNGE — TASARIM ŞABLONU
+   ROSSO LOUNGE — SAHNE MİMARİSİ
    -------------------------------------------------------------
-   Tek kaynak: renk, tipografi, boşluk, hareket ve katman ölçekleri.
-   Yeni bileşenler BEM ile yazılır:  .rosso-blok__eleman--durum
-   Yalnızca ziyaretçi sitesi için; yönetim paneli panel.css kullanır.
+   Quiet Luxury: obsidyen zemin, fırçalanmış titanyum, şampanya.
+   NOT: @layer kullanılmıyor — style.css katmansız ve katmanlı kurallar
+   katmansızlara her zaman yenilir. Bu dosya en son yüklenerek kazanır.
+
+   KRİTİK GÜVENLİK DESENİ
+   Kinetik girişler (clip-path / SplitText) öğeleri başlangıçta
+   gizler. GSAP yüklenmezse içerik görünmez kalırdı — bu yüzden
+   gizleme kuralları YALNIZCA <html class="rosso-kinetik"> altında
+   geçerli. Bu sınıfı JS, kütüphaneler yüklendiğini doğruladıktan
+   SONRA ekler. JS yoksa veya CDN düşerse sayfa tam okunur açılır.
    ============================================================= */
 
+
+/* =============================================================
+   TOKENLAR
+   ============================================================= */
 :root {
-    /* ---------- Yüzeyler (Onyx → kömür) ---------- */
-    --rs-onyx: #0a0a0c;
-    --rs-yuzey: #101014;
-    --rs-yuzey-2: #16161b;
-    --rs-yuzey-3: #1e1e25;
-    --rs-cizgi: rgba(255, 255, 255, 0.08);
-    --rs-cizgi-guclu: rgba(255, 255, 255, 0.16);
+    /* --- Zemin: obsidyen → antrasit --- */
+    --obsidyen: #08080a;
+    --antrasit: #0e0e11;
+    --antrasit-2: #141418;
+    --antrasit-3: #1c1c21;
 
-    /* ---------- Marka ---------- */
-    --rs-kirmizi: #e74c3c; /* logo ve marka işareti */
-    --rs-gold: #c9a961;
-    --rs-gold-acik: #e4cf9a;
-    --rs-gold-koyu: #a8873f;
-    --rs-gold-sis: rgba(201, 169, 97, 0.14);
+    /* --- Metal vurgular --- */
+    --titanyum: #b9b6ae; /* fırçalanmış titanyum — ana metin vurgusu */
+    --titanyum-sonuk: #8d8a83;
+    --sampanya: #e6d9bd; /* şampanya köpüğü — en parlak vurgu */
+    --sampanya-sis: rgba(230, 217, 189, 0.12);
+    --bronz: #9a7b4f; /* çok hafif bronz — ince çizgiler */
 
-    /* ---------- Metin ---------- */
-    --rs-metin: #f6f4f0;
-    --rs-metin-yumusak: #bdb9b2;
-    --rs-metin-silik: #949089; /* koyu kart üstünde 5.39:1 (AA) */
+    /* --- Metin --- */
+    --metin: #f2efe9;
+    --metin-2: #b9b6ae;
+    --metin-3: #949089; /* koyu kart üstünde AA (5.4:1) */
 
-    /* ---------- Tipografi ---------- */
-    --rs-font-baslik: 'Playfair Display', Georgia, serif;
-    --rs-font-govde: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    /* --- Çizgi --- */
+    --cizgi: rgba(255, 255, 255, 0.07);
+    --cizgi-2: rgba(255, 255, 255, 0.14);
 
-    /* Akıcı ölçek — 360px'ten 1920px'e kesintisiz */
-    --rs-yazi-xs: clamp(0.75rem, 0.72rem + 0.14vw, 0.8125rem);
-    --rs-yazi-sm: clamp(0.8125rem, 0.78rem + 0.18vw, 0.875rem);
-    --rs-yazi-md: clamp(0.9375rem, 0.90rem + 0.22vw, 1rem);
-    --rs-yazi-lg: clamp(1.0625rem, 1.00rem + 0.30vw, 1.1875rem);
-    --rs-yazi-xl: clamp(1.25rem, 1.12rem + 0.60vw, 1.5rem);
-    --rs-yazi-2xl: clamp(1.625rem, 1.35rem + 1.20vw, 2.25rem);
-    --rs-yazi-3xl: clamp(2rem, 1.55rem + 2.00vw, 3rem);
-    --rs-yazi-dev: clamp(2.5rem, 1.60rem + 3.90vw, 4.5rem);
+    /* --- Tipografi --- */
+    --f-serif: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+    --f-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
 
-    --rs-satir-sik: 1.1;
-    --rs-satir-normal: 1.55;
-    --rs-satir-genis: 1.75;
-    --rs-aralik-genis: 0.28em; /* üst başlıklar */
+    /* Sinematik ölçek — başlıklar ekranı kaplar */
+    --t-xs: clamp(0.6875rem, 0.66rem + 0.14vw, 0.75rem);
+    --t-sm: clamp(0.8125rem, 0.78rem + 0.18vw, 0.875rem);
+    --t-md: clamp(0.9375rem, 0.90rem + 0.22vw, 1rem);
+    --t-lg: clamp(1.0625rem, 1.00rem + 0.32vw, 1.25rem);
+    --t-xl: clamp(1.375rem, 1.20rem + 0.85vw, 2rem);
+    --t-2xl: clamp(2rem, 1.55rem + 2.2vw, 3.5rem);
+    --t-3xl: clamp(2.75rem, 1.90rem + 4.2vw, 6rem);
+    --t-dev: clamp(3.25rem, 1.60rem + 7.2vw, 9.5rem); /* hero */
 
-    /* ---------- Boşluk (4px tabanlı) ---------- */
-    --rs-bo-1: 0.25rem;
-    --rs-bo-2: 0.5rem;
-    --rs-bo-3: 0.75rem;
-    --rs-bo-4: 1rem;
-    --rs-bo-5: 1.25rem;
-    --rs-bo-6: 1.5rem;
-    --rs-bo-8: 2rem;
-    --rs-bo-10: 2.5rem;
-    --rs-bo-12: 3rem;
-    --rs-bo-16: 4rem;
-    --rs-bo-20: 5rem;
-    --rs-bo-24: 6rem;
+    --satir-sik: 0.94;
+    --satir-orta: 1.25;
+    --satir-genis: 1.7;
+    --harf-genis: 0.34em; /* üst başlık */
 
-    /* Bölüm nefesi — premium his büyük ölçüde buradan gelir */
-    --rs-bolum-bosluk: clamp(4.5rem, 3rem + 6vw, 9rem);
-    --rs-kap-genislik: 1180px;
-    --rs-kap-yan: clamp(1.25rem, 4vw, 2.5rem);
+    /* --- Boşluk: devasa negatif alan --- */
+    --b1: 0.25rem;
+    --b2: 0.5rem;
+    --b3: 0.75rem;
+    --b4: 1rem;
+    --b5: 1.5rem;
+    --b6: 2rem;
+    --b7: 3rem;
+    --b8: 4rem;
+    --b9: 6rem;
+    --b10: 8rem;
+    --bolum: clamp(6rem, 4rem + 9vw, 14rem);
 
-    /* ---------- Biçim ---------- */
-    --rs-yaricap-sm: 8px;
-    --rs-yaricap: 14px;
-    --rs-yaricap-lg: 22px;
-    --rs-yaricap-tam: 999px;
+    /* --- Kap --- */
+    --kap: 1280px;
+    --kap-dar: 880px;
+    --kap-yan: clamp(1.25rem, 5vw, 4rem);
 
-    /* ---------- Gölge ---------- */
-    --rs-golge-1: 0 2px 10px rgba(0, 0, 0, 0.3);
-    --rs-golge-2: 0 12px 34px rgba(0, 0, 0, 0.42);
-    --rs-golge-3: 0 26px 60px rgba(0, 0, 0, 0.55);
-    --rs-golge-gold: 0 14px 38px rgba(201, 169, 97, 0.26);
+    /* --- Hareket --- */
+    --h1: 200ms;
+    --h2: 420ms;
+    --h3: 800ms;
+    --egri: cubic-bezier(0.22, 1, 0.36, 1);
+    --egri-sert: cubic-bezier(0.76, 0, 0.24, 1);
 
-    /* ---------- Hareket ---------- */
-    --rs-hiz-1: 180ms;
-    --rs-hiz-2: 340ms;
-    --rs-hiz-3: 620ms;
-    --rs-hiz-4: 1100ms;
-    --rs-egri: cubic-bezier(0.22, 1, 0.36, 1); /* yumuşak çıkış */
-    --rs-egri-yumusak: cubic-bezier(0.4, 0, 0.2, 1);
+    /* --- Katman --- */
+    --k-zemin: 0;
+    --k-icerik: 1;
+    --k-nav: 900;
+    --k-menu: 950;
+    --k-imlec: 9998;
+    --k-loader: 9999;
 
-    /* ---------- Katman ---------- */
-    --rs-kat-zemin: 0;
-    --rs-kat-icerik: 1;
-    --rs-kat-basik: 900;
-    --rs-kat-navbar: 1000;
-    --rs-kat-menu: 1100;
-    --rs-kat-buyutec: 2500;
-    --rs-kat-preloader: 3000;
-
-    /* Dokunma hedefi alt sınırı */
-    --rs-dokunma: 44px;
+    --dokunma: 44px;
 }
 
 /* =============================================================
-   KAP
+   SIFIRLA
    ============================================================= */
-.rosso-kap {
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    /* Lenis kendi kaydırmasını yönetir; native smooth kapatılmalı */
+    scroll-behavior: auto;
+}
+
+/* :not(.panel) — style.css'teki eski katman aynı özgüllükte kural
+   içeriyor; eşitlemezsek zemin obsidyene inmiyor. Panel hariç tutuluyor. */
+body:not(.panel) {
+    margin: 0;
+    background: var(--obsidyen);
+    color: var(--metin-2);
+    font-family: var(--f-sans);
+    font-size: var(--t-md);
+    line-height: var(--satir-genis);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
+}
+
+h1, h2, h3, h4 {
+    margin: 0;
+    color: var(--metin);
+    font-family: var(--f-serif);
+    font-weight: 300;
+    line-height: var(--satir-sik);
+    letter-spacing: -0.02em;
+}
+
+p {
+    margin: 0;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+img,
+picture,
+video {
+    display: block;
+    max-width: 100%;
+}
+
+button {
+    font: inherit;
+    color: inherit;
+}
+
+ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+:focus-visible {
+    outline: 2px solid var(--sampanya);
+    outline-offset: 3px;
+}
+
+/* =============================================================
+   DÜZEN
+   ============================================================= */
+.kap {
     width: 100%;
-    max-width: var(--rs-kap-genislik);
+    max-width: var(--kap);
     margin-inline: auto;
-    padding-inline: var(--rs-kap-yan);
+    padding-inline: var(--kap-yan);
 }
 
-/* =============================================================
-   PRELOADER
-   -------------------------------------------------------------
-   Sayfa hazır olunca .rosso-onyukleyici--bitti eklenir ve öğe
-   DOM'dan kaldırılır. JS çalışmazsa 2.5sn sonra CSS ile de kaybolur,
-   yani içerik hiçbir koşulda perde arkasında kalmaz.
-   ============================================================= */
-.rosso-onyukleyici {
-    position: fixed;
-    inset: 0;
-    z-index: var(--rs-kat-preloader);
+.kap--dar {
+    max-width: var(--kap-dar);
+}
+
+/* Asimetrik ızgara: içerik sola yaslı, sağda geniş nefes */
+.izgara-asimetrik {
     display: grid;
-    place-items: center;
-    background: var(--rs-onyx);
-    animation: rosso-guvenlik-perdesi 0s linear 2.5s forwards;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(2rem, 6vw, 7rem);
+    align-items: center;
 }
 
-.rosso-onyukleyici__marka {
-    font-family: var(--rs-font-baslik);
-    font-size: var(--rs-yazi-2xl);
-    letter-spacing: 0.14em;
-    color: var(--rs-metin);
-    opacity: 0;
-    animation: rosso-marka-belir var(--rs-hiz-4) var(--rs-egri) forwards;
+.izgara-asimetrik--ters {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
 }
 
-    .rosso-onyukleyici__marka span {
-        color: var(--rs-gold);
+@media (max-width: 900px) {
+    .izgara-asimetrik,
+    .izgara-asimetrik--ters {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.bolum {
+    position: relative;
+    padding-block: var(--bolum);
+}
+
+/* Sadece ekran okuyucu */
+.gorsel-gizli {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.atla {
+    position: absolute;
+    inset-block-start: -100px;
+    inset-inline-start: var(--b4);
+    z-index: calc(var(--k-loader) + 1);
+    padding: var(--b3) var(--b5);
+    background: var(--sampanya);
+    color: var(--obsidyen);
+    font-weight: 600;
+    transition: inset-block-start var(--h1) var(--egri);
+}
+
+    .atla:focus {
+        inset-block-start: var(--b4);
     }
 
-.rosso-onyukleyici__cizgi {
-    width: min(220px, 50vw);
-    height: 1px;
-    margin-top: var(--rs-bo-6);
-    background: var(--rs-cizgi-guclu);
+/* =============================================================
+   HAREKET — KİNETİK GİRİŞ BAŞLANGIÇ DURUMLARI
+   -------------------------------------------------------------
+   Tümü html.rosso-kinetik altında. Bu sınıf yoksa (JS kapalı,
+   CDN düşük, reduced-motion) hiçbir şey gizlenmez.
+   ============================================================= */
+/* Maskeli açılış: içerik alttan yukarı "yırtılarak" girer */
+.rosso-kinetik .kn-maske {
+    clip-path: inset(0 0 100% 0);
+}
+
+/* Satır satır beliren metin — SplitText satırları bu kabı alır */
+.rosso-kinetik .kn-satir {
     overflow: hidden;
 }
 
-    .rosso-onyukleyici__cizgi::after {
-        content: "";
-        display: block;
-        width: 40%;
-        height: 100%;
-        background: var(--rs-gold);
-        animation: rosso-cizgi-kos 1.2s var(--rs-egri-yumusak) infinite;
-    }
-
-.rosso-onyukleyici--bitti {
+.rosso-kinetik .kn-kaydir {
     opacity: 0;
-    visibility: hidden;
-    transition: opacity var(--rs-hiz-3) var(--rs-egri), visibility 0s linear var(--rs-hiz-3);
+    transform: translateY(28px) skewY(2deg);
 }
 
-@keyframes rosso-marka-belir {
-    0% { opacity: 0; transform: translateY(12px); letter-spacing: 0.34em; }
-    100% { opacity: 1; transform: none; letter-spacing: 0.14em; }
+.rosso-kinetik .kn-solgun {
+    opacity: 0;
 }
 
-@keyframes rosso-cizgi-kos {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(350%); }
-}
-
-@keyframes rosso-guvenlik-perdesi {
-    to { opacity: 0; visibility: hidden; }
+/* Hero yükleme bitene kadar sahne kilitli */
+.rosso-kilit {
+    overflow: hidden;
+    height: 100%;
 }
 
 /* =============================================================
-   GİRİŞ ANİMASYONU (fade-up)
-   -------------------------------------------------------------
-   JS kancası: .rosso-belir → görünür olunca .rosso-belir--acik
+   SİNEMATİK LOADER
    ============================================================= */
-.rosso-belir {
-    opacity: 0;
-    transform: translateY(26px);
-    transition: opacity var(--rs-hiz-3) var(--rs-egri), transform var(--rs-hiz-3) var(--rs-egri);
-    transition-delay: var(--rs-gecikme, 0ms);
+.sahne-perde {
+    position: fixed;
+    inset: 0;
+    z-index: var(--k-loader);
+    display: grid;
+    place-items: center;
+    background: var(--obsidyen);
 }
 
-.rosso-belir--acik {
-    opacity: 1;
-    transform: none;
+.sahne-perde__marka {
+    font-family: var(--f-serif);
+    font-size: var(--t-2xl);
+    font-weight: 300;
+    letter-spacing: 0.24em;
+    color: var(--metin);
+}
+
+    .sahne-perde__marka span {
+        color: var(--sampanya);
+    }
+
+.sahne-perde__sayac {
+    position: absolute;
+    inset-block-end: var(--b7);
+    inset-inline-end: var(--kap-yan);
+    font-family: var(--f-serif);
+    font-size: var(--t-xl);
+    color: var(--titanyum-sonuk);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Perde iki panel halinde yukarı/aşağı yırtılır */
+.sahne-perde__panel {
+    position: fixed;
+    inset-inline: 0;
+    z-index: calc(var(--k-loader) - 1);
+    height: 50vh;
+    background: var(--obsidyen);
+}
+
+.sahne-perde__panel--ust {
+    inset-block-start: 0;
+}
+
+.sahne-perde__panel--alt {
+    inset-block-end: 0;
+}
+
+/* JS yoksa perde hiç görünmesin (içerik anında açılsın) */
+html:not(.rosso-kinetik) .sahne-perde,
+html:not(.rosso-kinetik) .sahne-perde__panel {
+    display: none;
+}
+
+/* =============================================================
+   SIVI İMLEÇ
+   -------------------------------------------------------------
+   Yalnızca gerçek fare olan cihazlarda. Dokunmatikte ve hareket
+   azaltmada tamamen devre dışı, native imleç korunur.
+   ============================================================= */
+.imlec {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    z-index: var(--k-imlec);
+    display: none;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.imlec__nokta {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    margin: -3px 0 0 -3px;
+    border-radius: 50%;
+    background: var(--sampanya);
+}
+
+.imlec__halka {
+    position: absolute;
+    width: 42px;
+    height: 42px;
+    margin: -21px 0 0 -21px;
+    border: 1px solid var(--cizgi-2);
+    border-radius: 50%;
+    transition: width var(--h2) var(--egri), height var(--h2) var(--egri),
+                margin var(--h2) var(--egri), border-color var(--h2) var(--egri),
+                background var(--h2) var(--egri);
+}
+
+/* Tıklanabilir öğe üzerinde halka büyür ve şampanya rengine döner */
+.imlec--yakin .imlec__halka {
+    width: 68px;
+    height: 68px;
+    margin: -34px 0 0 -34px;
+    border-color: var(--sampanya);
+    background: var(--sampanya-sis);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    html.rosso-imlec .imlec {
+        display: block;
+    }
+
+    /* Native imleci yalnızca özel imleç gerçekten aktifken gizle */
+    html.rosso-imlec,
+    html.rosso-imlec a,
+    html.rosso-imlec button {
+        cursor: none;
+    }
 }
 
 /* =============================================================
@@ -202,15 +388,17 @@
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
     }
 
-    .rosso-belir {
-        opacity: 1;
-        transform: none;
+    .sahne-perde,
+    .sahne-perde__panel,
+    .imlec {
+        display: none !important;
     }
 
-    .rosso-onyukleyici {
-        display: none;
+    html.rosso-imlec,
+    html.rosso-imlec a,
+    html.rosso-imlec button {
+        cursor: auto;
     }
 }
