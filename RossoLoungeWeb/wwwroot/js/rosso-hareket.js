@@ -1208,6 +1208,232 @@
     }
 
     /* =========================================================
+       14. YORUM GÖNDERME PANELİ
+       -------------------------------------------------------------
+       - Puan sözcüğü + karakter sayacı: JS varsa her koşulda çalışır
+       - Katman modu (sağdan kayan off-canvas) yalnızca kinetik modda
+       - Gönderim durumu: buton "İletiliyor" + belirsiz ilerleme çizgisi
+
+       Katman moduna geçilmezse panel akışın içinde normal bir form
+       olarak kalır; ziyaretçi yorumunu her hâlükârda gönderebilir.
+       ========================================================= */
+    function paylasPaneli() {
+        var kat = document.getElementById('paylas');
+        if (!kat) return;
+
+        var panel = kat.querySelector('.paylas__panel');
+        var form = kat.querySelector('.paylas__form');
+        if (!panel || !form) return;
+
+        formYardimcilari(form);
+        gonderimDurumu(form);
+
+        // Akışta kalsın: GSAP yoksa katmanı açacak bir şey de yok
+        if (!kinetik) return;
+        katmanKur(kat, panel);
+    }
+
+    /* ---------- Puan sözcüğü + karakter sayacı ---------- */
+    function formYardimcilari(form) {
+        var sozcukler = {
+            '1': 'Geliştirilmeli', '2': 'Orta', '3': 'İyi',
+            '4': 'Çok iyi', '5': 'Mükemmel'
+        };
+
+        var puanYazi = form.querySelector('.puan__yazi');
+        var radyolar = Array.prototype.slice.call(form.querySelectorAll('.puan__radyo'));
+
+        if (puanYazi) {
+            radyolar.forEach(function (radyo) {
+                radyo.addEventListener('change', function () {
+                    puanYazi.textContent = sozcukler[radyo.value] || '';
+                });
+            });
+        }
+
+        var govde = form.querySelector('.alan--govde .alan__girdi');
+        var sayac = form.querySelector('.alan__sayac');
+
+        if (govde && sayac) {
+            var sinir = govde.getAttribute('maxlength') || '1000';
+            var yaz = function () { sayac.textContent = govde.value.length + ' / ' + sinir; };
+            govde.addEventListener('input', yaz);
+            yaz();
+        }
+
+        manyetikDugme(form.querySelector('.paylas__gonder'));
+    }
+
+    /* ---------- Manyetik gönder butonu ---------- */
+    function manyetikDugme(dugme) {
+        if (!dugme || !inceIsaretci || azHareket || !gsapVar) return;
+
+        var xAyar = gsap.quickTo(dugme, 'x', { duration: 0.45, ease: 'power3.out' });
+        var yAyar = gsap.quickTo(dugme, 'y', { duration: 0.45, ease: 'power3.out' });
+
+        dugme.addEventListener('mousemove', function (olay) {
+            var r = dugme.getBoundingClientRect();
+            xAyar((olay.clientX - (r.left + r.width / 2)) * 0.28);
+            yAyar((olay.clientY - (r.top + r.height / 2)) * 0.34);
+        }, { passive: true });
+
+        dugme.addEventListener('mouseleave', function () { xAyar(0); yAyar(0); });
+    }
+
+    /* ---------- Gönderim durumu ----------
+       ortak.js formu kilitleyip butonun textContent'ini değiştiriyor;
+       bu yüzden görünen yazıyı CSS ::before üstleniyor, biz yalnızca
+       sınıfı ekliyoruz. Tarayıcı doğrulaması gönderimi engellerse
+       submit olayı hiç tetiklenmez, buton da durum değiştirmez. */
+    function gonderimDurumu(form) {
+        var dugme = form.querySelector('.paylas__gonder');
+        if (!dugme) return;
+
+        form.addEventListener('submit', function () {
+            dugme.classList.add('paylas__gonder--iletiliyor');
+        });
+
+        // Geri tuşuyla önbellekten dönülünce buton takılı kalmasın
+        window.addEventListener('pageshow', function (olay) {
+            if (olay.persisted) dugme.classList.remove('paylas__gonder--iletiliyor');
+        });
+    }
+
+    /* ---------- Katman modu ---------- */
+    function katmanKur(kat, panel) {
+        var acDugme = document.getElementById('paylas-ac');
+        var kapatDugme = kat.querySelector('.paylas__kapat');
+        var zemin = kat.querySelector('.paylas__zemin');
+        if (!acDugme || !kapatDugme) return;
+
+        kat.classList.add('paylas--katman');
+        kat.hidden = true;
+        panel.setAttribute('role', 'dialog');
+        panel.setAttribute('aria-modal', 'true');
+        acDugme.hidden = false;
+        kapatDugme.hidden = false;
+
+        var acik = false;
+
+        /* Kinetik mod açılışta doğrulanıyor ama emniyet katmanı ticker
+           ölüyse sınıfı sonradan kaldırıyor. Bayrağı dondurursak panel
+           ekran dışında (xPercent 100) kilitli kalır — galeri büyütecinde
+           bir kez yaşandı. Karar her çağrıda canlı sinyalden okunuyor. */
+        function canlandirMi() {
+            return gsapVar && kok.classList.contains('rosso-kinetik');
+        }
+
+        /* Panelin arkasındaki sayfa kaymasın. Galeri pinliyken body
+           overflow'una dokunmuyoruz — pin-spacer'ın yüksekliğini bozup
+           ScrollTrigger'ı şaşırtıyor. Lenis'i durdurmak tekerleği kesiyor. */
+        function kilit(kapali) {
+            if (lenis) {
+                if (kapali) { lenis.stop(); } else { lenis.start(); }
+            }
+            var galeri = document.querySelector('.galeri');
+            if (!galeri || !galeri.classList.contains('galeri--pinli')) {
+                document.body.style.overflow = kapali ? 'hidden' : '';
+            }
+        }
+
+        function odaklanabilirler() {
+            return Array.prototype.slice.call(panel.querySelectorAll(
+                'button:not([hidden]):not(:disabled), input:not([type="hidden"]),' +
+                ' select, textarea, [href], [tabindex]:not([tabindex="-1"])'
+            ));
+        }
+
+        function ac() {
+            if (acik) return;
+            acik = true;
+
+            kat.hidden = false;
+            kilit(true);
+            panel.focus();
+
+            if (!canlandirMi()) {
+                gsap.set([zemin, panel], { clearProps: 'opacity,visibility,transform,filter' });
+                return;
+            }
+
+            gsap.set(zemin, { opacity: 0 });
+            gsap.to(zemin, { opacity: 1, duration: 0.45, ease: 'power2.out' });
+
+            gsap.set(panel, { xPercent: 100, filter: 'blur(14px)' });
+            gsap.to(panel, {
+                xPercent: 0, filter: 'blur(0px)',
+                duration: 0.8, ease: 'expo.out'
+            });
+
+            gsap.fromTo(icerikler(),
+                { autoAlpha: 0, y: 24 },
+                {
+                    autoAlpha: 1, y: 0, duration: 0.7, ease: 'expo.out',
+                    stagger: 0.05, delay: 0.18
+                });
+        }
+
+        function icerikler() {
+            return panel.querySelectorAll(
+                '.paylas__ustbaslik, .paylas__baslik, .paylas__alt, .paylas__form > *'
+            );
+        }
+
+        function kapat() {
+            if (!acik) return;
+            acik = false;
+
+            function bitir() {
+                kat.hidden = true;
+                if (gsapVar) {
+                    gsap.set([panel, zemin], { clearProps: 'transform,filter,opacity' });
+                    gsap.set(icerikler(), { clearProps: 'opacity,visibility,transform' });
+                }
+                kilit(false);
+                acDugme.focus();
+            }
+
+            if (!canlandirMi()) { bitir(); return; }
+
+            gsap.to(zemin, { opacity: 0, duration: 0.4, ease: 'power2.in' });
+            gsap.to(panel, {
+                xPercent: 100, filter: 'blur(10px)',
+                duration: 0.5, ease: 'power3.in', onComplete: bitir
+            });
+        }
+
+        acDugme.addEventListener('click', ac);
+        kapatDugme.addEventListener('click', kapat);
+        if (zemin) zemin.addEventListener('click', kapat);
+
+        document.addEventListener('keydown', function (olay) {
+            if (!acik) return;
+
+            if (olay.key === 'Escape') {
+                kapat();
+                return;
+            }
+
+            if (olay.key !== 'Tab') return;
+
+            // Odak tuzağı: sekme panel içinde dönsün
+            var liste = odaklanabilirler();
+            if (!liste.length) return;
+
+            var ilk = liste[0];
+            var son = liste[liste.length - 1];
+
+            if (olay.shiftKey && (document.activeElement === ilk || document.activeElement === panel)) {
+                olay.preventDefault();
+                son.focus();
+            } else if (!olay.shiftKey && document.activeElement === son) {
+                olay.preventDefault();
+                ilk.focus();
+            }
+        });
+    }
+
+    /* =========================================================
        10. GÖRÜNÜRLÜK EMNİYETİ
        -------------------------------------------------------------
        rosso-kinetik sınıfı GSAP'in YÜKLENDİĞİNİ doğrular, ÇALIŞTIĞINI
@@ -1241,7 +1467,9 @@
                 ' .hero__baslik, .hero__ustbaslik, .hero__alt, .hero__eylemler, .hero__durum,' +
                 ' .menu__kalem, .menu__bas > *,' +
                 ' .vitrin__kart, .vitrin__bas > *, .vitrin__eylem,' +
-                ' .defter__yaprak, .defter__satir, .defter__isaret, .defter__imza'
+                ' .defter__yaprak, .defter__satir, .defter__isaret, .defter__imza,' +
+                ' .paylas__panel, .paylas__zemin, .paylas__ustbaslik, .paylas__baslik,' +
+                ' .paylas__alt, .paylas__form > *'
             ).forEach(function (oge) {
                 oge.style.opacity = '';
                 oge.style.visibility = '';
@@ -1264,6 +1492,28 @@
             var defter = document.querySelector('.defter');
             if (defter) defter.classList.remove('defter--sahnede');
 
+            /* Yorum gönderme paneli katman modunda ekran dışında
+               (xPercent 100) duruyor olabilir; akıştaki normal form
+               hâline döndürülüyor ki gönderim yolu kapanmasın. */
+            var paylas = document.getElementById('paylas');
+            if (paylas) {
+                paylas.classList.remove('paylas--katman');
+                paylas.hidden = false;
+                document.body.style.overflow = '';
+
+                var paylasAc = document.getElementById('paylas-ac');
+                if (paylasAc) paylasAc.hidden = true;
+
+                var paylasKapat = paylas.querySelector('.paylas__kapat');
+                if (paylasKapat) paylasKapat.hidden = true;
+
+                var paylasPanel = paylas.querySelector('.paylas__panel');
+                if (paylasPanel) {
+                    paylasPanel.removeAttribute('role');
+                    paylasPanel.removeAttribute('aria-modal');
+                }
+            }
+
             var perde = document.querySelector('.sahne-perde');
             if (perde) perde.remove();
             document.querySelectorAll('.sahne-perde__panel').forEach(function (p) { p.remove(); });
@@ -1280,7 +1530,7 @@
         if (acildi) return;
         acildi = true;
 
-        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, gorunurlukEmniyeti]
+        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, gorunurlukEmniyeti]
             .forEach(function (modul) {
                 try { modul(); } catch (h) {
                     if (window.console) console.error('rosso:', modul.name, h);

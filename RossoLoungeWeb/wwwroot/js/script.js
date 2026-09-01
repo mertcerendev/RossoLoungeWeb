@@ -183,7 +183,6 @@
         var hedefler = document.querySelectorAll(
             '.section-title, .bolum-ustbaslik, .menu-card, .menu-category,' +
             ' .hakkimizda-gorseller, .hakkimizda-metin, .rakam-serit,' +
-            ' .review-form-container,' +
             ' .bilgi-kart, .harita-kutu, .form-panel'
         );
 
@@ -520,27 +519,6 @@
 
         // Sunucudan hata/başarı dönerse ilgili sekme açık gelsin
         if (location.hash === '#mesaj' && mesajSekmesi) sekmeAc(mesajSekmesi, false);
-    }
-
-
-    // ============================================================
-    // 10. KATLANABİLİR YORUM FORMU
-    // ============================================================
-    const yorumAc = document.querySelector('.yorum-ac');
-
-    if (yorumAc) {
-        const govde = document.getElementById(yorumAc.getAttribute('aria-controls'));
-
-        yorumAc.addEventListener('click', () => {
-            const acik = yorumAc.getAttribute('aria-expanded') === 'true';
-            yorumAc.setAttribute('aria-expanded', acik ? 'false' : 'true');
-            if (govde) govde.hidden = acik;
-        });
-
-        // Doğrulama hatası döndüyse form kapalı kalmasın
-        if (govde && govde.querySelector('.rs-hata-metin, [aria-invalid="true"]')) {
-            yorumAc.click();
-        }
     }
 
 })();

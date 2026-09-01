@@ -14,7 +14,7 @@
      .reveal .gorunur .toast-bildirim .toast-kapat .kapaniyor
      .hata .basarili .section-title .about-text .about-image
      .menu-card .gallery-item .contact-details
-     .map-container .reservation-container .review-form-container
+     .map-container .reservation-container
      .menu-category
 
    İÇİNDEKİLER
@@ -920,8 +920,7 @@ footer {
 
 section[id],
 [id="rezervasyon"],
-[id="iletisim-form"],
-[id="yorum-formu"] {
+[id="iletisim-form"] {
     scroll-margin-top: var(--cipa-payi);
 }
 
@@ -1835,64 +1834,6 @@ section[id],
    =========================================
    Daha önce karuselin altında ikinci bir büyük form bloğu duruyordu.
    Artık varsayılan olarak kapalı; isteyen açıyor. */
-.review-form-container {
-    max-width: 720px;
-    margin: var(--bosluk-10) auto 0;
-    background: var(--siyah-2, #222);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: var(--yaricap-lg);
-    overflow: hidden;
-}
-
-.yorum-ac {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--bosluk-4);
-    width: 100%;
-    min-height: 72px;
-    padding: var(--bosluk-5) var(--bosluk-6);
-    background: none;
-    border: none;
-    color: var(--beyaz);
-    text-align: left;
-    cursor: pointer;
-    transition: background var(--sure-hizli) var(--gecis);
-}
-
-    .yorum-ac:hover {
-        background: rgba(255, 255, 255, 0.05);
-    }
-
-    .yorum-ac strong {
-        display: block;
-        font-family: var(--font-baslik);
-        font-size: var(--olcek-lg);
-        font-weight: 600;
-    }
-
-    .yorum-ac small {
-        display: block;
-        margin-top: 2px;
-        color: var(--gri-400);
-        font-size: var(--olcek-sm);
-    }
-
-    .yorum-ac i {
-        flex-shrink: 0;
-        color: var(--renk-marka-metin-koyu);
-        transition: transform var(--sure-normal) var(--gecis);
-    }
-
-    .yorum-ac[aria-expanded="true"] i {
-        transform: rotate(180deg);
-    }
-
-.yorum-govde {
-    padding: 0 var(--bosluk-6) var(--bosluk-6);
-    animation: sekmeGir var(--sure-normal) var(--gecis) both;
-}
-
 /* ==========================================================================
    28. KOYU & LÜKS DİL
    ==========================================================================
@@ -2258,15 +2199,6 @@ body:not(.panel) .rs-btn-ikincil {
         border-color: var(--altin);
         color: var(--altin-acik);
     }
-
-body:not(.panel) .review-form-container {
-    background: var(--sahne-3);
-    border-color: var(--sahne-cizgi);
-}
-
-body:not(.panel) .yorum-ac i {
-    color: var(--altin);
-}
 
 /* --- Alt bilgi --- */
 body:not(.panel) footer {

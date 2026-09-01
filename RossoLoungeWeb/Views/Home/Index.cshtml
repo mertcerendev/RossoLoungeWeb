@@ -130,6 +130,27 @@
         <span class="imlec__nokta"></span>
     </div>
 
+    @* Controller'lar rezervasyon/mesaj/yorum sonucunu TempData'ya yazıyordu
+       ama ziyaretçi sitesinde hiçbir yerde okunmuyordu — form gönderen
+       kullanıcı sessizlikle karşılaşıyordu. Toast bileşeni script.js'e bağlı
+       (otomatik kapanma + kapat düğmesi). *@
+    @if (TempData["Mesaj"] != null)
+    {
+        <div class="toast-bildirim basarili" role="status">
+            <i class="fas fa-circle-check" aria-hidden="true"></i>
+            <div>@TempData["Mesaj"]</div>
+            <button type="button" class="toast-kapat" aria-label="Bildirimi kapat">&times;</button>
+        </div>
+    }
+    @if (TempData["Hata"] != null)
+    {
+        <div class="toast-bildirim hata" role="alert">
+            <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+            <div>@TempData["Hata"]</div>
+            <button type="button" class="toast-kapat" aria-label="Bildirimi kapat">&times;</button>
+        </div>
+    }
+
     <a href="#icerik" class="atla">İçeriğe atla</a>
     <div class="nav-perde" aria-hidden="true"></div>
 
@@ -517,40 +538,85 @@
             }
 
             <div class="kap">
-                <div class="review-form-container" id="yorum-formu">
-                    <button type="button" class="yorum-ac" aria-expanded="false" aria-controls="yorum-govde">
-                        <span>
-                            <strong>Deneyiminizi paylaşın</strong>
-                            <small>Görüşleriniz bizim için değerli — onaylandıktan sonra yayınlanır.</small>
-                        </span>
-                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                @* ---- Çağrı: formu açan tek satırlık minimal buton ----
+                   JS yoksa gizli kalır, çünkü o durumda panel zaten
+                   akışın içinde açık duruyor. *@
+                <p class="paylas-cagri">
+                    <button type="button" class="paylas-ac" id="paylas-ac" aria-haspopup="dialog" hidden>
+                        <span class="paylas-ac__yazi">Deneyiminizi paylaşın</span>
+                        <span class="paylas-ac__cizgi" aria-hidden="true"></span>
                     </button>
-                    <div class="yorum-govde" id="yorum-govde" hidden>
-                    <form class="reservation-form-horizontal" method="post" action="/Home/YorumYap">
+                </p>
+            </div>
+
+            @* =========================================================
+               YORUM GÖNDERME PANELİ
+               Standart MVC POST: /Home/YorumYap AdSoyad + Puan + Mesaj
+               bekliyor, anti-forgery token formun ilk çocuğu.
+
+               JS devralırsa (.paylas--katman) panel sağdan kayan bir
+               off-canvas katmana dönüşür. Devralmazsa akışın içinde
+               normal bir form olarak durur — hiçbir koşulda erişilmez
+               hâle gelmez.
+               ========================================================= *@
+            <div class="paylas" id="paylas">
+                <div class="paylas__zemin" aria-hidden="true"></div>
+
+                <div class="paylas__panel" id="paylas-panel" tabindex="-1" aria-labelledby="paylas-baslik">
+                    <button type="button" class="paylas__kapat" aria-label="Formu kapat" hidden>
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+
+                    <p class="paylas__ustbaslik">Ziyaretçi defteri</p>
+                    <h3 class="paylas__baslik" id="paylas-baslik">Deneyiminizi <em>yazın</em></h3>
+                    <p class="paylas__alt">Birkaç cümle yeter. Yorumunuz onaylandıktan sonra defterde yerini alır.</p>
+
+                    <form class="paylas__form" method="post" action="/Home/YorumYap">
                         @Html.AntiForgeryToken()
-                        <div class="form-group">
-                            <label for="yorum-ad">Ad Soyad <span class="rs-vurgu" aria-hidden="true">*</span></label>
-                            <input type="text" id="yorum-ad" name="AdSoyad" placeholder="Adınız ve soyadınız"
-                                   autocomplete="name" maxlength="100" required>
+
+                        @* placeholder=" " şart: yüzen etiket :placeholder-shown
+                           ile "alan boş mu" sorusunu yanıtlıyor. Etiket girdiden
+                           SONRA geliyor ki + kardeş seçicisi çalışsın. *@
+                        <div class="alan">
+                            <input class="alan__girdi" type="text" id="paylas-ad" name="AdSoyad"
+                                   placeholder=" " autocomplete="name" maxlength="100" required>
+                            <label class="alan__etiket" for="paylas-ad">Ad Soyad</label>
+                            <span class="alan__cizgi" aria-hidden="true"></span>
                         </div>
-                        <div class="form-group">
-                            <label for="yorum-puan">Puanınız <span class="rs-vurgu" aria-hidden="true">*</span></label>
-                            <select id="yorum-puan" name="Puan" required>
-                                <option value="" disabled selected>Puan seçiniz...</option>
-                                <option value="5">5 yıldız — Mükemmel</option>
-                                <option value="4">4 yıldız — Çok iyi</option>
-                                <option value="3">3 yıldız — İyi</option>
-                                <option value="2">2 yıldız — Orta</option>
-                                <option value="1">1 yıldız — Geliştirilmeli</option>
-                            </select>
+
+                        @* Puan: 5→1 sırasıyla yazılıp CSS'te row-reverse ile
+                           çevriliyor. Böylece "seçilen ve altındakiler dolu"
+                           kuralı ~ kardeş seçicisiyle JS'siz çalışıyor. *@
+                        <fieldset class="puan">
+                            <legend class="puan__baslik">Puanınız</legend>
+
+                            <div class="puan__sira">
+                                @for (int p = 5; p >= 1; p--)
+                                {
+                                    <input class="puan__radyo" type="radio" name="Puan"
+                                           id="paylas-puan-@p" value="@p" required>
+                                    <label class="puan__isaret" for="paylas-puan-@p">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                            <path d="M12 1.8 22.2 12 12 22.2 1.8 12Z" />
+                                        </svg>
+                                        <span class="gorsel-gizli">@p puan</span>
+                                    </label>
+                                }
+                            </div>
+
+                            <p class="puan__yazi" aria-live="polite"></p>
+                        </fieldset>
+
+                        <div class="alan alan--govde">
+                            <textarea class="alan__girdi" id="paylas-mesaj" name="Mesaj" rows="4"
+                                      placeholder=" " maxlength="1000" required></textarea>
+                            <label class="alan__etiket" for="paylas-mesaj">Yorumunuz</label>
+                            <span class="alan__cizgi" aria-hidden="true"></span>
+                            <span class="alan__sayac" aria-hidden="true"></span>
                         </div>
-                        <div class="form-group full-width">
-                            <label for="yorum-mesaj">Yorumunuz <span class="rs-vurgu" aria-hidden="true">*</span></label>
-                            <textarea id="yorum-mesaj" name="Mesaj" rows="4" placeholder="Deneyiminizi birkaç cümleyle anlatın..." maxlength="1000" required></textarea>
-                        </div>
-                        <button type="submit" class="btn-main full-width">Yorumu Gönder</button>
+
+                        <button type="submit" class="paylas__gonder">Yorumu Gönder</button>
                     </form>
-                    </div>
                 </div>
             </div>
         </section>

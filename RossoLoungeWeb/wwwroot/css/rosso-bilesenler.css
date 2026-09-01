@@ -1891,3 +1891,446 @@ html:not(.rosso-imlec) .defter--sahnede .defter__sahne {
 html:not(.rosso-imlec) .defter--tutuluyor .defter__sahne {
     cursor: grabbing;
 }
+
+/* =============================================================
+   YORUM GÖNDERME PANELİ
+   -------------------------------------------------------------
+   İKİ KATMANLI KURULUM (galeri / defter ile aynı desen)
+   1) VARSAYILAN: panel akışın içinde normal bir form. JS kapalıysa
+      ziyaretçi yorumunu yine de gönderebilir.
+   2) .paylas--katman: sınıfı rosso-hareket.js ekler; panel sağdan
+      kayan, arka planı bulanıklaşan bir off-canvas katmana dönüşür.
+   ============================================================= */
+
+/* --- Çağrı butonu --- */
+.paylas-cagri {
+    margin-block-start: clamp(2.5rem, 6vw, 4.5rem);
+    text-align: center;
+}
+
+.paylas-ac {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--b2);
+    min-height: var(--dokunma);
+    padding: var(--b2) var(--b4);
+    background: none;
+    border: 0;
+    color: var(--metin-2);
+    font-family: var(--f-serif);
+    font-size: var(--t-lg);
+    font-style: italic;
+    cursor: pointer;
+    transition: color var(--h2) var(--egri);
+}
+
+    .paylas-ac:hover {
+        color: var(--sampanya);
+    }
+
+.paylas-ac__cizgi {
+    display: block;
+    width: 100%;
+    height: 1px;
+    background: var(--bronz);
+    transform: scaleX(0.42);
+    transition: transform var(--h2) var(--egri), background var(--h2) var(--egri);
+}
+
+.paylas-ac:hover .paylas-ac__cizgi,
+.paylas-ac:focus-visible .paylas-ac__cizgi {
+    background: var(--sampanya);
+    transform: scaleX(1);
+}
+
+/* --- Panel: akış hâli --- */
+.paylas__panel {
+    max-width: 40rem;
+    margin: clamp(2.5rem, 6vw, 4rem) auto 0;
+    padding: clamp(1.75rem, 4vw, 3rem);
+    background: var(--antrasit-2);
+    border: 1px solid var(--cizgi);
+}
+
+.paylas__zemin {
+    display: none;
+}
+
+.paylas__ustbaslik {
+    margin-block-end: var(--b3);
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: var(--harf-genis);
+    text-transform: uppercase;
+}
+
+.paylas__baslik {
+    margin-block-end: var(--b3);
+    font-size: clamp(1.625rem, 1.2rem + 1.4vw, 2.5rem);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+}
+
+    .paylas__baslik em {
+        font-style: italic;
+        color: var(--sampanya);
+    }
+
+.paylas__alt {
+    margin-block-end: clamp(1.75rem, 4vw, 2.75rem);
+    max-width: 40ch;
+    color: var(--metin-2);
+    line-height: var(--satir-genis);
+}
+
+.paylas__form {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.75rem, 3.5vw, 2.5rem);
+}
+
+/* =============================================================
+   ALAN — yüzen etiket
+   -------------------------------------------------------------
+   Kalın çerçeve yok: yalnızca ince bir alt çizgi. Etiket girdinin
+   İÇİNDE dinleniyor; odakta veya alan doluyken küçülüp yukarı
+   kayıyor ve şampanyaya dönüyor.
+
+   :placeholder-shown "alan boş mu" sorusunu yanıtlıyor — bu yüzden
+   işaretlemede placeholder=" " (tek boşluk) var. Etiket girdiden
+   SONRA yazılmak zorunda, + kardeş seçicisi geriye bakamaz.
+   ============================================================= */
+.alan {
+    position: relative;
+}
+
+.alan__girdi {
+    display: block;
+    width: 100%;
+    padding: 1.6rem 0 0.7rem;
+    background: none;
+    border: 0;
+    border-block-end: 1px solid var(--cizgi-2);
+    border-radius: 0;
+    color: var(--metin);
+    font-family: var(--f-sans);
+    font-size: var(--t-md);
+    line-height: 1.5;
+    outline: none;
+    transition: border-color var(--h2) var(--egri);
+}
+
+    .alan__girdi:hover {
+        border-block-end-color: var(--titanyum-sonuk);
+    }
+
+.alan--govde .alan__girdi {
+    min-height: 7.5rem;
+    resize: vertical;
+}
+
+.alan__etiket {
+    position: absolute;
+    inset-block-start: 1.6rem;
+    inset-inline-start: 0;
+    color: var(--metin-3);
+    font-size: var(--t-md);
+    line-height: 1.5;
+    pointer-events: none;
+    transform-origin: left top;
+    transition: transform var(--h2) var(--egri), color var(--h2) var(--egri);
+}
+
+.alan__girdi:focus + .alan__etiket,
+.alan__girdi:not(:placeholder-shown) + .alan__etiket {
+    color: var(--sampanya);
+    transform: translateY(-1.55rem) scale(0.76);
+}
+
+/* Odak dışında ama dolu: vurgu rengi yerine sakin ton */
+.alan__girdi:not(:focus):not(:placeholder-shown) + .alan__etiket {
+    color: var(--metin-3);
+}
+
+/* Alt çizgi odakta soldan sağa çekiliyor */
+.alan__cizgi {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    height: 1px;
+    background: var(--sampanya);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform var(--h3) var(--egri);
+}
+
+.alan__girdi:focus ~ .alan__cizgi {
+    transform: scaleX(1);
+}
+
+.alan__sayac {
+    position: absolute;
+    inset-block-end: -1.5rem;
+    inset-inline-end: 0;
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.08em;
+    opacity: 0;
+    transition: opacity var(--h2) var(--egri);
+}
+
+.alan--govde:focus-within .alan__sayac {
+    opacity: 1;
+}
+
+/* =============================================================
+   PUAN — ince çizgili elmaslar
+   -------------------------------------------------------------
+   Radyolar erişilebilir kalıyor (görsel olarak gizli, odaklanabilir).
+   İşaretlemede 5→1 sırası var, burada row-reverse ile çevriliyor:
+   böylece "seçilen ve altındakiler dolu" kuralı ~ kardeş seçicisiyle
+   JS olmadan çalışıyor.
+   ============================================================= */
+.puan {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.puan__baslik {
+    padding: 0;
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+.puan__sira {
+    position: relative;
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: var(--b2);
+    margin-block-start: var(--b4);
+}
+
+.puan__radyo {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.puan__isaret {
+    display: grid;
+    place-items: center;
+    width: var(--dokunma);
+    height: var(--dokunma);
+    cursor: pointer;
+}
+
+    .puan__isaret svg {
+        width: 26px;
+        height: 26px;
+        overflow: visible;
+    }
+
+    .puan__isaret path {
+        fill: transparent;
+        stroke: var(--cizgi-2);
+        stroke-width: 1.1;
+        transition: fill var(--h2) var(--egri), stroke var(--h2) var(--egri);
+    }
+
+/* Seçili olan ve ondan küçükler dolu */
+.puan__radyo:checked ~ .puan__isaret path {
+    fill: var(--sampanya);
+    stroke: var(--sampanya);
+}
+
+/* Fare sıradayken seçim görüntüsü bırakılır, imleç yönetir */
+.puan__sira:hover .puan__radyo:checked ~ .puan__isaret path {
+    fill: transparent;
+    stroke: var(--cizgi-2);
+}
+
+.puan__sira .puan__isaret:hover path,
+.puan__sira .puan__isaret:hover ~ .puan__isaret path {
+    fill: var(--sampanya);
+    stroke: var(--sampanya);
+}
+
+.puan__radyo:focus-visible + .puan__isaret {
+    outline: 2px solid var(--sampanya);
+    outline-offset: 2px;
+}
+
+.puan__yazi {
+    min-height: 1.4em;
+    margin-block-start: var(--b3);
+    color: var(--sampanya);
+    font-family: var(--f-serif);
+    font-size: var(--t-lg);
+    font-style: italic;
+}
+
+/* =============================================================
+   GÖNDER — manyetik buton + iletim durumu
+   ============================================================= */
+.paylas__gonder {
+    position: relative;
+    align-self: flex-start;
+    overflow: hidden;
+    min-height: var(--dokunma);
+    padding: var(--b3) clamp(1.75rem, 4vw, 2.75rem);
+    background: var(--sampanya);
+    border: 1px solid var(--sampanya);
+    color: var(--obsidyen);
+    font-family: var(--f-sans);
+    font-size: var(--t-xs);
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background var(--h2) var(--egri), color var(--h2) var(--egri);
+    will-change: transform;
+}
+
+    .paylas__gonder:hover {
+        background: var(--metin);
+        border-color: var(--metin);
+    }
+
+    .paylas__gonder:disabled {
+        cursor: default;
+    }
+
+/* İletim durumu: gerçek metin görünmez olur (ekran okuyucu için DOM'da
+   kalır, ortak.js aria-busy ekler), görünen yazıyı ::before üstlenir.
+   Böylece ortak.js'in textContent'i değiştirmesi görüntüyü bozmuyor. */
+.paylas__gonder--iletiliyor {
+    background: var(--sampanya);
+    border-color: var(--sampanya);
+    color: transparent;
+}
+
+    .paylas__gonder--iletiliyor::before {
+        content: 'İletiliyor';
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: var(--obsidyen);
+        letter-spacing: 0.2em;
+    }
+
+    /* Belirsiz ilerleme: ince bir çizgi butonun altında gidip gelir */
+    .paylas__gonder--iletiliyor::after {
+        content: '';
+        position: absolute;
+        inset-inline: 0;
+        inset-block-end: 0;
+        height: 2px;
+        background: var(--obsidyen);
+        opacity: 0.32;
+        transform-origin: left center;
+        animation: gonderimCizgi 1.15s var(--egri) infinite;
+    }
+
+@keyframes gonderimCizgi {
+    0% { transform: scaleX(0); transform-origin: left center; }
+    48% { transform: scaleX(1); transform-origin: left center; }
+    52% { transform: scaleX(1); transform-origin: right center; }
+    100% { transform: scaleX(0); transform-origin: right center; }
+}
+
+/* Hareket azaltmada animasyon süresi 0.01ms'e iniyor; çizgi kaybolmasın */
+@media (prefers-reduced-motion: reduce) {
+    .paylas__gonder--iletiliyor::after {
+        transform: scaleX(1);
+    }
+}
+
+/* =============================================================
+   KATMAN MODU — sağdan kayan off-canvas
+   ============================================================= */
+.paylas--katman {
+    position: fixed;
+    inset: 0;
+    z-index: var(--k-loader);
+    display: flex;
+    justify-content: flex-end;
+}
+
+    .paylas--katman[hidden] {
+        display: none;
+    }
+
+    .paylas--katman .paylas__zemin {
+        position: absolute;
+        inset: 0;
+        display: block;
+        background: rgba(8, 8, 10, 0.66);
+        -webkit-backdrop-filter: blur(16px) saturate(115%);
+        backdrop-filter: blur(16px) saturate(115%);
+    }
+
+    .paylas--katman .paylas__panel {
+        position: relative;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        width: min(30rem, 100%);
+        max-width: none;
+        height: 100%;
+        margin: 0;
+        padding: clamp(3.5rem, 7vh, 5rem) clamp(1.5rem, 4vw, 3rem) clamp(2rem, 5vh, 3.5rem);
+        background: var(--antrasit);
+        border: 0;
+        border-inline-start: 1px solid var(--cizgi-2);
+        box-shadow: -60px 0 120px -40px rgba(0, 0, 0, 0.9);
+    }
+
+        .paylas--katman .paylas__panel:focus-visible {
+            outline: none;
+        }
+
+.paylas__kapat {
+    position: absolute;
+    inset-block-start: clamp(1rem, 3vh, 1.75rem);
+    inset-inline-end: clamp(1rem, 3vw, 1.75rem);
+    display: grid;
+    place-items: center;
+    width: var(--dokunma);
+    height: var(--dokunma);
+    padding: 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--cizgi-2);
+    border-radius: 50%;
+    color: var(--metin);
+    font-size: var(--t-lg);
+    line-height: 1;
+    cursor: pointer;
+    transition: background var(--h2) var(--egri), border-color var(--h2) var(--egri);
+}
+
+    .paylas__kapat:hover {
+        background: var(--sampanya-sis);
+        border-color: var(--sampanya);
+    }
+
+@media (max-width: 520px) {
+    .paylas--katman .paylas__panel {
+        width: 100%;
+        border-inline-start: 0;
+    }
+
+    .paylas__gonder {
+        align-self: stretch;
+    }
+}
