@@ -34,6 +34,9 @@
 }
 
 .nav__marka {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
     font-family: var(--f-serif);
     font-size: var(--t-lg);
     font-weight: 400;
@@ -63,6 +66,14 @@
     text-transform: uppercase;
     transition: color var(--h1) var(--egri);
 }
+
+    /* Görünmez dokunma katmanı: altı çizgiyi kaydırmadan hedefi 44px+ yapar */
+    .nav__link::before {
+        content: "";
+        position: absolute;
+        inset-inline: 0;
+        inset-block: -5px;
+    }
 
     .nav__link::after {
         content: "";
@@ -939,4 +950,199 @@
 
 .rosso-kinetik .menu__bas > * {
     opacity: 0;
+}
+
+/* =============================================================
+   VİTRİN — ana sayfadaki seçki
+   ============================================================= */
+.vitrin {
+    position: relative;
+    padding-block: var(--bolum);
+    background: var(--antrasit);
+}
+
+.vitrin__bas {
+    max-width: 44rem;
+    margin-block-end: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+.vitrin__ustbaslik {
+    margin-block-end: var(--b4);
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: var(--harf-genis);
+    text-transform: uppercase;
+}
+
+.vitrin__baslik {
+    margin-block-end: var(--b4);
+    font-size: clamp(2rem, 1.2rem + 2.6vw, 3.75rem);
+    font-weight: 300;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+}
+
+    .vitrin__baslik em {
+        font-style: italic;
+        color: var(--sampanya);
+    }
+
+.vitrin__alt {
+    max-width: 44ch;
+    color: var(--metin-2);
+    line-height: var(--satir-genis);
+}
+
+/* --- Kart ızgarası --- */
+.vitrin__izgara {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1.25rem, 3vw, 2.5rem);
+}
+
+.vitrin__kart {
+    display: flex;
+    flex-direction: column;
+}
+
+    /* Ortadaki kart aşağı kaydırılır — düz ızgara yerine ritim */
+    .vitrin__kart:nth-child(2) {
+        margin-block-start: clamp(1.5rem, 5vw, 4rem);
+    }
+
+.vitrin__gorsel {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 5;
+    background: var(--antrasit-3);
+}
+
+    .vitrin__gorsel img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 1.1s var(--egri), filter var(--h3) var(--egri);
+    }
+
+    .vitrin__kart:hover .vitrin__gorsel img {
+        transform: scale(1.06);
+    }
+
+    /* Alt kenarda yumuşak karartma — yazı ile görsel arası geçiş */
+    .vitrin__gorsel::after {
+        content: "";
+        position: absolute;
+        inset-block-end: 0;
+        inset-inline: 0;
+        height: 45%;
+        background: linear-gradient(to top, var(--antrasit) 4%, transparent);
+        pointer-events: none;
+    }
+
+.vitrin__govde {
+    padding-block-start: var(--b5);
+}
+
+.vitrin__ad {
+    margin-block-end: var(--b3);
+    font-family: var(--f-serif);
+    font-size: clamp(1.375rem, 1rem + 1.1vw, 1.875rem);
+    font-weight: 400;
+    line-height: 1.14;
+    letter-spacing: -0.02em;
+    color: var(--metin);
+    transition: color var(--h2) var(--egri);
+}
+
+.vitrin__kart:hover .vitrin__ad {
+    color: var(--sampanya);
+}
+
+.vitrin__aciklama {
+    margin-block-end: var(--b4);
+    color: var(--metin-3);
+    font-size: var(--t-sm);
+    font-weight: 300;
+    line-height: 1.65;
+}
+
+.vitrin__fiyat {
+    display: flex;
+    align-items: baseline;
+    gap: var(--b2);
+    padding-block-start: var(--b4);
+    border-block-start: 1px solid var(--cizgi);
+    font-family: var(--f-serif);
+    font-size: var(--t-lg);
+    color: var(--metin);
+}
+
+.vitrin__para {
+    color: var(--sampanya);
+    font-size: 0.75em;
+}
+
+.vitrin__ayrac {
+    color: var(--metin-3);
+}
+
+/* --- Tüm menü çağrısı --- */
+.vitrin__eylem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--b4);
+    margin-block-start: clamp(3rem, 7vw, 5.5rem);
+}
+
+.vitrin__ipucu {
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.vitrin__bos {
+    padding-block: var(--b8);
+    color: var(--metin-3);
+    text-align: center;
+}
+
+@media (max-width: 860px) {
+    .vitrin__izgara {
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(2rem, 7vw, 3rem);
+    }
+
+    .vitrin__kart:nth-child(2) {
+        margin-block-start: 0;
+    }
+
+    .vitrin__gorsel {
+        aspect-ratio: 3 / 2;
+    }
+}
+
+/* Kinetik başlangıç */
+.rosso-kinetik .vitrin__kart,
+.rosso-kinetik .vitrin__bas > *,
+.rosso-kinetik .vitrin__eylem {
+    opacity: 0;
+}
+
+/* --- Menü SAYFASI (ayrı sayfa; sabit navbar payı gerekir) --- */
+.menu--sayfa {
+    padding-block-start: clamp(7rem, 14vh, 11rem);
+    background: var(--obsidyen);
+}
+
+    .menu--sayfa .menu__filtre {
+        background: linear-gradient(to bottom, var(--obsidyen) 62%, transparent);
+    }
+
+.menu__geri {
+    display: flex;
+    justify-content: center;
+    margin-block-start: clamp(3rem, 7vw, 5rem);
 }

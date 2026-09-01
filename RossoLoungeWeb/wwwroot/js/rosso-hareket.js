@@ -435,6 +435,27 @@
          girenlerde blur + yukarıdan kayma
        - İmleç görsel önizlemesi: hıza bağlı skew ile fareyi takip
        ========================================================= */
+    /* Ana sayfadaki vitrin (seçilmiş birkaç tabak) */
+    function vitrinBolumu() {
+        var bolum = document.querySelector('.vitrin');
+        if (!bolum || !kinetik) return;
+
+        gsap.to(bolum.querySelectorAll('.vitrin__bas > *'), {
+            autoAlpha: 1, y: 0, duration: 0.9, ease: 'expo.out', stagger: 0.08,
+            scrollTrigger: { trigger: bolum, start: 'top 78%' }
+        });
+
+        gsap.to(bolum.querySelectorAll('.vitrin__kart'), {
+            autoAlpha: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.12,
+            scrollTrigger: { trigger: bolum.querySelector('.vitrin__izgara'), start: 'top 84%' }
+        });
+
+        gsap.to(bolum.querySelector('.vitrin__eylem'), {
+            autoAlpha: 1, duration: 0.9, ease: 'power2.out',
+            scrollTrigger: { trigger: bolum.querySelector('.vitrin__eylem'), start: 'top 92%' }
+        });
+    }
+
     function menuSergisi() {
         var bolum = document.querySelector('.menu');
         if (!bolum) return;
@@ -618,7 +639,8 @@
                 '.hakkinda__govde, .hakkinda__olcut, .hakkinda__eylemler, .hakkinda__yil,' +
                 ' .hakkinda__alinti, .hakkinda__cerceve, .kn-maske, .kn-kaydir, .kn-solgun,' +
                 ' .hero__baslik, .hero__ustbaslik, .hero__alt, .hero__eylemler, .hero__durum,' +
-                ' .menu__kalem, .menu__bas > *'
+                ' .menu__kalem, .menu__bas > *,' +
+                ' .vitrin__kart, .vitrin__bas > *, .vitrin__eylem'
             ).forEach(function (oge) {
                 oge.style.opacity = '';
                 oge.style.visibility = '';
@@ -642,7 +664,7 @@
         if (acildi) return;
         acildi = true;
 
-        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, menuSergisi, gorunurlukEmniyeti]
+        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, gorunurlukEmniyeti]
             .forEach(function (modul) {
                 try { modul(); } catch (h) {
                     if (window.console) console.error('rosso:', modul.name, h);

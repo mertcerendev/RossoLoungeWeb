@@ -62,6 +62,8 @@ namespace RossoLoungeWeb.Controllers
                                                .Select(k => { k.Urunler = k.Urunler.OrderBy(u => u.SiraNo).ToList(); return k; })
                                                .ToList();
 
+            ViewBag.KategoriSayisi = ((List<RossoLoungeWeb.Models.Kategori>)ViewBag.MenuKategorileri).Count;
+
             // Çalışma saatleri 11.30 – 00.00. Gece yarısına sarktığı için
             // "saat >= açılış" tek başına yetmiyor; 00.00 kapanışı ertesi güne denk geliyor.
             // Hakkımızda bölümündeki rakam şeridi — uydurma değil, gerçek veriden

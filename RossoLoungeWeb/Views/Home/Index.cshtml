@@ -126,7 +126,7 @@
                 <ul class="nav__menu">
                     <li><a href="#home" class="nav__link nav__link--aktif">Ana Sayfa</a></li>
                     <li><a href="#about" class="nav__link">Hakkımızda</a></li>
-                    <li><a href="#menu" class="nav__link">Menü</a></li>
+                    <li><a href="/Home/Menu" class="nav__link">Menü</a></li>
                     <li><a href="#gallery" class="nav__link">Galeri</a></li>
                     <li><a href="#reviews" class="nav__link">Yorumlar</a></li>
                     <li><a href="#contact" class="nav__link">İletişim</a></li>
@@ -263,103 +263,71 @@
         </section>
 
         @* ============================================================
-           MENÜ SERGİSİ
-           Razor notu: Views/Home/_Menu.cshtml partial'ına taşınabilir.
-           Tek girdisi ViewBag.MenuKategorileri (List<Kategori>, her biri
-           .Urunler yüklü ve SiraNo'ya göre sıralı).
-           Filtreleme için her satırda data-kategori, imleç görseli için
-           data-gorsel niteliği var — JS bunlara bakıyor.
+           VİTRİN — ana sayfada yalnızca seçilmiş birkaç tabak.
+           Tam menü /Home/Menu sayfasında; ana sayfa bitmez bir listeye
+           dönüşmesin diye burada sadece 3 ürün gösteriliyor.
+           Seçim panelden yönetiliyor: SiraNo'su en küçük 3 ürün gelir.
+           Razor notu: Views/Home/_Vitrin.cshtml partial'ına taşınabilir.
            ============================================================ *@
         @{
-            var menuKategorileri = ViewBag.MenuKategorileri as List<RossoLoungeWeb.Models.Kategori>
-                                   ?? new List<RossoLoungeWeb.Models.Kategori>();
-            var yerTutucu = "/img/site/sunum.jpg";
+            var vitrin = ViewBag.OneCikanlar as List<RossoLoungeWeb.Models.Urun>
+                         ?? new List<RossoLoungeWeb.Models.Urun>();
+            var vitrinYedek = "/img/site/sunum.jpg";
         }
 
-        <section id="menu" class="menu">
+        <section id="menu" class="vitrin">
             <div class="kap">
-                <header class="menu__bas">
-                    <p class="menu__ustbaslik">Menü</p>
-                    <h2 class="menu__baslik">Mutfağımızdan <em>seçkiler</em></h2>
-                    <p class="menu__alt">
-                        Malzemeler günlük, tarifler sabit. Mevsime göre birkaç tabak değişir.
+                <header class="vitrin__bas">
+                    <p class="vitrin__ustbaslik">Mutfaktan</p>
+                    <h2 class="vitrin__baslik">Bu haftanın <em>seçkileri</em></h2>
+                    <p class="vitrin__alt">
+                        Şefimizin öne çıkardığı birkaç tabak. Menünün tamamı için sayfayı ziyaret edin.
                     </p>
                 </header>
 
-                @if (menuKategorileri.Count > 0)
+                @if (vitrin.Count > 0)
                 {
-                    @* --- Yapışkan kategori navigasyonu --- *@
-                    <nav class="menu__filtre" aria-label="Menü kategorileri">
-                        <div class="menu__filtre-ic" role="tablist">
-                            <button type="button" class="menu__sekme menu__sekme--aktif"
-                                    role="tab" aria-selected="true" data-filtre="tumu">
-                                Tümü
-                            </button>
-                            @foreach (var kategori in menuKategorileri)
-                            {
-                                <button type="button" class="menu__sekme"
-                                        role="tab" aria-selected="false" tabindex="-1"
-                                        data-filtre="kat-@kategori.Id">
-                                    @kategori.Ad
-                                </button>
-                            }
-                        </div>
-                    </nav>
-
-                    @* --- Kalem listesi --- *@
-                    <div class="menu__liste" id="menu-liste">
-                        @foreach (var kategori in menuKategorileri)
+                    <div class="vitrin__izgara">
+                        @foreach (var urun in vitrin)
                         {
-                            foreach (var urun in kategori.Urunler)
-                            {
-                                <article class="menu__kalem"
-                                         data-kategori="kat-@kategori.Id"
-                                         data-gorsel="@(string.IsNullOrEmpty(urun.ResimUrl) || urun.ResimUrl.StartsWith("http") ? yerTutucu : urun.ResimUrl)">
-                                    <div class="menu__kalem-ana">
-                                        <h3 class="menu__ad">@urun.Ad</h3>
-                                        @if (!string.IsNullOrWhiteSpace(urun.Aciklama))
-                                        {
-                                            <p class="menu__aciklama">@urun.Aciklama</p>
-                                        }
-                                    </div>
+                            <article class="vitrin__kart">
+                                <div class="vitrin__gorsel">
+                                    <img src="@(string.IsNullOrEmpty(urun.ResimUrl) || urun.ResimUrl.StartsWith("http") ? vitrinYedek : urun.ResimUrl)"
+                                         alt="@urun.Ad" loading="lazy" width="800" height="1000">
+                                </div>
 
-                                    <div class="menu__fiyatlar">
+                                <div class="vitrin__govde">
+                                    <h3 class="vitrin__ad">@urun.Ad</h3>
+                                    @if (!string.IsNullOrWhiteSpace(urun.Aciklama))
+                                    {
+                                        <p class="vitrin__aciklama">@urun.Aciklama</p>
+                                    }
+                                    <p class="vitrin__fiyat">
                                         @if (urun.FiyatBuyuk.HasValue)
                                         {
-                                            <span class="menu__fiyat">
-                                                <span class="menu__fiyat-tur">@(string.IsNullOrEmpty(urun.FiyatTur) ? "Orta" : urun.FiyatTur)</span>
-                                                @urun.Fiyat.ToString("N0")<span class="menu__para">₺</span>
-                                            </span>
-                                            <span class="menu__fiyat">
-                                                <span class="menu__fiyat-tur">@(string.IsNullOrEmpty(urun.FiyatBuyukTur) ? "Büyük" : urun.FiyatBuyukTur)</span>
-                                                @urun.FiyatBuyuk.Value.ToString("N0")<span class="menu__para">₺</span>
-                                            </span>
+                                            <span>@urun.Fiyat.ToString("N0")<span class="vitrin__para">₺</span></span>
+                                            <span class="vitrin__ayrac">/</span>
+                                            <span>@urun.FiyatBuyuk.Value.ToString("N0")<span class="vitrin__para">₺</span></span>
                                         }
                                         else
                                         {
-                                            <span class="menu__fiyat">
-                                                @urun.Fiyat.ToString("N0")<span class="menu__para">₺</span>
-                                            </span>
+                                            <span>@urun.Fiyat.ToString("N0")<span class="vitrin__para">₺</span></span>
                                         }
-                                    </div>
-
-                                    <span class="menu__kategori-etiket">@kategori.Ad</span>
-                                </article>
-                            }
+                                    </p>
+                                </div>
+                            </article>
                         }
                     </div>
 
-                    <p class="menu__bos" hidden>Bu kategoride şu an ürün bulunmuyor.</p>
+                    <div class="vitrin__eylem">
+                        <a href="/Home/Menu" class="btn btn--sampanya">Tüm Menüyü Gör</a>
+                        <p class="vitrin__ipucu">@(ViewBag.ToplamUrun ?? 0) tabak, @(ViewBag.KategoriSayisi ?? 0) kategori</p>
+                    </div>
                 }
                 else
                 {
-                    <p class="menu__bos">Menü yakında burada olacak.</p>
+                    <p class="vitrin__bos">Menü yakında burada olacak.</p>
                 }
-            </div>
-
-            @* İmleci takip eden görsel — yalnızca fare olan cihazlarda görünür *@
-            <div class="menu__onizleme" aria-hidden="true">
-                <img class="menu__onizleme-foto" src="" alt="">
             </div>
         </section>
 
