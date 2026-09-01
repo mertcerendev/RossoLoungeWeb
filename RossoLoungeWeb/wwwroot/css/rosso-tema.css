@@ -372,8 +372,15 @@ html:not(.rosso-kinetik) .sahne-perde__panel {
 }
 
 /* =============================================================
-   SIVI İMLEÇ
-   -------------------------------------------------------------
+   ÖZEL İMLEÇ — "KADRAJ"
+
+   Matbaadaki kırpma işaretleri: dört köşe ayracı bir kadraj kuruyor,
+   ortada dizgi imlecini andıran ince dikey tik duruyor. Hiçbir
+   parçada eğri yok.
+
+   İki hız: tik imlecin tam noktasında (kısa süreli quickTo), kadraj
+   gecikmeli (uzun süreli) — ağırlık ve sıvı akış hissi buradan.
+
    Yalnızca gerçek fare olan cihazlarda. Dokunmatikte ve hareket
    azaltmada tamamen devre dışı, native imleç korunur.
    ============================================================= */
@@ -391,55 +398,77 @@ html:not(.rosso-kinetik) .sahne-perde__panel {
     mix-blend-mode: difference;
 }
 
-.imlec__cekirdek {
+/* Dizgi tiki — imlecin GERÇEK noktası. İnce dikey çizgi, tipografik
+   metin imlecinin karşılığı. Kadraj gecikirken bu tam yerinde durur. */
+.imlec__tik {
     position: absolute;
-    width: 7px;
-    height: 7px;
-    margin: -3.5px 0 0 -3.5px;
+    width: 1px;
+    height: 15px;
+    margin: -7.5px 0 0 0;
     background: var(--sampanya);
-    /* Küçük dolu elmas. clip-path transform'a dokunmadığı için
-       GSAP'in quickTo ile yazdığı x/y serbest kalıyor. */
-    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
-    transition: opacity var(--h1) var(--egri);
+    transition: opacity var(--h1) var(--egri), height var(--h2) var(--egri);
 }
 
-/* Konumlandırma çerçevesi — görünür kenarı yok, elması ve
-   yazıyı taşır. GSAP yalnızca bunun x/y'sini sürüyor. */
-.imlec__kap {
+/* Kadraj — köşe ayraçlarını, yazıyı ve görseli taşır.
+   GSAP yalnızca bunun x/y'sini sürüyor; xPercent/yPercent -50 ile
+   kendi merkezine oturuyor (margin yerine, çünkü genişlik durumdan
+   duruma değişiyor ve margin'i her seferinde güncellemek gerekirdi). */
+.imlec__kadraj {
     position: absolute;
-    width: 46px;
-    height: 46px;
-    margin: -23px 0 0 -23px;
+    width: 34px;
+    height: 34px;
     transition: width var(--h2) var(--egri), height var(--h2) var(--egri),
-                margin var(--h2) var(--egri), background var(--h2) var(--egri);
+                background var(--h2) var(--egri);
 }
 
-/* Çizgili elmas: kare + 45° dönüş.
-   Dönüş bilerek burada, GSAP'in taşıdığı .imlec__kap'ta değil —
-   orada olsaydı quickTo'nun yazdığı transform dönüşü silerdi.
-   Motif yorum puanlamasındaki ince çizgili elmaslarla aynı. */
-.imlec__elmas {
+/* Köşe ayracı: iki kenarlı bir kare parçası. Yarıçap YOK. */
+.imlec__kose {
     position: absolute;
-    inset: 0;
-    border: 1px solid var(--cizgi-2);
-    transform: rotate(45deg);
-    transition: transform var(--h3) var(--egri),
-                border-color var(--h2) var(--egri),
-                background var(--h2) var(--egri),
-                opacity var(--h1) var(--egri);
+    width: 9px;
+    height: 9px;
+    border: 0 solid var(--metin);
+    transition: width var(--h2) var(--egri), height var(--h2) var(--egri),
+                border-color var(--h2) var(--egri), opacity var(--h1) var(--egri);
 }
 
-/* Etkileşimli öğede elmas dönerek kareye evrilir ve büyür */
-.imlec--yakin .imlec__kap {
-    width: 64px;
-    height: 64px;
-    margin: -32px 0 0 -32px;
+.imlec__kose--su {
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    border-block-start-width: 1px;
+    border-inline-start-width: 1px;
 }
 
-.imlec--yakin .imlec__elmas {
-    transform: rotate(0deg);
+.imlec__kose--sagu {
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    border-block-start-width: 1px;
+    border-inline-end-width: 1px;
+}
+
+.imlec__kose--sa {
+    inset-block-end: 0;
+    inset-inline-start: 0;
+    border-block-end-width: 1px;
+    border-inline-start-width: 1px;
+}
+
+.imlec__kose--saga {
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    border-block-end-width: 1px;
+    border-inline-end-width: 1px;
+}
+
+/* Etkileşimli öğede kadraj o öğenin kutusuna oturuyor — ölçüyü JS
+   yazıyor. Köşe kolları uzuyor, ayraçlar şampanyaya dönüyor. */
+.imlec--yakin .imlec__kose {
+    width: 14px;
+    height: 14px;
     border-color: var(--sampanya);
-    background: var(--sampanya-sis);
+}
+
+.imlec--yakin .imlec__tik {
+    height: 9px;
 }
 
 @media (hover: hover) and (pointer: fine) {

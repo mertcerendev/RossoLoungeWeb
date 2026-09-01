@@ -1,24 +1,37 @@
 @* ============================================================
-   GLOBAL ÖZEL İMLEÇ
+   GLOBAL ÖZEL İMLEÇ — "KADRAJ"
 
-   Tüm durumlar TEK DOM örneği üzerinde çalışır: hover başına öğe
-   yaratılmaz, yalnızca sınıf değişir. Elmasın içindeki yazı ve görsel
-   kutuları hep burada durur, boşken görünmezler.
+   Konsept: matbaadaki KIRPMA İŞARETLERİ (crop marks). Dört köşe
+   ayracı bir kadraj kuruyor; ortada dizgi imlecini andıran ince
+   dikey bir tik duruyor. Hiçbir parçasında eğri yok — daire, nokta,
+   çember, elips kullanılmadı.
+
+   İmzası olan hareket: etkileşimli bir öğenin üzerine gelindiğinde
+   kadraj büyüyüp O ÖĞENİN KUTUSUNA oturuyor, vizör gibi çerçeveliyor.
+   Metin ve görsel durumlarında da aynı kadraj bir levhaya dönüşüyor.
+
+   DOM yükü: 9 düğüm, sayfa ömrü boyunca bir kez. Hover başına öğe
+   yaratılmıyor, öğe başına listener bağlanmıyor.
 
    Sayfaya eklemek için: @@await Html.PartialAsync("_Imlec")
 
-   NOT: Bu projede hiçbir view _Layout.cshtml kullanmıyor (18 view de
-   "Layout = null" diyor), bu yüzden imleç ana şablona değil ortak
-   partial'a taşındı — tek kaynak burası.
+   NOT: Bu projede hiçbir view _Layout.cshtml kullanmıyordu; imleç bu
+   yüzden ortak partial'a taşınmıştı. Artık ziyaretçi sayfaları
+   _Layout üzerinden render oluyor ve onu buradan alıyor.
 
    Görsel <img> bilerek src'siz: boş src bazı tarayıcılarda gereksiz
    istek açıyor, kaynağı JS ilk hover'da yazıyor.
    ============================================================ *@
 <div class="imlec" aria-hidden="true">
-    <span class="imlec__kap">
-        <span class="imlec__elmas"></span>
+    <span class="imlec__kadraj">
+        <span class="imlec__kose imlec__kose--su"></span>
+        <span class="imlec__kose imlec__kose--sagu"></span>
+        <span class="imlec__kose imlec__kose--sa"></span>
+        <span class="imlec__kose imlec__kose--saga"></span>
+
         <span class="imlec__yazi"></span>
         <img class="imlec__gorsel" alt="" decoding="async">
     </span>
-    <span class="imlec__cekirdek"></span>
+
+    <span class="imlec__tik"></span>
 </div>

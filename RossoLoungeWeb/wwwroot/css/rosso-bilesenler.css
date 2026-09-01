@@ -1357,22 +1357,21 @@
 }
 
 /* =============================================================
-   İMLEÇ — ETİKETLİ DURUM
-   -------------------------------------------------------------
-   Etiket halkanın İÇİNDE duruyor: halka gecikmeli takip ettiği için
-   yazı da aynı sıvı gecikmeyle akar, ayrıca konumlandırma gerekmez.
-   Etiket metnini JS yazıyor: galeride "Keşfet", yorum defterinde
-   "İleri/Geri". Bu kurallar rosso-tema.css'teki .imlec--yakin'den SONRA
-   geldiği için (aynı özgüllük) kazanır — her iki hedef de <button>.
+   İMLEÇ — ETİKETLİ DURUM  (data-cursor-text)
+
+   Kadraj bir levhaya dönüşüyor, yazı içinde diziliyor. Köşe
+   ayraçları kalıyor: levha da kırpma işaretleriyle çerçeveli.
+   Bu kurallar rosso-tema.css'teki .imlec--yakin'den SONRA geldiği
+   için (aynı özgüllük) kazanır.
    ============================================================= */
-.imlec__kap {
+.imlec__kadraj {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .imlec__yazi {
-    /* Elmas mutlak konumlu; konumsuz kardeş onun ALTINDA boyanırdı */
+    /* Köşeler mutlak konumlu; konumsuz kardeş onların ALTINDA boyanırdı */
     position: relative;
     opacity: 0;
     color: var(--obsidyen);
@@ -1382,32 +1381,29 @@
     letter-spacing: 0.16em;
     text-transform: uppercase;
     white-space: nowrap;
-    transform: scale(0.86);
+    transform: translateY(4px);
     transition: opacity var(--h2) var(--egri), transform var(--h2) var(--egri);
 }
 
-.imlec--etiketli .imlec__kap {
-    width: 112px;
-    height: 112px;
-    margin: -56px 0 0 -56px;
+.imlec--etiketli .imlec__kadraj {
+    width: 132px;
+    height: 46px;
+    background: var(--sampanya);
 }
 
-/* Etiketli durumda elmas kareye döner ve şampanya ile dolar */
-.imlec--etiketli .imlec__elmas {
-    transform: rotate(0deg);
-    background: rgba(230, 217, 189, 0.9);
-    border-color: transparent;
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
+.imlec--etiketli .imlec__kose {
+    width: 8px;
+    height: 8px;
+    border-color: var(--obsidyen);
 }
 
-.imlec--etiketli .imlec__cekirdek {
+.imlec--etiketli .imlec__tik {
     opacity: 0;
 }
 
 .imlec--etiketli .imlec__yazi {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
 }
 
 /* =============================================================
@@ -1522,18 +1518,20 @@
 }
 
 /* Tam ekran açıkken imleç sergi durumunda takılı kalmasın */
-.tamekran-acik .imlec--etiketli .imlec__kap {
-    width: 64px;
-    height: 64px;
-    margin: -32px 0 0 -32px;
+.tamekran-acik .imlec--etiketli .imlec__kadraj {
+    width: 34px;
+    height: 34px;
+    background: transparent;
 }
 
-.tamekran-acik .imlec--etiketli .imlec__elmas {
-    transform: rotate(45deg);
-    background: var(--sampanya-sis);
+.tamekran-acik .imlec--etiketli .imlec__kose {
+    width: 9px;
+    height: 9px;
     border-color: var(--sampanya);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
+}
+
+.tamekran-acik .imlec--etiketli .imlec__tik {
+    opacity: 1;
 }
 
 .tamekran-acik .imlec--etiketli .imlec__yazi {
@@ -2911,18 +2909,19 @@ body:not(.panel) footer.finale {
     transition: clip-path var(--h3) var(--egri), opacity var(--h1) var(--egri);
 }
 
-.imlec--gorselli .imlec__kap {
-    width: 240px;
-    height: 300px;
-    margin: -150px 0 0 -120px;
+.imlec--gorselli .imlec__kadraj {
+    width: 248px;
+    height: 310px;
     background: var(--antrasit-3);
-    border-radius: 2px;
-    overflow: hidden;
 }
 
-/* Elmas çizgisi fotoğrafın üstünde kirlilik yapıyor */
-.imlec--gorselli .imlec__elmas {
-    opacity: 0;
+/* Köşe ayraçları fotoğrafın DIŞINA taşıyor: kırpma işaretleri
+   fotoğrafı çerçeveliyor, üstüne binmiyor. */
+.imlec--gorselli .imlec__kose {
+    width: 16px;
+    height: 16px;
+    border-color: var(--sampanya);
+    margin: -7px;
 }
 
 .imlec--gorselli .imlec__gorsel {
@@ -2930,8 +2929,7 @@ body:not(.panel) footer.finale {
     clip-path: inset(0 0 0 0);
 }
 
-/* Fotoğrafın üstünde küçük nokta kirlilik yapıyor */
-.imlec--gorselli .imlec__cekirdek {
+.imlec--gorselli .imlec__tik {
     opacity: 0;
 }
 

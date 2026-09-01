@@ -521,30 +521,53 @@
 
         kok.classList.add('rosso-imlec');
 
-        var nokta = imlec.querySelector('.imlec__cekirdek');
-        var halka = imlec.querySelector('.imlec__kap');
+        var kadraj = imlec.querySelector('.imlec__kadraj');
+        var tik = imlec.querySelector('.imlec__tik');
         var yazi = imlec.querySelector('.imlec__yazi');
         var gorsel = imlec.querySelector('.imlec__gorsel');
-        if (!nokta || !halka) return;
+        if (!kadraj || !tik) return;
 
-        var nx = gsap.quickTo(nokta, 'x', { duration: 0.12, ease: 'power3.out' });
-        var ny = gsap.quickTo(nokta, 'y', { duration: 0.12, ease: 'power3.out' });
-        var hx = gsap.quickTo(halka, 'x', { duration: 0.55, ease: 'power3.out' });
-        var hy = gsap.quickTo(halka, 'y', { duration: 0.55, ease: 'power3.out' });
+        /* Her ikisi de kendi merkezine oturuyor. margin yerine
+           xPercent/yPercent: kadrajın genişliği duruma göre değişiyor,
+           margin kullanılsaydı her ölçü değişiminde onu da güncellemek
+           gerekirdi. GSAP yüzde kanalını x/y'den ayrı tutup topluyor. */
+        gsap.set([kadraj, tik], { xPercent: -50, yPercent: -50 });
+
+        /* İki hız: tik imlecin gerçek noktasında, kadraj gecikmeli.
+           Ağırlık ve sıvı akış hissi bu farktan geliyor. */
+        var tx = gsap.quickTo(tik, 'x', { duration: 0.10, ease: 'power3.out' });
+        var ty = gsap.quickTo(tik, 'y', { duration: 0.10, ease: 'power3.out' });
+        var kx = gsap.quickTo(kadraj, 'x', { duration: 0.55, ease: 'power3.out' });
+        var ky = gsap.quickTo(kadraj, 'y', { duration: 0.55, ease: 'power3.out' });
 
         var sonHedef = null;
         var manyetik = null;
         var manyetikKutu = null;
         var sonX = 0, sonY = 0;
 
+        /* Kadrajı hedefin kutusuna oturt: kırpma işaretleri öğeyi
+           vizör gibi çerçeveler. Ölçü CSS geçişiyle yumuşuyor. */
+        function kadrajaOturt(kutu) {
+            kadraj.style.width = Math.round(kutu.width + 18) + 'px';
+            kadraj.style.height = Math.round(kutu.height + 18) + 'px';
+        }
+
+        function kadrajOlcusunuBirak() {
+            kadraj.style.width = '';
+            kadraj.style.height = '';
+        }
+
         function kutuyuTazele() {
-            if (manyetik) manyetikKutu = manyetik.getBoundingClientRect();
+            if (!manyetik) return;
+            manyetikKutu = manyetik.getBoundingClientRect();
+            kadrajaOturt(manyetikKutu);
         }
 
         function durumSifirla() {
             imlec.classList.remove('imlec--yakin', 'imlec--etiketli', 'imlec--gorselli');
             manyetik = null;
             manyetikKutu = null;
+            kadrajOlcusunuBirak();
         }
 
         function durumUygula(hedef) {
@@ -572,23 +595,33 @@
             imlec.classList.add('imlec--yakin');
             manyetik = hedef;
             manyetikKutu = hedef.getBoundingClientRect();
+
+            /* Çok büyük alanları çerçevelemek anlamsız (tam ekran
+               düğmeler, uzun bağlantı blokları); orada kadraj kendi
+               ölçüsünde kalıp yalnızca hedefe doğru kayıyor. */
+            if (manyetikKutu.width > 420 || manyetikKutu.height > 260) {
+                manyetikKutu = null;
+                return;
+            }
+            kadrajaOturt(manyetikKutu);
         }
 
         window.addEventListener('mousemove', function (olay) {
             sonX = olay.clientX;
             sonY = olay.clientY;
 
-            nx(sonX); ny(sonY);
+            tx(sonX); ty(sonY);
 
-            /* Halka manyetik olarak hedefin merkezine kayar, nokta
-               imlecin gerçek yerinde kalır → "yapışma" hissi.
-               imlecCekim'i yorum defteri de besliyor, ikisi toplanır. */
-            var kx = imlecCekim.x, ky = imlecCekim.y;
+            /* Kadraj hedefe OTURUYOR: kutunun merkezine gidiyor, imlecin
+               kendisine değil. Vizör hissi buradan. Hedef yoksa imleci
+               takip ediyor; imlecCekim'i yorum defteri besliyor. */
             if (manyetikKutu) {
-                kx += (manyetikKutu.left + manyetikKutu.width / 2 - sonX) * 0.32;
-                ky += (manyetikKutu.top + manyetikKutu.height / 2 - sonY) * 0.32;
+                kx(manyetikKutu.left + manyetikKutu.width / 2);
+                ky(manyetikKutu.top + manyetikKutu.height / 2);
+            } else {
+                kx(sonX + imlecCekim.x);
+                ky(sonY + imlecCekim.y);
             }
-            hx(sonX + kx); hy(sonY + ky);
         }, { passive: true });
 
         // TEK delege dinleyici — öğe başına bağlama yok
@@ -607,8 +640,7 @@
         /* TAKILI KALMA ONARIMI
            Menü filtresi, off-canvas panel veya tam ekran görüntüleyici,
            imlecin üzerinde durduğu öğeyi gizleyebiliyor. Öğe gizlenince
-           mouseout TETİKLENMİYOR, imleç de o durumda donuyor (ölçtüm:
-           gizledikten sonra imlec--etiketli üzerinde kalıyordu).
+           mouseout TETİKLENMİYOR, imleç de o durumda donuyor.
            Tıklamadan hemen sonra imlecin ALTINDA gerçekten ne olduğuna
            bakıp durumu yeniden kuruyoruz — tıklama başına tek ölçüm. */
         document.addEventListener('click', function () {
