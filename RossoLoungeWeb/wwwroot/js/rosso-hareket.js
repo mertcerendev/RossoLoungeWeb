@@ -428,6 +428,164 @@
         });
     }
 
+
+    /* =========================================================
+       11. MENÜ SERGİSİ
+       - Kategori filtresi: GSAP Flip ile pürüzsüz yer değiştirme,
+         girenlerde blur + yukarıdan kayma
+       - İmleç görsel önizlemesi: hıza bağlı skew ile fareyi takip
+       ========================================================= */
+    function menuSergisi() {
+        var bolum = document.querySelector('.menu');
+        if (!bolum) return;
+
+        var liste = bolum.querySelector('#menu-liste');
+        var kalemler = Array.prototype.slice.call(bolum.querySelectorAll('.menu__kalem'));
+        var sekmeler = Array.prototype.slice.call(bolum.querySelectorAll('.menu__sekme'));
+        var bosMesaj = bolum.querySelector('.menu__bos');
+        if (!liste || !kalemler.length) return;
+
+        /* ---------- Giriş animasyonu ---------- */
+        if (kinetik) {
+            gsap.to(bolum.querySelectorAll('.menu__bas > *'), {
+                autoAlpha: 1, y: 0, duration: 0.9, ease: 'expo.out', stagger: 0.08,
+                scrollTrigger: { trigger: bolum, start: 'top 78%' }
+            });
+
+            gsap.to(kalemler, {
+                autoAlpha: 1, duration: 0.7, ease: 'power2.out', stagger: 0.04,
+                scrollTrigger: { trigger: liste, start: 'top 85%' }
+            });
+        }
+
+        /* ---------- Kategori filtresi ---------- */
+        function filtrele(deger) {
+            var flipVar = kinetik && typeof window.Flip !== 'undefined';
+            var durum = flipVar ? Flip.getState(kalemler) : null;
+
+            var gorunen = 0;
+            kalemler.forEach(function (kalem) {
+                var uygun = deger === 'tumu' || kalem.dataset.kategori === deger;
+                kalem.hidden = !uygun;
+                if (uygun) gorunen++;
+            });
+
+            liste.classList.toggle('menu__liste--filtreli', deger !== 'tumu');
+            if (bosMesaj) bosMesaj.hidden = gorunen > 0;
+
+            if (!flipVar) return;
+
+            Flip.from(durum, {
+                duration: 0.62,
+                ease: 'power2.inOut',
+                absolute: true,
+                // Ayrılanlar bulanıklaşarak çıkar
+                onLeave: function (ogeler) {
+                    gsap.to(ogeler, { autoAlpha: 0, filter: 'blur(8px)', duration: 0.32, ease: 'power2.in' });
+                },
+                // Girenler yukarıdan, bulanıklıktan netleşerek yerleşir
+                onEnter: function (ogeler) {
+                    gsap.fromTo(ogeler,
+                        { autoAlpha: 0, y: -26, filter: 'blur(10px)' },
+                        { autoAlpha: 1, y: 0, filter: 'blur(0px)', duration: 0.55, ease: 'expo.out', stagger: 0.035 });
+                }
+            });
+        }
+
+        sekmeler.forEach(function (sekme) {
+            sekme.addEventListener('click', function () {
+                if (sekme.classList.contains('menu__sekme--aktif')) return;
+
+                sekmeler.forEach(function (s) {
+                    var aktif = s === sekme;
+                    s.classList.toggle('menu__sekme--aktif', aktif);
+                    s.setAttribute('aria-selected', aktif ? 'true' : 'false');
+                    s.tabIndex = aktif ? 0 : -1;
+                });
+
+                filtrele(sekme.dataset.filtre);
+            });
+        });
+
+        // Ok tuşlarıyla sekmeler arası gezinme (WAI-ARIA tab deseni)
+        var sekmeKabi = bolum.querySelector('.menu__filtre-ic');
+        if (sekmeKabi) {
+            sekmeKabi.addEventListener('keydown', function (olay) {
+                var su = sekmeler.indexOf(document.activeElement);
+                if (su < 0) return;
+                var hedef = null;
+                if (olay.key === 'ArrowRight') hedef = sekmeler[(su + 1) % sekmeler.length];
+                else if (olay.key === 'ArrowLeft') hedef = sekmeler[(su - 1 + sekmeler.length) % sekmeler.length];
+                else if (olay.key === 'Home') hedef = sekmeler[0];
+                else if (olay.key === 'End') hedef = sekmeler[sekmeler.length - 1];
+                if (!hedef) return;
+                olay.preventDefault();
+                hedef.focus();
+                hedef.click();
+            });
+        }
+
+        /* ---------- İmleç görsel önizlemesi ---------- */
+        var onizleme = bolum.querySelector('.menu__onizleme');
+        var foto = onizleme && onizleme.querySelector('.menu__onizleme-foto');
+
+        // Yalnızca gerçek fare + GSAP varken; dokunmatikte hiç açılmaz
+        if (!onizleme || !foto || !inceIsaretci || azHareket || !gsapVar) return;
+
+        onizleme.style.display = 'block';
+
+        var xAyar = gsap.quickTo(onizleme, 'x', { duration: 0.55, ease: 'power3.out' });
+        var yAyar = gsap.quickTo(onizleme, 'y', { duration: 0.55, ease: 'power3.out' });
+        var egimAyar = gsap.quickTo(onizleme, 'skewY', { duration: 0.5, ease: 'power3.out' });
+
+        var sonX = 0, sonZaman = 0, aktifKalem = null;
+
+        window.addEventListener('mousemove', function (olay) {
+            if (!aktifKalem) return;
+
+            // Görsel imlecin sağ-altında dursun, ekran dışına taşmasın
+            var g = onizleme.offsetWidth, y = onizleme.offsetHeight;
+            var hx = Math.min(olay.clientX + 28, window.innerWidth - g - 16);
+            var hy = Math.min(Math.max(olay.clientY - y / 2, 16), window.innerHeight - y - 16);
+            xAyar(hx); yAyar(hy);
+
+            // Yatay hıza göre hafif eğilme
+            var simdi = performance.now();
+            var dt = simdi - sonZaman;
+            if (dt > 0) {
+                var hiz = (olay.clientX - sonX) / dt;
+                egimAyar(Math.max(-9, Math.min(9, hiz * -5)));
+            }
+            sonX = olay.clientX;
+            sonZaman = simdi;
+        }, { passive: true });
+
+        kalemler.forEach(function (kalem) {
+            kalem.addEventListener('mouseenter', function () {
+                var kaynak = kalem.dataset.gorsel;
+                if (!kaynak) return;
+
+                aktifKalem = kalem;
+                foto.src = kaynak;
+                foto.alt = '';
+
+                gsap.killTweensOf(onizleme);
+                gsap.fromTo(onizleme,
+                    { autoAlpha: 0, scale: 0.9, clipPath: 'inset(100% 0 0 0)' },
+                    { autoAlpha: 1, scale: 1, clipPath: 'inset(0% 0 0 0)', duration: 0.55, ease: 'expo.out' });
+            });
+
+            kalem.addEventListener('mouseleave', function () {
+                if (aktifKalem !== kalem) return;
+                aktifKalem = null;
+                gsap.to(onizleme, {
+                    autoAlpha: 0, scale: 0.94, duration: 0.3, ease: 'power2.in',
+                    clipPath: 'inset(100% 0 0 0)'
+                });
+            });
+        });
+    }
+
     /* =========================================================
        10. GÖRÜNÜRLÜK EMNİYETİ
        -------------------------------------------------------------
@@ -459,7 +617,8 @@
             document.querySelectorAll(
                 '.hakkinda__govde, .hakkinda__olcut, .hakkinda__eylemler, .hakkinda__yil,' +
                 ' .hakkinda__alinti, .hakkinda__cerceve, .kn-maske, .kn-kaydir, .kn-solgun,' +
-                ' .hero__baslik, .hero__ustbaslik, .hero__alt, .hero__eylemler, .hero__durum'
+                ' .hero__baslik, .hero__ustbaslik, .hero__alt, .hero__eylemler, .hero__durum,' +
+                ' .menu__kalem, .menu__bas > *'
             ).forEach(function (oge) {
                 oge.style.opacity = '';
                 oge.style.visibility = '';
@@ -483,7 +642,7 @@
         if (acildi) return;
         acildi = true;
 
-        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, gorunurlukEmniyeti]
+        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, menuSergisi, gorunurlukEmniyeti]
             .forEach(function (modul) {
                 try { modul(); } catch (h) {
                     if (window.console) console.error('rosso:', modul.name, h);

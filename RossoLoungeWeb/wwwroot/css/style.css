@@ -122,7 +122,11 @@ p {
 /* =========================================
    3. HEADER & NAVBAR
    ========================================= */
-header {
+/* Kapsam daraltildi: bu kural cıplak <header> etiketini yakaladigi icin
+   bolum basliklarini (or. .menu__bas) da sabit konumlandirip sol kenara
+   yapistiriyordu. Artik yalnizca Menu.cshtml'deki eski navbari hedefler.
+   Ana sayfa .nav bilesenini kullaniyor. */
+header.dark-header {
     position: fixed;
     top: 0;
     left: 0;

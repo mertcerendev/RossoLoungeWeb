@@ -52,6 +52,16 @@ namespace RossoLoungeWeb.Controllers
                                           .Take(3)
                                           .ToList();
 
+            // Ana sayfadaki menü sergisi: kategoriler + ürünleri, panelden
+            // yönetilen SiraNo düzeninde. Boş kategori sergide görünmesin.
+            ViewBag.MenuKategorileri = _context.Kategoriler
+                                               .Include(k => k.Urunler)
+                                               .Where(k => k.Urunler.Any())
+                                               .OrderBy(k => k.SiraNo)
+                                               .ToList()
+                                               .Select(k => { k.Urunler = k.Urunler.OrderBy(u => u.SiraNo).ToList(); return k; })
+                                               .ToList();
+
             // Çalışma saatleri 11.30 – 00.00. Gece yarısına sarktığı için
             // "saat >= açılış" tek başına yetmiyor; 00.00 kapanışı ertesi güne denk geliyor.
             // Hakkımızda bölümündeki rakam şeridi — uydurma değil, gerçek veriden

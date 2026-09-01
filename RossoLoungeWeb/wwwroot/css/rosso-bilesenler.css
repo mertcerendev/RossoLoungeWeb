@@ -677,3 +677,266 @@
 .rosso-kinetik .hakkinda__cerceve {
     clip-path: inset(0 0 100% 0);
 }
+
+/* =============================================================
+   MENÜ SERGİSİ
+   ============================================================= */
+.menu {
+    position: relative;
+    padding-block: var(--bolum);
+    background: var(--antrasit);
+}
+
+.menu__bas {
+    max-width: 46rem;
+    margin-block-end: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+.menu__ustbaslik {
+    margin-block-end: var(--b4);
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: var(--harf-genis);
+    text-transform: uppercase;
+}
+
+.menu__baslik {
+    margin-block-end: var(--b4);
+    font-size: clamp(2rem, 1.2rem + 2.6vw, 3.75rem);
+    font-weight: 300;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+}
+
+    .menu__baslik em {
+        font-style: italic;
+        color: var(--sampanya);
+    }
+
+.menu__alt {
+    max-width: 42ch;
+    color: var(--metin-2);
+    line-height: var(--satir-genis);
+}
+
+/* --- Yapışkan kategori navigasyonu --- */
+.menu__filtre {
+    position: sticky;
+    /* Sabit navbarın altına yapışır */
+    inset-block-start: 72px;
+    z-index: var(--k-icerik);
+    margin-block-end: clamp(1.5rem, 4vw, 3rem);
+    padding-block: var(--b4);
+    /* Kaydırırken altındaki satırlar filtre çubuğunun arkasından geçmesin */
+    background: linear-gradient(to bottom, var(--antrasit) 62%, transparent);
+}
+
+.menu__filtre-ic {
+    display: flex;
+    /* Geniş ekranda sarsın: yatay kaydırmada son sekme kesik görünüyor
+       ve kaydırılabilir olduğu anlaşılmıyordu. Dar ekranda kaydırma kalır. */
+    flex-wrap: wrap;
+    gap: var(--b2);
+    padding-block-end: var(--b2);
+    scrollbar-width: none;
+}
+
+@media (max-width: 720px) {
+    .menu__filtre-ic {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+}
+
+    .menu__filtre-ic::-webkit-scrollbar {
+        display: none;
+    }
+
+.menu__sekme {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding-inline: var(--b5);
+    background: transparent;
+    border: 1px solid var(--cizgi);
+    border-radius: 999px;
+    color: var(--metin-3);
+    font-family: var(--f-sans);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color var(--h2) var(--egri), border-color var(--h2) var(--egri),
+                background var(--h2) var(--egri);
+}
+
+    .menu__sekme:hover {
+        color: var(--metin);
+        border-color: var(--cizgi-2);
+    }
+
+.menu__sekme--aktif {
+    background: var(--sampanya);
+    border-color: var(--sampanya);
+    color: var(--obsidyen);
+}
+
+/* --- Kalem listesi --- */
+.menu__liste {
+    display: flex;
+    flex-direction: column;
+}
+
+.menu__kalem {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: var(--b5);
+    padding-block: clamp(1.25rem, 2.6vw, 2rem);
+    border-block-end: 1px solid var(--cizgi);
+    transition: opacity var(--h2) var(--egri);
+}
+
+    /* İnce şampanya vurgu çizgisi — üzerine gelince soldan açılır */
+    .menu__kalem::before {
+        content: "";
+        position: absolute;
+        inset-block-end: -1px;
+        inset-inline-start: 0;
+        width: 0;
+        height: 1px;
+        background: var(--sampanya);
+        transition: width var(--h3) var(--egri);
+    }
+
+    .menu__kalem:hover::before {
+        width: 100%;
+    }
+
+.menu__ad {
+    margin-block-end: var(--b2);
+    font-family: var(--f-serif);
+    font-size: clamp(1.375rem, 0.95rem + 1.3vw, 2.125rem);
+    font-weight: 400;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    color: var(--metin);
+    transition: color var(--h2) var(--egri);
+}
+
+.menu__kalem:hover .menu__ad {
+    color: var(--sampanya);
+}
+
+.menu__aciklama {
+    max-width: 52ch;
+    color: var(--metin-3);
+    font-size: var(--t-sm);
+    font-weight: 300;
+    line-height: 1.6;
+}
+
+.menu__fiyatlar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--b1);
+    text-align: right;
+}
+
+.menu__fiyat {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--b2);
+    font-family: var(--f-serif);
+    font-size: clamp(1.125rem, 0.9rem + 0.6vw, 1.5rem);
+    font-weight: 400;
+    color: var(--metin);
+    white-space: nowrap;
+}
+
+.menu__fiyat-tur {
+    color: var(--metin-3);
+    font-family: var(--f-sans);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.menu__para {
+    color: var(--sampanya);
+    font-size: 0.75em;
+}
+
+/* Kategori etiketi — yalnızca "Tümü" görünümünde anlamlı */
+.menu__kategori-etiket {
+    grid-column: 1 / -1;
+    color: var(--titanyum-sonuk);
+    font-size: 0.625rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.55;
+}
+
+.menu__liste--filtreli .menu__kategori-etiket {
+    display: none;
+}
+
+.menu__bos {
+    padding-block: var(--b8);
+    color: var(--metin-3);
+    text-align: center;
+}
+
+/* --- İmleci takip eden görsel önizleme --- */
+.menu__onizleme {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    z-index: calc(var(--k-imlec) - 1);
+    width: clamp(200px, 19vw, 300px);
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    display: none; /* JS yalnızca fare olan cihazlarda açar */
+    will-change: transform;
+}
+
+.menu__onizleme-foto {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+@media (max-width: 720px) {
+    .menu__kalem {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--b3);
+    }
+
+    .menu__fiyatlar {
+        flex-direction: row;
+        align-items: baseline;
+        gap: var(--b5);
+        justify-content: flex-start;
+        text-align: left;
+    }
+
+    .menu__filtre {
+        inset-block-start: 64px;
+    }
+}
+
+/* Kinetik başlangıç durumu */
+.rosso-kinetik .menu__kalem {
+    opacity: 0;
+}
+
+.rosso-kinetik .menu__bas > * {
+    opacity: 0;
+}
