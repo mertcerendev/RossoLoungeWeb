@@ -73,10 +73,50 @@ namespace RossoLoungeWeb.Controllers
                 ? onayliYorumlar.Average(y => y.Puan).ToString("0.0", new CultureInfo("tr-TR"))
                 : "—";
 
-            var suan = TurkiyeSaati.Simdi.TimeOfDay;
-            ViewBag.SuAnAcik = suan >= new TimeSpan(11, 30, 0);
+            /* İletişim bölümündeki canlı saat + durum ışığı.
+               ÇALIŞMA SAATLERİ TEK KAYNAK BURASI. Mola yoksa MolaBas/MolaBit
+               boş bırakılır; o zaman sarı "molada" durumu hiç oluşmaz.
+               Aynı değerler data-* nitelikleriyle görünüme geçiyor, istemci
+               tarafı Europe/Istanbul saatiyle her dakika tazeliyor. */
+            const string acilis = "11:30";
+            const string kapanis = "00:00";
+            const string molaBas = "";
+            const string molaBit = "";
+
+            var simdi = TurkiyeSaati.Simdi;
+            ViewBag.Acilis = acilis;
+            ViewBag.Kapanis = kapanis;
+            ViewBag.MolaBas = molaBas;
+            ViewBag.MolaBit = molaBit;
+            ViewBag.SaatSimdi = simdi.ToString("HH:mm");
+            ViewBag.SaatDurum = CalismaDurumu(simdi.TimeOfDay, acilis, kapanis, molaBas, molaBit);
 
             return View(onayliYorumlar); // Listeyi View'a gönder
+        }
+
+        /* Açık / molada / kapalı.
+           Kapanış açılıştan küçükse (ör. 11:30 - 00:00) aralık gece
+           yarısını aşıyor demektir; karşılaştırma ona göre çevriliyor. */
+        private static string CalismaDurumu(TimeSpan simdi, string acilis, string kapanis,
+                                            string molaBas, string molaBit)
+        {
+            if (!TimeSpan.TryParse(acilis, out var acilisSaat) ||
+                !TimeSpan.TryParse(kapanis, out var kapanisSaat))
+                return "kapali";
+
+            bool AralikIcinde(TimeSpan bas, TimeSpan bit)
+                => bas <= bit ? (simdi >= bas && simdi < bit)
+                              : (simdi >= bas || simdi < bit);
+
+            if (!AralikIcinde(acilisSaat, kapanisSaat)) return "kapali";
+
+            if (TimeSpan.TryParse(molaBas, out var molaBasSaat) &&
+                TimeSpan.TryParse(molaBit, out var molaBitSaat) &&
+                molaBasSaat != molaBitSaat &&
+                AralikIcinde(molaBasSaat, molaBitSaat))
+                return "mola";
+
+            return "acik";
         }
 
         public IActionResult Menu()

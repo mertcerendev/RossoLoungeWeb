@@ -301,4 +301,90 @@
         if (location.hash === '#mesaj' && mesajSekmesi) sekmeAc(mesajSekmesi, false);
     }
 
+    // ============================================================
+    // 9. CANLI SAAT + DURUM IŞIĞI (iletişim bölümü)
+    //
+    // Çalışma saatleri sunucudan data-* nitelikleriyle geliyor;
+    // tek kaynak HomeController.Index. Sunucu ilk değeri zaten
+    // basıyor, burası yalnızca canlı tutuyor — JS çalışmasa da
+    // gösterge doğru görünür.
+    //
+    // Saat MEKÂNIN saati: ziyaretçi başka bir saat diliminde olsa
+    // bile Europe/Istanbul gösteriliyor.
+    // ============================================================
+    (function () {
+        var kutu = document.querySelector('.saat-isik');
+        if (!kutu) return;
+
+        var saatOge = kutu.querySelector('.saat-isik__saat');
+        var metinOge = kutu.querySelector('.saat-isik__metin');
+        if (!saatOge || !metinOge) return;
+
+        var ETIKET = { acik: 'Şu an açık', mola: 'Molada', kapali: 'Şu an kapalı' };
+
+        function dakika(metin) {
+            var p = /^\s*(\d{1,2}):(\d{2})\s*$/.exec(metin || '');
+            return p ? (+p[1]) * 60 + (+p[2]) : null;
+        }
+
+        function mekanSaati() {
+            try {
+                var parcalar = new Intl.DateTimeFormat('tr-TR', {
+                    timeZone: 'Europe/Istanbul',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hourCycle: 'h23'   // gece yarısı 24:00 değil 00:00 gelsin
+                }).formatToParts(new Date());
+
+                var sa = '', dk = '';
+                parcalar.forEach(function (p) {
+                    if (p.type === 'hour') sa = p.value;
+                    if (p.type === 'minute') dk = p.value;
+                });
+                return (sa && dk) ? sa + ':' + dk : null;
+            } catch (h) {
+                return null;   // Intl/saat dilimi yoksa sunucunun değeri kalsın
+            }
+        }
+
+        var acilis = dakika(kutu.getAttribute('data-acilis'));
+        var kapanis = dakika(kutu.getAttribute('data-kapanis'));
+        var molaBas = dakika(kutu.getAttribute('data-mola-bas'));
+        var molaBit = dakika(kutu.getAttribute('data-mola-bit'));
+
+        /* Başlangıç bitişten büyükse aralık gece yarısını aşıyor
+           demektir (ör. 11:30 - 00:00). C# tarafındaki CalismaDurumu
+           ile aynı mantık. */
+        function icinde(su, bas, bit) {
+            if (bas === null || bit === null) return false;
+            return bas <= bit ? (su >= bas && su < bit) : (su >= bas || su < bit);
+        }
+
+        function tazele() {
+            var metin = mekanSaati();
+            if (!metin) return;
+
+            saatOge.textContent = metin;
+            saatOge.setAttribute('datetime', metin);
+
+            var su = dakika(metin);
+            if (su === null || acilis === null || kapanis === null) return;
+
+            var durum = 'kapali';
+            if (icinde(su, acilis, kapanis)) {
+                durum = (molaBas !== null && molaBit !== null &&
+                         molaBas !== molaBit && icinde(su, molaBas, molaBit))
+                    ? 'mola' : 'acik';
+            }
+
+            kutu.classList.remove('saat-isik--acik', 'saat-isik--mola', 'saat-isik--kapali');
+            kutu.classList.add('saat-isik--' + durum);
+            metinOge.textContent = ETIKET[durum];
+        }
+
+        tazele();
+        setInterval(tazele, 30000);
+    })();
+
+
 })();

@@ -414,7 +414,7 @@
             <div class="kap konsiyer__izgara">
 
                 <div class="konsiyer__sol">
-                    <p class="konsiyer__ustbaslik kn-maske">Konsiyer</p>
+                    <p class="konsiyer__ustbaslik kn-maske">İletişim</p>
                     <h2 class="konsiyer__baslik" id="konsiyer-baslik" data-kelime-acilis>Bize <em>Ulaşın</em></h2>
                     <p class="konsiyer__alt kn-maske">Masanızı ayırtın ya da aklınıza takılanı sorun — aynı gün dönüş yapıyoruz.</p>
 
@@ -422,12 +422,13 @@
                         <div class="konsiyer__satir kn-maske">
                             <dt class="konsiyer__etiket">Adres</dt>
                             <dd class="konsiyer__deger">
-                                Yeni Mahalle, 21002 Sokak No: 3B<br>
-                                10200 Bandırma / Balıkesir
-                                <a class="konsiyer__eylem" target="_blank" rel="noopener"
-                                   href="https://www.google.com/maps/dir/?api=1&amp;destination=Rosso+lounge+bistro+Bandırma">
-                                    Yol tarifi al
-                                    <span class="konsiyer__ok" aria-hidden="true">&#8599;</span>
+                                @* Ayrı "Yol tarifi al" butonu yerine adresin kendisi
+                                   bağlantı; aynı yere gidiyor. *@
+                                <a class="konsiyer__adres" target="_blank" rel="noopener"
+                                   href="https://www.google.com/maps/dir/?api=1&amp;destination=Rosso+lounge+bistro+Bandırma"
+                                   aria-label="Yol tarifi al: Yeni Mahalle, 21002 Sokak No: 3B, Bandırma">
+                                    Yeni Mahalle, 21002 Sokak No: 3B<br>
+                                    10200 Bandırma / Balıkesir
                                 </a>
                             </dd>
                         </div>
@@ -443,13 +444,6 @@
                             <dt class="konsiyer__etiket">Çalışma saatleri</dt>
                             <dd class="konsiyer__deger">
                                 Her gün 11.30 – 00.00
-                                @if (ViewBag.SuAnAcik is bool acikMi)
-                                {
-                                    <span class="durum-rozet @(acikMi ? "acik" : "kapali")">
-                                        <span class="durum-nokta" aria-hidden="true"></span>
-                                        @(acikMi ? "Şu an açığız" : "Şu an kapalıyız")
-                                    </span>
-                                }
                             </dd>
                         </div>
 
@@ -460,6 +454,22 @@
                             </dd>
                         </div>
                     </dl>
+
+                    @* Canlı saat + durum ışığı.
+                       Sunucu Türkiye saatiyle ilk değeri basıyor, böylece JS
+                       çalışmasa da doğru görünüyor. script.js aynı data-*
+                       niteliklerini okuyup Europe/Istanbul saatiyle her dakika
+                       tazeliyor — ziyaretçinin saat dilimi ne olursa olsun
+                       mekânın saati gösteriliyor. *@
+                    <div class="saat-isik saat-isik--@ViewBag.SaatDurum kn-maske"
+                         data-acilis="@ViewBag.Acilis" data-kapanis="@ViewBag.Kapanis"
+                         data-mola-bas="@ViewBag.MolaBas" data-mola-bit="@ViewBag.MolaBit">
+                        <span class="saat-isik__nokta" aria-hidden="true"></span>
+                        <time class="saat-isik__saat">@ViewBag.SaatSimdi</time>
+                        <span class="saat-isik__metin">
+                            @(ViewBag.SaatDurum switch { "acik" => "Şu an açık", "mola" => "Molada", _ => "Şu an kapalı" })
+                        </span>
+                    </div>
 
                     @* Monokrom harita: renkli gömülü harita koyu dili bozuyordu.
                        Filtre + obsidyen perde ile sahneye uyduruldu; perde

@@ -2444,28 +2444,53 @@ html:not(.rosso-imlec) .defter--tutuluyor .defter__sahne {
     letter-spacing: 0.01em;
 }
 
-.konsiyer__eylem {
+/* Adresin kendisi bağlantı — ayrı "Yol tarifi al" butonu kaldırıldı.
+   Ayrı renk kuralı GEREKMİYOR: yukarıdaki ".konsiyer__deger a" rengi
+   metinden miras alıyor, ":hover" da şampanyaya çeviriyor. Ölçüldü:
+   #f2efe9 -> #e6d9bd -> geri. Sınıf yalnızca işaretleme kancası. */
+
+/* --- Canlı saat + durum ışığı --- */
+.saat-isik {
     display: inline-flex;
     align-items: center;
-    gap: var(--b2);
-    /* Dokunma hedefi 44px'in altına düşmesin */
-    min-height: var(--dokunma);
-    margin-block-start: var(--b1);
-    color: var(--sampanya) !important;
-    font-size: var(--t-xs);
-    font-weight: 500;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
+    gap: var(--b3);
+    margin-block: clamp(1.5rem, 3vw, 2.25rem) clamp(1rem, 2vw, 1.5rem);
+    padding: var(--b3) var(--b5);
+    border: 1px solid var(--cizgi);
+    border-radius: 999px;
+    font-size: var(--t-sm);
 }
 
-.konsiyer__ok {
-    display: inline-block;
-    transition: transform var(--h2) var(--egri);
+.saat-isik__nokta {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--metin-3);
+    /* Işığın kendisi kadar hâlesi de okunurluğu artırıyor */
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
 }
 
-.konsiyer__eylem:hover .konsiyer__ok {
-    transform: translate(3px, -3px);
+.saat-isik__saat {
+    font-family: var(--f-serif);
+    font-size: var(--t-lg);
+    color: var(--metin);
+    font-variant-numeric: tabular-nums;
 }
+
+.saat-isik__metin {
+    color: var(--metin-2);
+    letter-spacing: 0.06em;
+}
+
+/* Üç durum. Renkler obsidyen üstünde AA'yı geçiyor. */
+.saat-isik--acik .saat-isik__nokta { background: #7fd4a0; }
+.saat-isik--acik .saat-isik__metin { color: #7fd4a0; }
+
+.saat-isik--mola .saat-isik__nokta { background: #e0b558; }
+.saat-isik--mola .saat-isik__metin { color: #e0b558; }
+
+.saat-isik--kapali .saat-isik__nokta { background: #e08b86; }
+.saat-isik--kapali .saat-isik__metin { color: #e08b86; }
 
 .konsiyer__sosyal {
     margin-block-start: clamp(1.75rem, 4vw, 2.5rem);
