@@ -1,0 +1,39 @@
+@{
+    // Aktif bağlantı rotadan çıkarılıyor; sayfalar parametre geçmiyor.
+    var eylem = (ViewContext.RouteData.Values["action"] ?? "").ToString();
+    var anaSayfada = string.Equals(eylem, "Index", StringComparison.OrdinalIgnoreCase);
+
+    string Aktif(bool kosul) => kosul ? " nav__link--aktif" : "";
+}
+
+@* ============================================================
+   NAVBAR — tek kaynak.
+
+   Bağlantılar her sayfada "/#hedef" biçiminde. Ana sayfadayken de
+   aynı biçim kullanılıyor: rosso-hareket.js'teki çapa yakalayıcı
+   yolun aynı olduğunu görüp sayfayı yeniden yüklemeden Lenis ile
+   kaydırıyor. Böylece bu partial hiçbir koşul taşımıyor.
+   ============================================================ *@
+<header class="nav" id="navbar">
+    <div class="kap nav__ic">
+        <a href="/" class="nav__marka">ROSSO <span>LOUNGE</span></a>
+
+        <nav aria-label="Ana menü">
+            <ul class="nav__menu">
+                <li><a href="/" class="nav__link@(Aktif(anaSayfada))">Ana Sayfa</a></li>
+                <li><a href="/#about" class="nav__link">Hakkımızda</a></li>
+                <li><a href="/Home/Menu" class="nav__link@(Aktif(string.Equals(eylem, "Menu", StringComparison.OrdinalIgnoreCase)))">Menü</a></li>
+                <li><a href="/#gallery" class="nav__link">Galeri</a></li>
+                <li><a href="/#reviews" class="nav__link">Yorumlar</a></li>
+                <li><a href="/#contact" class="nav__link">İletişim</a></li>
+                <li class="nav__mobil"><a href="/#rezervasyon" class="nav__eylem">Rezervasyon</a></li>
+            </ul>
+        </nav>
+
+        <a href="/#rezervasyon" class="nav__eylem nav__eylem--masaustu">Rezervasyon</a>
+
+        <button type="button" class="nav__hamburger" aria-label="Menüyü aç veya kapat" aria-expanded="false">
+            <span class="nav__cizgi"></span>
+        </button>
+    </div>
+</header>

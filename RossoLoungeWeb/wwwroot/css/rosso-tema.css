@@ -89,7 +89,7 @@
     --k-icerik: 1;
     --k-nav: 900;
     --k-menu: 950;
-    --k-imlec: 9998;
+    --k-imlec: 10000; /* tam ekran goruntuleyici (--k-loader) dahil her seyin ustunde */
     --k-loader: 9999;
 
     --dokunma: 44px;
@@ -395,11 +395,23 @@ html:not(.rosso-kinetik) .sahne-perde__panel {
         display: block;
     }
 
-    /* Native imleci yalnızca özel imleç gerçekten aktifken gizle */
+    /* Native imleci yalnızca özel imleç gerçekten aktifken gizle.
+       ÖNEMLİ: eskiden yalnız html/a/button listeleniyordu; cursor MİRAS
+       yoluyla iniyordu ve kendi cursor'ı olan her öğe (.btn { pointer },
+       tarayıcının yerleşik stilleri) onu eziyordu — özel imlecin altında
+       yerleşik imleç de görünüyordu. Evrensel seçici bunu kökten çözer. */
     html.rosso-imlec,
-    html.rosso-imlec a,
-    html.rosso-imlec button {
+    html.rosso-imlec *,
+    html.rosso-imlec *::before,
+    html.rosso-imlec *::after {
         cursor: none;
+    }
+
+    /* Metin alanlarında yerleşik kiriş imleci kalsın: nereye yazdığını
+       görmek özel imleçten daha önemli. */
+    html.rosso-imlec input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]),
+    html.rosso-imlec textarea {
+        cursor: auto;
     }
 }
 
@@ -422,8 +434,7 @@ html:not(.rosso-kinetik) .sahne-perde__panel {
     }
 
     html.rosso-imlec,
-    html.rosso-imlec a,
-    html.rosso-imlec button {
+    html.rosso-imlec * {
         cursor: auto;
     }
 }

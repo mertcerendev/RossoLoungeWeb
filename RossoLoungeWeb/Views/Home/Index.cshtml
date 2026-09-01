@@ -1,6 +1,7 @@
 @model List<RossoLoungeWeb.Models.Yorum>
 @{
-    Layout = null;
+    ViewData["Baslik"] = "Rosso Lounge Bistro | Bandırma";
+    ViewData["Aciklama"] = "Rosso Lounge Bistro — Bandırma'da modern atmosfer, taze lezzetler ve imza kokteyller. Online masa rezervasyonu yapın.";
 
     // Öne çıkan ürünler HomeController.Index'ten geliyor (SiraNo'ya göre ilk 3).
     var oneCikanlar = ViewBag.OneCikanlar as List<RossoLoungeWeb.Models.Urun> ?? new List<RossoLoungeWeb.Models.Urun>();
@@ -27,95 +28,6 @@
     };
 }
 
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rosso Lounge Bistro | Bandırma</title>
-    <meta name="description" content="Rosso Lounge Bistro — Bandırma'da modern atmosfer, taze lezzetler ve imza kokteyller. Online masa rezervasyonu yapın.">
-    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true">
-    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
-    @* Yeni sahne mimarisi en sonda: eski katmanı bilinçli olarak ezer *@
-    <link rel="stylesheet" href="~/css/rosso-tema.css" asp-append-version="true">
-    <link rel="stylesheet" href="~/css/rosso-bilesenler.css" asp-append-version="true">
-
-    <style>
-        /* SADECE bu sayfaya (ve Menu.cshtml'e) özgü kurallar.
-           style.css'te karşılığı olan .menu-card / .menu-info / .price / .menu-header
-           kuralları silindi — tek kaynak style.css.
-           Aşağıdakiler style.css'te YOK; Tasarım ajanına taşınması için bildirildi. */
-        .menu-item {
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Ürünün görseli yoksa zarif yer tutucu */
-        .gorsel-yok {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 200px;
-            background: var(--yz-zemin-vurgu);
-            color: var(--renk-marka);
-            font-size: var(--olcek-3xl);
-            opacity: 0.55;
-        }
-
-        .menu-info {
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-        }
-
-            .menu-info h3 {
-                margin-top: 0;
-            }
-
-            .menu-info p {
-                margin: 0 0 var(--bosluk-4);
-            }
-
-        /* Tek ya da çift fiyat satırı (Orta / Büyük) */
-        .fiyat-satiri {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: baseline;
-            gap: var(--bosluk-4);
-            margin-top: auto;
-            padding-top: var(--bosluk-3);
-            border-top: 1px solid var(--yz-kenar);
-        }
-
-        .fiyat-secenek {
-            min-width: 0;
-        }
-
-        .fiyat-etiket {
-            display: block;
-            color: var(--yz-metin-soluk);
-            font-size: var(--olcek-xs);
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-        }
-
-        .fiyat-satiri .price {
-            margin-top: 0;
-        }
-    </style>
-</head>
-
-<body>
     @* ---- Sinematik perde: sayaç dolar, ardından iki panel yırtılır ---- *@
     <div class="sahne-perde" aria-hidden="true">
         <div class="sahne-perde__marka">ROSSO <span>LOUNGE</span></div>
@@ -124,9 +36,6 @@
     <div class="sahne-perde__panel sahne-perde__panel--ust" aria-hidden="true"></div>
     <div class="sahne-perde__panel sahne-perde__panel--alt" aria-hidden="true"></div>
 
-    @* ---- Sıvı imleç (yalnızca fare olan cihazlarda görünür) ---- *@
-    @await Html.PartialAsync("_Imlec")
-
     @* Controller'lar rezervasyon/mesaj/yorum sonucunu TempData'ya yazıyordu
        ama ziyaretçi sitesinde hiçbir yerde okunmuyordu — form gönderen
        kullanıcı sessizlikle karşılaşıyordu. Toast bileşeni script.js'e bağlı
@@ -134,7 +43,7 @@
     @if (TempData["Mesaj"] != null)
     {
         <div class="toast-bildirim basarili" role="status">
-            <i class="fas fa-circle-check" aria-hidden="true"></i>
+            <svg class="toast-ikon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
             <div>@TempData["Mesaj"]</div>
             <button type="button" class="toast-kapat" aria-label="Bildirimi kapat">&times;</button>
         </div>
@@ -142,38 +51,13 @@
     @if (TempData["Hata"] != null)
     {
         <div class="toast-bildirim hata" role="alert">
-            <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+            <svg class="toast-ikon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3.5 22 20H2Z"/><path d="M12 9.5v4.5"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg>
             <div>@TempData["Hata"]</div>
             <button type="button" class="toast-kapat" aria-label="Bildirimi kapat">&times;</button>
         </div>
     }
 
-    <a href="#icerik" class="atla">İçeriğe atla</a>
-    <div class="nav-perde" aria-hidden="true"></div>
 
-    <header class="nav" id="navbar">
-        <div class="kap nav__ic">
-            <a href="#home" class="nav__marka">ROSSO <span>LOUNGE</span></a>
-
-            <nav aria-label="Ana menü">
-                <ul class="nav__menu">
-                    <li><a href="#home" class="nav__link nav__link--aktif">Ana Sayfa</a></li>
-                    <li><a href="#about" class="nav__link">Hakkımızda</a></li>
-                    <li><a href="/Home/Menu" class="nav__link">Menü</a></li>
-                    <li><a href="#gallery" class="nav__link">Galeri</a></li>
-                    <li><a href="#reviews" class="nav__link">Yorumlar</a></li>
-                    <li><a href="#contact" class="nav__link">İletişim</a></li>
-                    <li class="nav__mobil"><a href="#rezervasyon" class="nav__eylem">Rezervasyon</a></li>
-                </ul>
-            </nav>
-
-            <a href="#rezervasyon" class="nav__eylem nav__eylem--masaustu">Rezervasyon</a>
-
-            <button type="button" class="nav__hamburger" aria-label="Menüyü aç veya kapat" aria-expanded="false">
-                <span class="nav__cizgi"></span>
-            </button>
-        </div>
-    </header>
 
     <main id="icerik">
         <section id="home" class="hero">
@@ -695,10 +579,10 @@
 
                     <div class="sosyal-satir konsiyer__sosyal kn-maske">
                         <a href="https://www.instagram.com/rosso.lounge.bistro/" target="_blank" rel="noopener" aria-label="Instagram sayfamız">
-                            <i class="fab fa-instagram" aria-hidden="true"></i>
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
                         </a>
                         <a href="https://www.facebook.com/rossolounge" target="_blank" rel="noopener" aria-label="Facebook sayfamız">
-                            <i class="fab fa-facebook-f" aria-hidden="true"></i>
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.25-1.5 1.55-1.5H16.7V3.6c-.3-.04-1.3-.13-2.47-.13-2.44 0-4.11 1.49-4.11 4.23V9.9H7.4V13h2.72v8Z"/></svg>
                         </a>
                     </div>
                 </div>
@@ -915,18 +799,10 @@
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/tr.js"></script>
-    <!-- Sahne motoru bagimliliklar — rosso-hareket.js'ten ONCE.
-         Yuklenemezlerse site animasyonsuz ama tam okunur acilir. -->
-    <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
-    <script src="~/js/rosso-hareket.js" asp-append-version="true"></script>
-    <script src="~/js/ortak.js" asp-append-version="true"></script>
-    <script src="~/js/script.js" asp-append-version="true"></script>
-</body>
-</html>
+@section Scriptler {
+    @* Yalnızca rezervasyon formunun tarih seçicisi için *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script defer src="https://npmcdn.com/flatpickr/dist/l10n/tr.js"></script>
+}

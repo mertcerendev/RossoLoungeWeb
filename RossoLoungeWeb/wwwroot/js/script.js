@@ -1,14 +1,18 @@
-﻿/* =========================================================
+/* =========================================================
    ROSSO LOUNGE BISTRO — ZİYARETÇİ SİTESİ
    ---------------------------------------------------------
-   Yüklendiği sayfalar: Views/Home/Index.cshtml, Views/Home/Menu.cshtml
+   _Layout.cshtml üzerinden ziyaretçi sayfalarında yüklenir.
    Panel sayfaları panel.js kullanır; ortak.js ikisinde de yüklüdür.
 
+   NOT: Sayfa içi çapa kaydırması, navbar kaydırma durumu, hamburger ve
+   menü filtresi BURADAN KALDIRILDI. Hepsinin karşılığı rosso-hareket.js'te
+   (Lenis ile uyumlu). Eski sürümde bu dosya her a[href^="#"] tıklamasını
+   preventDefault edip window.scrollTo çağırıyordu; Lenis aynı anda kendi
+   kaydırmasını yürüttüğü için hedef tam oturmuyordu.
+
    style.css'in bağlı olduğu kancalar (DEĞİŞTİRMEYİN):
-   #navbar  .kaydirildi  .hamburger  .nav-links  .active  .scroll-ipucu
    .toast-bildirim  .toast-kapat  .kapaniyor  .basarili  .hata
-   #reservation-form  #datePicker  #phoneInput
-   .menu-filtre-btn  .menu-category  .menu-item
+   #reservation-form  #datePicker  #phoneInput  .form-sekmeler  .form-sekme
 
    Her blok kendi elemanını arar ve bulamazsa sessizce çıkar,
    çünkü aynı dosya iki farklı sayfada çalışıyor.
@@ -20,28 +24,6 @@
 
     function azHareket() {
         return azHareketTercihi.matches;
-    }
-
-    // 'auto' CSS'teki scroll-behavior'a uyar; style.css'te html { smooth }
-    // olduğu için hareket azaltma tercihinde 'instant' diyoruz.
-    function kaydirmaDavranisi() {
-        return azHareket() ? 'instant' : 'smooth';
-    }
-
-    function navbarYuksekligi() {
-        var bar = document.getElementById('navbar');
-        return bar ? bar.getBoundingClientRect().height : 0;
-    }
-
-    // Sabit navbar başlığı örtmesin diye hedefin biraz üstüne kaydırıyoruz.
-    function hedefeKaydir(hedef, aninda) {
-        var ust = hedef.getBoundingClientRect().top + window.pageYOffset
-            - navbarYuksekligi() - 12;
-
-        window.scrollTo({
-            top: Math.max(ust, 0),
-            behavior: aninda ? 'instant' : kaydirmaDavranisi()
-        });
     }
 
     // ============================================================
@@ -66,138 +48,6 @@
 
             // Hata mesajları okunacak kadar dursun, başarı mesajı erken kapansın.
             setTimeout(kapat, toast.classList.contains('hata') ? 8000 : 5000);
-        });
-    })();
-
-    // ============================================================
-    // 2. NAVİGASYON — hamburger, sayfa içi bağlantılar
-    // ============================================================
-    (function () {
-        var hamburger = document.querySelector('.hamburger');
-        var navLinks = document.querySelector('.nav-links');
-
-        if (hamburger && navLinks) {
-            hamburger.setAttribute('aria-expanded', 'false');
-
-            function menuyuKapat() {
-                if (!navLinks.classList.contains('active')) return;
-                navLinks.classList.remove('active');
-                hamburger.setAttribute('aria-expanded', 'false');
-            }
-
-            hamburger.addEventListener('click', function (olay) {
-                olay.stopPropagation();
-                var acik = navLinks.classList.toggle('active');
-                hamburger.setAttribute('aria-expanded', acik ? 'true' : 'false');
-            });
-
-            // Menüden bir bağlantıya tıklanınca kapansın
-            navLinks.addEventListener('click', function (olay) {
-                if (olay.target.closest('a')) menuyuKapat();
-            });
-
-            // Boşluğa tıklayınca kapansın
-            document.addEventListener('click', function (olay) {
-                if (navLinks.contains(olay.target) || hamburger.contains(olay.target)) return;
-                menuyuKapat();
-            });
-
-            // Esc ile kapansın (klavye kullanıcıları için)
-            document.addEventListener('keydown', function (olay) {
-                if (olay.key === 'Escape') menuyuKapat();
-            });
-
-            // Kaydırınca kapansın
-            window.addEventListener('scroll', menuyuKapat, { passive: true });
-        }
-
-        // Sayfa içi bağlantılar: navbar yüksekliği kadar ofsetle kaydır.
-        document.addEventListener('click', function (olay) {
-            var baglanti = olay.target.closest('a[href^="#"]');
-            if (!baglanti) return;
-
-            var hedefId = baglanti.getAttribute('href');
-
-            if (hedefId === '#') {
-                olay.preventDefault();
-                window.scrollTo({ top: 0, behavior: kaydirmaDavranisi() });
-                return;
-            }
-
-            var hedef = document.querySelector(hedefId);
-            if (!hedef) return;
-
-            olay.preventDefault();
-            hedefeKaydir(hedef);
-
-            // Klavye odağı da hedefe taşınsın, yoksa Tab başa döner.
-            if (!hedef.hasAttribute('tabindex')) hedef.setAttribute('tabindex', '-1');
-            hedef.focus({ preventScroll: true });
-        });
-
-        // Başka sayfadan #çıpa ile gelindiğinde tarayıcı navbar'ı hesaba katmıyor.
-        window.addEventListener('load', function () {
-            if (!location.hash) return;
-
-            var hedef = null;
-            try {
-                hedef = document.querySelector(location.hash);
-            } catch (e) {
-                return; // geçersiz seçici içeren hash
-            }
-
-            if (hedef) hedefeKaydir(hedef, true);
-        });
-    })();
-
-    // ============================================================
-    // 3. NAVBAR KAYDIRMA DURUMU (.kaydirildi)
-    // ============================================================
-    (function () {
-        var ustBar = document.getElementById('navbar');
-        if (!ustBar) return;
-
-        var bekleyen = false;
-
-        function guncelle() {
-            bekleyen = false;
-            ustBar.classList.toggle('kaydirildi', window.scrollY > 50);
-        }
-
-        guncelle();
-
-        window.addEventListener('scroll', function () {
-            if (bekleyen) return;
-            bekleyen = true;
-            window.requestAnimationFrame(guncelle);
-        }, { passive: true });
-    })();
-
-    // ============================================================
-    // 5. AKTİF MENÜ BAĞLANTISI (sadece tek sayfalık ana sayfada)
-    // ============================================================
-    (function () {
-        var bolumler = document.querySelectorAll('section[id]');
-        var baglantilar = document.querySelectorAll('.nav-links a[href^="#"]');
-
-        if (!bolumler.length || !baglantilar.length) return;
-        if (!('IntersectionObserver' in window)) return;
-
-        var gozlemci = new IntersectionObserver(function (girisler) {
-            girisler.forEach(function (giris) {
-                if (!giris.isIntersecting) return;
-
-                Array.prototype.forEach.call(baglantilar, function (baglanti) {
-                    baglanti.classList.toggle(
-                        'active',
-                        baglanti.getAttribute('href') === '#' + giris.target.id
-                    );
-                });
-            });
-        }, { rootMargin: '-45% 0px -50% 0px' });
-
-        Array.prototype.forEach.call(bolumler, function (bolum) {
-            gozlemci.observe(bolum);
         });
     })();
 
@@ -387,49 +237,10 @@
             if (!ilkHatali) return;
 
             olay.preventDefault();
-            hedefeKaydir(ilkHatali);
+            // Kaydırmanın tek sahibi rosso-hareket.js (Lenis uyumlu)
+            if (typeof window.rossoKaydir === 'function') window.rossoKaydir(ilkHatali);
+            else ilkHatali.scrollIntoView({ block: 'center' });
             ilkHatali.focus({ preventScroll: true });
-        });
-    })();
-
-    // ============================================================
-    // 7. MENÜ SAYFASI KATEGORİ FİLTRESİ
-    //    JS kapalıysa hiçbir bölüm gizlenmez; tüm menü görünür kalır.
-    // ============================================================
-    (function () {
-        var dugmeler = document.querySelectorAll('.menu-filtre-btn');
-        var bolumler = document.querySelectorAll('.menu-category');
-
-        if (!dugmeler.length || !bolumler.length) return;
-
-        function gorunurYap(bolum) {
-            // Bölüm kaydırma animasyonu için .reveal almış olabilir; filtreyle
-            // sonradan gösterilen bölüm saydam kalmasın diye elle açıyoruz.
-            bolum.classList.add('gorunur');
-            Array.prototype.forEach.call(bolum.querySelectorAll('.reveal'), function (el) {
-                el.classList.add('gorunur');
-            });
-        }
-
-        Array.prototype.forEach.call(dugmeler, function (dugme) {
-            dugme.addEventListener('click', function () {
-                var secili = dugme.getAttribute('data-kategori');
-
-                Array.prototype.forEach.call(dugmeler, function (d) {
-                    var aktif = (d === dugme);
-                    d.setAttribute('aria-pressed', aktif ? 'true' : 'false');
-                    d.classList.toggle('rs-btn-birincil', aktif);
-                    d.classList.toggle('rs-btn-ikincil', !aktif);
-                });
-
-                Array.prototype.forEach.call(bolumler, function (bolum) {
-                    var goster = (secili === 'tumu') ||
-                        (bolum.getAttribute('data-kategori') === secili);
-
-                    bolum.hidden = !goster;
-                    if (goster) gorunurYap(bolum);
-                });
-            });
         });
     })();
 

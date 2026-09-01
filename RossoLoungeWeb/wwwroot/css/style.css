@@ -1,4 +1,4 @@
-﻿/* =========================================================
+/* =========================================================
    ROSSO LOUNGE BISTRO — ZİYARETÇİ SİTESİ STİLİ
    ---------------------------------------------------------
    Yükleme sırası (Views/Home/*.cshtml <head> içinde):
@@ -139,7 +139,7 @@ header.dark-header {
     }
 
     /* Sayfa kaydırılınca ince, yarı saydam bar (script.js ekler) */
-    header.kaydirildi {
+    header:not(.nav).kaydirildi {
         padding: var(--bosluk-2) 0;
         background: rgba(20, 20, 20, 0.92);
         backdrop-filter: blur(12px);
@@ -1568,12 +1568,12 @@ body:not(.panel) .rs-soluk {
 }
 
 /* --- Üst menü --- */
-body:not(.panel) header {
+body:not(.panel) header:not(.nav) {
     background: transparent;
     border-bottom: 1px solid transparent;
 }
 
-    body:not(.panel) header.kaydirildi {
+    body:not(.panel) header:not(.nav).kaydirildi {
         background: rgba(12, 12, 14, 0.86);
         border-bottom-color: var(--sahne-cizgi);
         box-shadow: none;

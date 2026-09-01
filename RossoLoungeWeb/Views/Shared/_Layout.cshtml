@@ -1,45 +1,67 @@
-﻿<!DOCTYPE html>
+@*
+    ============================================================
+    ZİYARETÇİ SİTESİ KABUĞU
+
+    Bu dosya ÖNCEDEN ÖLÜYDÜ: bütün view'lar "Layout = null" diyordu,
+    head ve script listesi Index/Menu içinde ayrı ayrı kopyalanmıştı ve
+    zamanla birbirinden sapmıştı (Menu'de SplitText ve script.js yoktu).
+    Artık ziyaretçi sayfaları buradan render oluyor; panel sayfaları
+    kendi kabuğunu kullanmaya devam ediyor (bilerek, tamamen farklı bir
+    arayüz).
+
+    Script sırası kritik ve bilerek şöyle:
+      1) Lenis + GSAP çekirdeği ve eklentileri
+      2) Sayfaya özel scriptler  (@@section Scriptler)
+      3) Uygulama scriptleri     (rosso-hareket.js, ortak.js, script.js)
+    Hepsi "defer": ayrıştırmayı bloklamazlar, belge sırasında çalışırlar.
+    Bu yüzden 3. adımdaki dosyalar 1. ve 2. adımı hazır bulur.
+    ============================================================
+*@
+<!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - RossoLoungeWeb</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/RossoLoungeWeb.styles.css" asp-append-version="true" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@(ViewData["Baslik"] ?? "Rosso Lounge Bistro | Bandırma")</title>
+    <meta name="description" content="@(ViewData["Aciklama"] ?? "Rosso Lounge Bistro — Bandırma'da modern atmosfer, taze lezzetler ve imza kokteyller.")">
+    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    @* Eski katman önce, yeni sahne mimarisi sonra — sıra bilinçli.
+       Not: style.css/theme.css hâlâ panel sayfalarının da temeli. *@
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/rosso-tema.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/rosso-bilesenler.css" asp-append-version="true">
+
+    @await RenderSectionAsync("Basliklar", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">RossoLoungeWeb</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+    @await Html.PartialAsync("_Imlec")
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - Rosso Lounge Bistro
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    <a href="#icerik" class="atla">İçeriğe atla</a>
+    <div class="nav-perde" aria-hidden="true"></div>
+
+    @await Html.PartialAsync("_Nav")
+
+    @RenderBody()
+
+    @* --- 1) Sahne motoru --- *@
+    <script defer src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
+
+    @* --- 2) Sayfaya özel (ör. flatpickr) --- *@
+    @await RenderSectionAsync("Scriptler", required: false)
+
+    @* --- 3) Uygulama --- *@
+    <script defer src="~/js/rosso-hareket.js" asp-append-version="true"></script>
+    <script defer src="~/js/ortak.js" asp-append-version="true"></script>
+    <script defer src="~/js/script.js" asp-append-version="true"></script>
 </body>
 </html>

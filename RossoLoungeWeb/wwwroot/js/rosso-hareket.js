@@ -66,18 +66,6 @@
             var dongu = function (z) { lenis.raf(z); requestAnimationFrame(dongu); };
             requestAnimationFrame(dongu);
         }
-
-        // Sayfa içi bağlantılar Lenis üzerinden aksın
-        document.querySelectorAll('a[href^="#"]').forEach(function (bag) {
-            bag.addEventListener('click', function (olay) {
-                var hedefId = bag.getAttribute('href');
-                if (!hedefId || hedefId === '#') return;
-                var hedef = document.querySelector(hedefId);
-                if (!hedef) return;
-                olay.preventDefault();
-                lenis.scrollTo(hedef, { offset: -84, duration: 1.3 });
-            });
-        });
     }
 
     /* =========================================================
@@ -268,6 +256,86 @@
        okuması demek olurdu; kaydırma ve yeniden boyutlandırmada
        tazeleniyor.
        ========================================================= */
+    /* =========================================================
+       ÇAPA KAYDIRMASI — sayfadaki TEK kaydırma sahibi
+
+       Önceden iki sistem vardı: burada Lenis'e bağlı bir dinleyici,
+       script.js'te ise her a[href^="#"] tıklamasını preventDefault edip
+       window.scrollTo çağıran ikinci bir dinleyici. İkisi aynı anda
+       çalıştığı için hedef tam oturmuyordu. script.js'teki kaldırıldı.
+
+       Delege dinleyici: bağlantılar sonradan eklense de çalışır.
+       İki biçimi de kabul eder — "#hedef" ve aynı sayfayı gösteren
+       "/#hedef" (navbar partial'ı bu ikinci biçimi kullanıyor).
+
+       Ofset navbarın CANLI yüksekliğinden hesaplanıyor; sabit sayı
+       yazılsaydı navbar kompakt duruma geçtiğinde kayardı.
+       ========================================================= */
+    function capaOfseti() {
+        var nav = document.querySelector('.nav');
+        var yukseklik = nav ? nav.getBoundingClientRect().height : 0;
+        return yukseklik + 12;
+    }
+
+    function capayiCoz(bag) {
+        var ham = bag.getAttribute('href') || '';
+        // Aynı sayfayı gösteren "/#hedef" de sayfa içi bağlantıdır
+        if (ham.charAt(0) !== '#') {
+            if (!bag.hash || bag.pathname !== window.location.pathname) return null;
+            ham = bag.hash;
+        }
+        if (ham === '#' || ham.length < 2) return null;
+        try {
+            return document.querySelector(ham);
+        } catch (h) {
+            return null; // geçersiz seçici içeren hash
+        }
+    }
+
+    /* Tek genel kaydırma girişi. script.js (rezervasyon formu ilk hatalı
+       alana giderken) buradan çağırıyor — ikinci bir kaydırma mantığı
+       yazmasın diye bilerek dışarı açıldı. */
+    window.rossoKaydir = function (hedef, aninda) {
+        if (!hedef) return;
+
+        if (lenis && !aninda) {
+            lenis.scrollTo(hedef, { offset: -capaOfseti(), duration: 1.2 });
+            return;
+        }
+
+        var ust = hedef.getBoundingClientRect().top + window.pageYOffset - capaOfseti();
+        window.scrollTo({
+            top: Math.max(ust, 0),
+            behavior: (aninda || azHareket) ? 'auto' : 'smooth'
+        });
+    };
+
+    function capaBagla() {
+        document.addEventListener('click', function (olay) {
+            var bag = olay.target.closest ? olay.target.closest('a[href]') : null;
+            if (!bag || bag.target === '_blank') return;
+
+            var hedef = capayiCoz(bag);
+            if (!hedef) return;
+
+            olay.preventDefault();
+            window.rossoKaydir(hedef);
+
+            // Klavye odağı da hedefe taşınsın, yoksa Tab başa döner
+            if (!hedef.hasAttribute('tabindex')) hedef.setAttribute('tabindex', '-1');
+            hedef.focus({ preventScroll: true });
+        });
+
+        /* Başka sayfadan #çıpa ile gelindiğinde tarayıcı sabit navbarı
+           hesaba katmıyor; yükleme bitince biz hizalıyoruz. */
+        window.addEventListener('load', function () {
+            if (!window.location.hash) return;
+            var hedef = null;
+            try { hedef = document.querySelector(window.location.hash); } catch (h) { return; }
+            if (hedef) setTimeout(function () { window.rossoKaydir(hedef, true); }, 60);
+        });
+    }
+
     var ETKILESIM_SECICI = 'a, button, input, textarea, select, [role="button"]';
     var IMLEC_SECICI = '[data-cursor-image], [data-cursor-text], ' + ETKILESIM_SECICI;
 
@@ -361,6 +429,32 @@
             sonHedef = null;
             durumSifirla();
         });
+
+        /* TAKILI KALMA ONARIMI
+           Menü filtresi, off-canvas panel veya tam ekran görüntüleyici,
+           imlecin üzerinde durduğu öğeyi gizleyebiliyor. Öğe gizlenince
+           mouseout TETİKLENMİYOR, imleç de o durumda donuyor (ölçtüm:
+           gizledikten sonra imlec--etiketli üzerinde kalıyordu).
+           Tıklamadan hemen sonra imlecin ALTINDA gerçekten ne olduğuna
+           bakıp durumu yeniden kuruyoruz — tıklama başına tek ölçüm. */
+        document.addEventListener('click', function () {
+            setTimeout(function () {
+                var altta = document.elementFromPoint(sonX, sonY);
+                /* undefined, null DEĞİL: durumUygula ilk satırda
+                   hedef === sonHedef diye erken dönüyor ve altta hiçbir
+                   şey yokken (elementFromPoint null) sıfırlama atlanıyordu. */
+                sonHedef = undefined;
+                durumUygula(altta && altta.closest ? altta.closest(IMLEC_SECICI) : null);
+            }, 80);
+        });
+
+        // Hedef DOM'dan tamamen çıkarsa (isConnected bedava, layout okumaz)
+        window.addEventListener('mousemove', function () {
+            if (sonHedef && !sonHedef.isConnected) {
+                sonHedef = null;
+                durumSifirla();
+            }
+        }, { passive: true });
 
         // Ölçülen kutu kaydırma/boyut değişiminde bayatlar
         window.addEventListener('scroll', kutuyuTazele, { passive: true });
@@ -1699,7 +1793,7 @@
         if (acildi) return;
         acildi = true;
 
-        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, finaleBolumu, gorunurlukEmniyeti]
+        [lenisBaslat, capaBagla, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, finaleBolumu, gorunurlukEmniyeti]
             .forEach(function (modul) {
                 try { modul(); } catch (h) {
                     if (window.console) console.error('rosso:', modul.name, h);

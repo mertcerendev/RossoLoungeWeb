@@ -1,58 +1,12 @@
 @model List<RossoLoungeWeb.Models.Kategori>
 @{
-    Layout = null;
+    ViewData["Baslik"] = "Menü | Rosso Lounge Bistro";
+    ViewData["Aciklama"] = "Rosso Lounge Bistro menüsü — başlangıçlar, ana yemekler, pizzalar, tatlılar ve içecekler.";
+
     var yil = RossoLoungeWeb.Services.TurkiyeSaati.Simdi.Year;
     var yerTutucu = "/img/site/sunum.jpg";
     var toplamUrun = Model?.Sum(k => k.Urunler.Count) ?? 0;
 }
-
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menü | Rosso Lounge Bistro</title>
-    <meta name="description" content="Rosso Lounge Bistro menüsü — başlangıçlar, ana yemekler, pizzalar, tatlılar ve içecekler.">
-    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-    <link rel="stylesheet" href="~/css/rosso-tema.css" asp-append-version="true">
-    <link rel="stylesheet" href="~/css/rosso-bilesenler.css" asp-append-version="true">
-</head>
-<body>
-    @* Sıvı imleç — yalnızca fare olan cihazlarda *@
-    @await Html.PartialAsync("_Imlec")
-
-    <a href="#icerik" class="atla">İçeriğe atla</a>
-    <div class="nav-perde" aria-hidden="true"></div>
-
-    <header class="nav" id="navbar">
-        <div class="kap nav__ic">
-            <a href="/" class="nav__marka">ROSSO <span>LOUNGE</span></a>
-
-            <nav aria-label="Ana menü">
-                <ul class="nav__menu">
-                    <li><a href="/" class="nav__link">Ana Sayfa</a></li>
-                    <li><a href="/#about" class="nav__link">Hakkımızda</a></li>
-                    <li><a href="/Home/Menu" class="nav__link nav__link--aktif">Menü</a></li>
-                    <li><a href="/#gallery" class="nav__link">Galeri</a></li>
-                    <li><a href="/#reviews" class="nav__link">Yorumlar</a></li>
-                    <li><a href="/#contact" class="nav__link">İletişim</a></li>
-                    <li class="nav__mobil"><a href="/#rezervasyon" class="nav__eylem">Rezervasyon</a></li>
-                </ul>
-            </nav>
-
-            <a href="/#rezervasyon" class="nav__eylem nav__eylem--masaustu">Rezervasyon</a>
-
-            <button type="button" class="nav__hamburger" aria-label="Menüyü aç veya kapat" aria-expanded="false">
-                <span class="nav__cizgi"></span>
-            </button>
-        </div>
-    </header>
 
     <main id="icerik">
         <section class="menu menu--sayfa">
@@ -149,12 +103,3 @@
             </div>
         </div>
     </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
-    <script src="~/js/rosso-hareket.js" asp-append-version="true"></script>
-    <script src="~/js/ortak.js" asp-append-version="true"></script>
-</body>
-</html>
