@@ -371,9 +371,12 @@
             }
             if (eslesen) isaretle(eslesen);
         }, {
-            /* Üstte sabit navbar kadar pay bırakılıyor; altta %55 kesilerek
-               "ekranın üst yarısındaki bölüm aktiftir" kuralı kuruluyor. */
-            rootMargin: '-96px 0px -55% 0px',
+            /* Ekranın %40'ında SIFIR yükseklikte bir referans çizgisi:
+               o çizgiyi hangi bölüm kesiyorsa o aktif. Önceki geniş bant
+               (96px - %45) iki bölümün birden kesişmesine yol açıyor ve
+               en üstteki kazandığı için, ekranı iletişim bölümü doldurmuşken
+               "Yorumlar" altı çizili kalıyordu (ölçüldü: %82 konumunda). */
+            rootMargin: '-40% 0px -60% 0px',
             threshold: 0
         });
 
@@ -401,14 +404,20 @@
         return yukseklik + 12;
     }
 
+    /* 'tepe' döner: aynı sayfaya giden hash'siz bağlantı (Ana Sayfa,
+       marka). Bunlar sayfayı yeniden yüklüyordu; artık başa kaydırıyor. */
     function capayiCoz(bag) {
         var ham = bag.getAttribute('href') || '';
-        // Aynı sayfayı gösteren "/#hedef" de sayfa içi bağlantıdır
+
         if (ham.charAt(0) !== '#') {
-            if (!bag.hash || bag.pathname !== window.location.pathname) return null;
+            if (bag.pathname !== window.location.pathname) return null;
+            if (!bag.hash) return 'tepe';
             ham = bag.hash;
         }
-        if (ham === '#' || ham.length < 2) return null;
+
+        if (ham === '#') return 'tepe';
+        if (ham.length < 2) return null;
+
         try {
             return document.querySelector(ham);
         } catch (h) {
@@ -433,8 +442,16 @@
             return { oge: hedef, pay: 0 };
         }
 
-        var baslik = hedef.querySelector('h1, h2, .hero__baslik');
-        return { oge: baslik || hedef, pay: varsayilanPay };
+        /* Başlığa değil, bölümün İÇERİK BLOĞUNA hizalanıyor.
+           Hakkımızda'da başlık sağ sütunda, görseller sol sütunda daha
+           yukarıdan başlıyor; başlığı hizalayınca görsellerin üstü
+           kesiliyordu. .kap sarmalayıcısı iki sütunun da başladığı yer.
+
+           Pay da genişletildi: eski değerle üst başlık navın 29px
+           altına sıkışıyor, altta boşluk kalıyordu. */
+        var blok = hedef.querySelector('.kap') ||
+                   hedef.querySelector('h1, h2, .hero__baslik') || hedef;
+        return { oge: blok, pay: capaOfseti() + 56 };
     }
 
     /* Tek genel kaydırma girişi. script.js (rezervasyon formu ilk hatalı
@@ -469,6 +486,13 @@
             if (!hedef) return;
 
             olay.preventDefault();
+
+            if (hedef === 'tepe') {
+                if (lenis) lenis.scrollTo(0, { duration: 1.1 });
+                else window.scrollTo({ top: 0, behavior: azHareket ? 'auto' : 'smooth' });
+                return;
+            }
+
             window.rossoKaydir(hedef);
 
             // Klavye odağı da hedefe taşınsın, yoksa Tab başa döner
@@ -482,7 +506,7 @@
             if (!window.location.hash) return;
             var hedef = null;
             try { hedef = document.querySelector(window.location.hash); } catch (h) { return; }
-            if (hedef) setTimeout(function () { window.rossoKaydir(hedef, true); }, 60);
+            if (hedef && hedef !== 'tepe') setTimeout(function () { window.rossoKaydir(hedef, true); }, 60);
         });
     }
 
