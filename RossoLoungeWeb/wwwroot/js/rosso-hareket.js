@@ -257,6 +257,74 @@
        tazeleniyor.
        ========================================================= */
     /* =========================================================
+       NAVBAR AKTİF BÖLÜM İZLEYİCİSİ
+
+       Eski tasarımın scrollspy'ı .nav-links kancasına bağlıydı ve yeni
+       navbarla eşleşmiyordu; sonuç olarak "Ana Sayfa" hangi bölüme
+       gidilirse gidilsin altı çizili kalıyordu.
+
+       IntersectionObserver kullanılıyor: kaydırma dinleyicisi yok,
+       ölçüm yalnızca kesişim değiştiğinde yapılıyor.
+       ========================================================= */
+    function navIzleyici() {
+        var linkler = Array.prototype.slice.call(document.querySelectorAll('.nav__link'));
+        if (!linkler.length) return;
+
+        var anaLink = null;
+        var hedefler = [];
+
+        linkler.forEach(function (bag) {
+            // Başka sayfaya giden bağlantılar (ör. /Home/Menu) izlenmez
+            if (bag.pathname !== window.location.pathname) return;
+            if (!bag.hash) { anaLink = bag; return; }
+
+            var bolum = document.getElementById(bag.hash.slice(1));
+            if (bolum) hedefler.push({ bag: bag, bolum: bolum });
+        });
+
+        if (!hedefler.length) return; // menü sayfası: sunucunun verdiği durum kalsın
+
+        function isaretle(etkin) {
+            linkler.forEach(function (bag) {
+                bag.classList.toggle('nav__link--aktif', bag === etkin);
+            });
+        }
+
+        var gorunen = [];
+
+        var izleyici = new IntersectionObserver(function (girisler) {
+            girisler.forEach(function (giris) {
+                var yer = gorunen.indexOf(giris.target);
+                if (giris.isIntersecting) {
+                    if (yer < 0) gorunen.push(giris.target);
+                } else if (yer >= 0) {
+                    gorunen.splice(yer, 1);
+                }
+            });
+
+            if (!gorunen.length) { isaretle(anaLink); return; }
+
+            // Birden fazla bölüm görünüyorsa en yukarıdaki kazanır
+            var enUst = gorunen.slice().sort(function (a, b) {
+                return a.getBoundingClientRect().top - b.getBoundingClientRect().top;
+            })[0];
+
+            var eslesen = null;
+            for (var i = 0; i < hedefler.length; i++) {
+                if (hedefler[i].bolum === enUst) { eslesen = hedefler[i].bag; break; }
+            }
+            isaretle(eslesen || anaLink);
+        }, {
+            /* Üstte sabit navbar kadar pay bırakılıyor; altta %55 kesilerek
+               "ekranın üst yarısındaki bölüm aktiftir" kuralı kuruluyor. */
+            rootMargin: '-96px 0px -55% 0px',
+            threshold: 0
+        });
+
+        hedefler.forEach(function (h) { izleyici.observe(h.bolum); });
+    }
+
+    /* =========================================================
        ÇAPA KAYDIRMASI — sayfadaki TEK kaydırma sahibi
 
        Önceden iki sistem vardı: burada Lenis'e bağlı bir dinleyici,
@@ -1453,8 +1521,13 @@
 
         var harfler = finale.querySelectorAll('.finale__harf > span');
         if (harfler.length) {
+            /* y: 0 ŞART. GSAP, CSS'teki translateY(105%) değerini kendi
+               PX kanalına (y = 117.6px) emiyor; yPercent ayrı bir kanal
+               olduğu için 105 -> 0 animasyonu bitse bile o px kayması
+               duruyor ve harfler maskenin altında kalıyordu. Ölçüldü:
+               bitişte inline transform "translate(0px, 117.6px)". */
             gsap.fromTo(harfler,
-                { yPercent: 105 },
+                { yPercent: 105, y: 0 },
                 {
                     yPercent: 0,
                     duration: 1.15,
@@ -1793,7 +1866,7 @@
         if (acildi) return;
         acildi = true;
 
-        [lenisBaslat, capaBagla, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, finaleBolumu, gorunurlukEmniyeti]
+        [lenisBaslat, capaBagla, navIzleyici, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, finaleBolumu, gorunurlukEmniyeti]
             .forEach(function (modul) {
                 try { modul(); } catch (h) {
                     if (window.console) console.error('rosso:', modul.name, h);

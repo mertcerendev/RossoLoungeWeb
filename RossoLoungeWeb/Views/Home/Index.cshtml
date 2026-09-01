@@ -294,31 +294,6 @@
             </div>
         </section>
 
-        @* Tam ekran görüntüleyici — çerçeve, tıklanan karenin üstünden
-           GSAP Flip ile büyür; arka plan bulanıklaşır. *@
-        <div class="tamekran" id="tamekran" role="dialog" aria-modal="true" aria-label="Görsel önizleme" hidden>
-            <div class="tamekran__zemin"></div>
-
-            <div class="tamekran__cerceve">
-                <img class="tamekran__foto" src="" alt="">
-            </div>
-
-            <div class="tamekran__ayak">
-                <span class="tamekran__no"></span>
-                <span class="tamekran__etiket"></span>
-            </div>
-
-            <button type="button" class="tamekran__kapat" aria-label="Kapat">
-                <span aria-hidden="true">&times;</span>
-            </button>
-            <button type="button" class="tamekran__ok tamekran__ok--onceki" aria-label="Önceki görsel">
-                <span aria-hidden="true">&#10094;</span>
-            </button>
-            <button type="button" class="tamekran__ok tamekran__ok--sonraki" aria-label="Sonraki görsel">
-                <span aria-hidden="true">&#10095;</span>
-            </button>
-        </div>
-
         @* =========================================================
            ZİYARETÇİ DEFTERİ
            Karusel değil: tek yorum ekranın merkezinde, tipografi odaklı.
@@ -690,6 +665,38 @@
         </section>
 
     </main>
+
+@* Tam ekran görüntüleyici — çerçeve, tıklanan karenin üstünden GSAP ile büyür.
+
+   BİLEREK <main> DIŞINDA: finale perdesi için main'e
+   "position: relative; z-index: 1" veriliyor ve bu bir yığılma bağlamı
+   yaratıyor. Katman main içinde kalırsa z-index: 9999 o bağlamın İÇİNDE
+   yorumlanıyor, navbar (z-index: 900, main'in kardeşi) fotoğrafın üstüne
+   biniyor: kapatma düğmesi görünmez oluyor ve tıklamalar navbara gidip
+   sayfayı başka bölüme atıyor. Ölçüldü ve ekran görüntüsüyle doğrulandı.
+*@
+        <div class="tamekran" id="tamekran" role="dialog" aria-modal="true" aria-label="Görsel önizleme" hidden>
+            <div class="tamekran__zemin"></div>
+
+            <div class="tamekran__cerceve">
+                <img class="tamekran__foto" src="" alt="">
+            </div>
+
+            <div class="tamekran__ayak">
+                <span class="tamekran__no"></span>
+                <span class="tamekran__etiket"></span>
+            </div>
+
+            <button type="button" class="tamekran__kapat" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <button type="button" class="tamekran__ok tamekran__ok--onceki" aria-label="Önceki görsel">
+                <span aria-hidden="true">&#10094;</span>
+            </button>
+            <button type="button" class="tamekran__ok tamekran__ok--sonraki" aria-label="Sonraki görsel">
+                <span aria-hidden="true">&#10095;</span>
+            </button>
+        </div>
 
     @* ============================================================
        FİNALE — sinematik perde

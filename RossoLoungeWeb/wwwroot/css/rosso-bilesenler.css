@@ -3073,3 +3073,11 @@ body.finale-acik footer.finale {
 .imlec--gorselli .imlec__cekirdek {
     opacity: 0;
 }
+
+/* Perde modunda son bölümün alt boşluğu, sabit footer'ın üstünde
+   135px'lik boş bir bant olarak görünüyordu (ölçüldü: .konsiyer
+   alt dolgusu 193.6px, son içerik 10px'te bitiyor). Footer zaten
+   kendi üst dolgusunu taşıdığı için burada kısaltılıyor. */
+body.finale-acik main > section:last-of-type {
+    padding-block-end: clamp(4rem, 8vw, 8rem);
+}
