@@ -279,8 +279,8 @@
 
         kok.classList.add('rosso-imlec');
 
-        var nokta = imlec.querySelector('.imlec__nokta');
-        var halka = imlec.querySelector('.imlec__halka');
+        var nokta = imlec.querySelector('.imlec__cekirdek');
+        var halka = imlec.querySelector('.imlec__kap');
         var yazi = imlec.querySelector('.imlec__yazi');
         var gorsel = imlec.querySelector('.imlec__gorsel');
         if (!nokta || !halka) return;

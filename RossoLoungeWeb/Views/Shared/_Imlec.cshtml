@@ -2,7 +2,7 @@
    GLOBAL ÖZEL İMLEÇ
 
    Tüm durumlar TEK DOM örneği üzerinde çalışır: hover başına öğe
-   yaratılmaz, yalnızca sınıf değişir. Halka içindeki yazı ve görsel
+   yaratılmaz, yalnızca sınıf değişir. Elmasın içindeki yazı ve görsel
    kutuları hep burada durur, boşken görünmezler.
 
    Sayfaya eklemek için: @@await Html.PartialAsync("_Imlec")
@@ -15,9 +15,10 @@
    istek açıyor, kaynağı JS ilk hover'da yazıyor.
    ============================================================ *@
 <div class="imlec" aria-hidden="true">
-    <span class="imlec__halka">
+    <span class="imlec__kap">
+        <span class="imlec__elmas"></span>
         <span class="imlec__yazi"></span>
         <img class="imlec__gorsel" alt="" decoding="async">
     </span>
-    <span class="imlec__nokta"></span>
+    <span class="imlec__cekirdek"></span>
 </div>

@@ -1354,13 +1354,15 @@
    "İleri/Geri". Bu kurallar rosso-tema.css'teki .imlec--yakin'den SONRA
    geldiği için (aynı özgüllük) kazanır — her iki hedef de <button>.
    ============================================================= */
-.imlec__halka {
+.imlec__kap {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .imlec__yazi {
+    /* Elmas mutlak konumlu; konumsuz kardeş onun ALTINDA boyanırdı */
+    position: relative;
     opacity: 0;
     color: var(--obsidyen);
     font-family: var(--f-sans);
@@ -1373,17 +1375,22 @@
     transition: opacity var(--h2) var(--egri), transform var(--h2) var(--egri);
 }
 
-.imlec--etiketli .imlec__halka {
-    width: 108px;
-    height: 108px;
-    margin: -54px 0 0 -54px;
-    background: rgba(230, 217, 189, 0.88);
+.imlec--etiketli .imlec__kap {
+    width: 112px;
+    height: 112px;
+    margin: -56px 0 0 -56px;
+}
+
+/* Etiketli durumda elmas kareye döner ve şampanya ile dolar */
+.imlec--etiketli .imlec__elmas {
+    transform: rotate(0deg);
+    background: rgba(230, 217, 189, 0.9);
     border-color: transparent;
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
 }
 
-.imlec--etiketli .imlec__nokta {
+.imlec--etiketli .imlec__cekirdek {
     opacity: 0;
 }
 
@@ -1504,12 +1511,18 @@
 }
 
 /* Tam ekran açıkken imleç sergi durumunda takılı kalmasın */
-.tamekran-acik .imlec--etiketli .imlec__halka {
-    width: 68px;
-    height: 68px;
-    margin: -34px 0 0 -34px;
+.tamekran-acik .imlec--etiketli .imlec__kap {
+    width: 64px;
+    height: 64px;
+    margin: -32px 0 0 -32px;
+}
+
+.tamekran-acik .imlec--etiketli .imlec__elmas {
+    transform: rotate(45deg);
     background: var(--sampanya-sis);
     border-color: var(--sampanya);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }
 
 .tamekran-acik .imlec--etiketli .imlec__yazi {
@@ -3037,14 +3050,18 @@ body.finale-acik footer.finale {
     transition: clip-path var(--h3) var(--egri), opacity var(--h1) var(--egri);
 }
 
-.imlec--gorselli .imlec__halka {
+.imlec--gorselli .imlec__kap {
     width: 240px;
     height: 300px;
     margin: -150px 0 0 -120px;
     background: var(--antrasit-3);
-    border-color: transparent;
     border-radius: 2px;
     overflow: hidden;
+}
+
+/* Elmas çizgisi fotoğrafın üstünde kirlilik yapıyor */
+.imlec--gorselli .imlec__elmas {
+    opacity: 0;
 }
 
 .imlec--gorselli .imlec__gorsel {
@@ -3053,6 +3070,6 @@ body.finale-acik footer.finale {
 }
 
 /* Fotoğrafın üstünde küçük nokta kirlilik yapıyor */
-.imlec--gorselli .imlec__nokta {
+.imlec--gorselli .imlec__cekirdek {
     opacity: 0;
 }
