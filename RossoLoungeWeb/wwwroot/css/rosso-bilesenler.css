@@ -15,7 +15,10 @@
     border-block-end: 1px solid transparent;
     transition: padding-block var(--h2) var(--egri),
                 background var(--h2) var(--egri),
-                border-color var(--h2) var(--egri);
+                border-color var(--h2) var(--egri),
+                /* .nav--gizli için: imza görünürken header çekiliyor */
+                transform var(--h2) var(--egri),
+                opacity var(--h2) var(--egri);
 }
 
 .nav--sabit {
@@ -1044,7 +1047,7 @@
 .vitrin__fiyat {
     display: flex;
     align-items: baseline;
-    gap: var(--b2);
+    gap: var(--b5);
     padding-block-start: var(--b4);
     border-block-start: 1px solid var(--cizgi);
     font-family: var(--f-serif);
@@ -1052,13 +1055,26 @@
     color: var(--metin);
 }
 
+/* Her fiyat kendi ölçü adıyla: "Orta 290₺  Büyük 350₺" */
+.vitrin__olcu {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--b2);
+    white-space: nowrap;
+}
+
+.vitrin__olcu-ad {
+    color: var(--metin-3);
+    font-family: var(--f-sans);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
 .vitrin__para {
     color: var(--sampanya);
     font-size: 0.75em;
-}
-
-.vitrin__ayrac {
-    color: var(--metin-3);
 }
 
 /* --- Tüm menü çağrısı --- */
@@ -2341,7 +2357,9 @@ html:not(.rosso-imlec) .defter--tutuluyor .defter__sahne {
    ============================================================= */
 .konsiyer {
     position: relative;
-    padding-block: var(--bolum);
+    /* Alt dolgu kısa: devasa imza bu bölümün içinde durduğu için
+       footer şeridi haritaya yakın kalmalı. */
+    padding-block: var(--bolum) clamp(2.5rem, 5vw, 4rem);
     background: var(--obsidyen);
 }
 
@@ -2686,75 +2704,38 @@ html:not(.rosso-imlec) .defter--tutuluyor .defter__sahne {
 }
 
 /* =============================================================
-   FİNALE — sinematik alt bilgi
+   FİNALE — iki satırlık alt bilgi
+
+   Devasa ROSSO LOUNGE yazısı iletişim bölümüne (haritanın sağına)
+   taşındı; geriye telif + geliştirici imzası kaldı. Bu yüzden eski
+   "sabit footer perdesi" (fixed konum + .finale-bosluk yer ayırma)
+   tamamen kaldırıldı: iki satır için gereksizdi ve main'e verdiği
+   z-index bağlamı tam ekran görüntüleyici ile yorum panelini
+   hapsediyordu.
 
    ESKİ CSS UYARISI: style.css içinde "body:not(.panel) footer"
    kuralı var; özgüllüğü (0,1,2) ve tek sınıflı .finale'yi (0,1,0)
    ezip zemini/dolguyu/hizayı geri yazıyor. Bu yüzden kap düzeyindeki
    kurallar bilerek "body:not(.panel) footer.finale" (0,2,2) ile
-   yazıldı. Alt seçicilerde çakışma yok — footer altında element
-   kuralı bulunmuyor, onlar sade sınıflarla yazılabiliyor.
+   yazıldı.
    ============================================================= */
 body:not(.panel) footer.finale {
     position: relative;
-    z-index: var(--k-zemin);
     margin-block-start: 0;
-    padding-block: clamp(3rem, 5vw, 4rem) clamp(1.75rem, 3vw, 2.5rem);
+    /* Haritaya yakın dursun diye üst boşluk dar tutuldu */
+    padding-block: clamp(1.25rem, 2.5vw, 2rem);
     background: var(--obsidyen);
     border-block-start: 1px solid var(--cizgi);
     color: var(--metin-2);
     text-align: left;
-    overflow: hidden;
 }
 
-.finale__ic {
-    display: flex;
-    flex-direction: column;
-    gap: clamp(2rem, 4vw, 3.25rem);
-}
-
-/* --- Üst şerit: solda mekân, sağda gezinti + bülten --- */
-/* --- Devasa imza --- */
-.finale__imza {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 0.2em;
-    /* Kap 1280px'de sabitlendiği icin ust sinir rem cinsinden:
-       yalnizca vw kullanilsa genis ekranda kabi tasardi. */
-    font-family: var(--f-serif);
-    font-size: clamp(2rem, 10vw, 7rem);
-    font-weight: 300;
-    line-height: 1;
-    letter-spacing: 0.01em;
-    color: var(--metin);
-    user-select: none;
-}
-
-.finale__soz {
-    display: flex;
-    align-items: baseline;
-}
-
-.finale__harf {
-    display: inline-block;
-    overflow: hidden;
-    line-height: 1;
-}
-
-    .finale__harf > span {
-        display: inline-block;
-    }
-
-/* --- Alt köşeler --- */
 .finale__alt {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: var(--b5);
-    padding-block-start: clamp(1.5rem, 3vw, 2.5rem);
-    border-block-start: 1px solid var(--cizgi);
 }
 
 .finale__telif {
@@ -2763,54 +2744,108 @@ body:not(.panel) footer.finale {
     letter-spacing: 0.06em;
 }
 
+.rosso-kinetik .finale__alt {
+    opacity: 0;
+}
+
 /* =============================================================
-   PERDE MODU — yalnızca JS açar (body.finale-acik)
-   Footer sabit durur, içerik onun üstünden kayarak footer'ı
-   yavaşça açığa çıkarır. Boşluğun yüksekliğini JS yazar.
+   İMZA — haritanın sağındaki devasa yazı
+
+   Dar sütunda durduğu için iki söz alt alta; her söz kendi içinde
+   space-between ile kenardan kenara yayılıyor, böylece sütun
+   genişliği ne olursa olsun hizalı bir blok oluşuyor.
    ============================================================= */
-.finale-bosluk {
-    display: none;
+.imza {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    margin-block-start: clamp(2.5rem, 6vw, 5rem);
+    font-family: var(--f-serif);
+    font-size: clamp(2.25rem, 7vw, 5rem);
+    font-weight: 300;
+    line-height: 1.02;
+    letter-spacing: 0.01em;
+    color: var(--metin);
+    user-select: none;
 }
 
-body.finale-acik .finale-bosluk {
-    display: block;
+.imza__soz {
+    display: flex;
+    justify-content: space-between;
 }
 
-/* Üstteki katman opak olmalı, yoksa sabit footer içerikten görünür */
-body.finale-acik main {
-    position: relative;
-    z-index: var(--k-icerik);
-    background: var(--obsidyen);
+.imza__harf {
+    display: inline-block;
+    overflow: hidden;
+    line-height: 1;
 }
 
-body.finale-acik footer.finale {
-    position: fixed;
-    inset-block-end: 0;
-    inset-inline: 0;
-    border-block-start: 0;
-}
-
-@media (max-width: 640px) {
-    /* Dar ekranda iki kelime yan yana sığmıyor, alt alta iniyor */
-    .finale__imza {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0;
-        font-size: 17vw;
+    .imza__harf > span {
+        display: inline-block;
     }
-
-    .finale__alt {
-        justify-content: flex-start;
-    }
-}
 
 /* Kinetik başlangıç — harfler maskenin altında bekler */
-.rosso-kinetik .finale__harf > span {
+.rosso-kinetik .imza__harf > span {
     transform: translateY(105%);
 }
 
-.rosso-kinetik .finale__alt {
+@media (max-width: 980px) {
+    /* Tek sütuna inince imza sayfa genişliğine yayılıyor */
+    .imza {
+        font-size: clamp(2.5rem, 15vw, 7rem);
+    }
+}
+
+/* =============================================================
+   BAŞA DÖN
+
+   Sona yaklaşınca beliriyor. İmleç 10000'de olduğu için onun
+   altında ama içeriğin üstünde duruyor.
+   ============================================================= */
+.basa-don {
+    position: fixed;
+    inset-block-end: clamp(1.25rem, 3vw, 2rem);
+    inset-inline-end: clamp(1.25rem, 3vw, 2rem);
+    z-index: var(--k-nav);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: rgba(8, 8, 10, 0.72);
+    border: 1px solid var(--cizgi-2);
+    border-radius: 50%;
+    color: var(--metin-2);
+    cursor: pointer;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     opacity: 0;
+    transform: translateY(10px);
+    transition: opacity var(--h2) var(--egri), transform var(--h2) var(--egri),
+                color var(--h2) var(--egri), border-color var(--h2) var(--egri);
+}
+
+.basa-don--gorunur {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+    .basa-don:hover,
+    .basa-don:focus-visible {
+        color: var(--sampanya);
+        border-color: var(--sampanya);
+    }
+
+/* =============================================================
+   NAVBAR GİZLEME
+
+   İmza görünürken header kayboluyor: iki ROSSO LOUNGE yazısı
+   aynı anda ekranda durmasın.
+   ============================================================= */
+.nav--gizli {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* =============================================================
@@ -2862,14 +2897,6 @@ body.finale-acik footer.finale {
 /* Fotoğrafın üstünde küçük nokta kirlilik yapıyor */
 .imlec--gorselli .imlec__cekirdek {
     opacity: 0;
-}
-
-/* Perde modunda son bölümün alt boşluğu, sabit footer'ın üstünde
-   135px'lik boş bir bant olarak görünüyordu (ölçüldü: .konsiyer
-   alt dolgusu 193.6px, son içerik 10px'te bitiyor). Footer zaten
-   kendi üst dolgusunu taşıdığı için burada kısaltılıyor. */
-body.finale-acik main > section:last-of-type {
-    padding-block-end: clamp(4rem, 8vw, 8rem);
 }
 
 /* =============================================================

@@ -77,6 +77,17 @@
 
     @RenderBody()
 
+    @* Sayfanın başına dön — yalnızca sona yaklaşınca beliriyor (script.js).
+       JS yoksa gizli kalır; çapa zaten "#" ile en üste gitmez, o yüzden
+       görünürlüğü de davranışı da JS'e bırakıldı. *@
+    <button type="button" class="basa-don" aria-label="Sayfanın başına dön" hidden>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+             stroke-width="1.5" aria-hidden="true">
+            <path d="M12 19V6" />
+            <path d="m6 12 6-6 6 6" />
+        </svg>
+    </button>
+
     @* --- 1) Sahne motoru --- *@
     <script defer src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>

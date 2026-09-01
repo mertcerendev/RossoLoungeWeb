@@ -210,16 +210,25 @@
                                     {
                                         <p class="vitrin__aciklama">@urun.Aciklama</p>
                                     }
+                                    @* İki fiyat varken hangisinin ne olduğu yazmalı;
+                                       menü sayfasındaki gösterimle aynı dil. *@
                                     <p class="vitrin__fiyat">
                                         @if (urun.FiyatBuyuk.HasValue)
                                         {
-                                            <span>@urun.Fiyat.ToString("N0")<span class="vitrin__para">₺</span></span>
-                                            <span class="vitrin__ayrac">/</span>
-                                            <span>@urun.FiyatBuyuk.Value.ToString("N0")<span class="vitrin__para">₺</span></span>
+                                            <span class="vitrin__olcu">
+                                                <span class="vitrin__olcu-ad">@(string.IsNullOrEmpty(urun.FiyatTur) ? "Orta" : urun.FiyatTur)</span>
+                                                @urun.Fiyat.ToString("N0")<span class="vitrin__para">₺</span>
+                                            </span>
+                                            <span class="vitrin__olcu">
+                                                <span class="vitrin__olcu-ad">@(string.IsNullOrEmpty(urun.FiyatBuyukTur) ? "Büyük" : urun.FiyatBuyukTur)</span>
+                                                @urun.FiyatBuyuk.Value.ToString("N0")<span class="vitrin__para">₺</span>
+                                            </span>
                                         }
                                         else
                                         {
-                                            <span>@urun.Fiyat.ToString("N0")<span class="vitrin__para">₺</span></span>
+                                            <span class="vitrin__olcu">
+                                                @urun.Fiyat.ToString("N0")<span class="vitrin__para">₺</span>
+                                            </span>
                                         }
                                     </p>
                                 </div>
@@ -591,6 +600,25 @@
                             </form>
                         </div>
                     </div>
+
+                    @* İMZA — footer'dan buraya taşındı.
+                       Haritanın sağındaki boşlukta beliriyor. Dar sütun
+                       olduğu için iki söz alt alta; her söz kendi içinde
+                       kenardan kenara yayılıyor.
+                       Ekran okuyucu harf harf okumasın diye kap gizli,
+                       ad görsel-gizli metinle veriliyor. *@
+                    <p class="gorsel-gizli">Rosso Lounge</p>
+                    <div class="imza" id="imza" aria-hidden="true">
+                        @foreach (var soz in new[] { "ROSSO", "LOUNGE" })
+                        {
+                            <span class="imza__soz">
+                                @foreach (var harf in soz)
+                                {
+                                    <span class="imza__harf"><span>@harf</span></span>
+                                }
+                            </span>
+                        }
+                    </div>
                 </div>
             </div>
         </section>
@@ -702,34 +730,14 @@
             </button>
         </div>
 
-    @* ============================================================
-       FİNALE — sinematik perde
-       Footer sayfanın en altında sabit durur (z-index olarak altta);
-       son bölüm onun üstünden yukarı kayarken footer gün yüzüne çıkar.
-       .finale-bosluk footer yüksekliği kadar yer ayırır — bu ölçüyü JS
-       verir. JS/GSAP yoksa perde modu HİÇ açılmaz, footer normal akışta
-       kalır ve sayfa eksiksiz okunur.
-       ============================================================ *@
-    <div class="finale-bosluk" aria-hidden="true"></div>
-
+    @* Footer artık yalnızca iki satır: telif + geliştirici imzası.
+       Devasa ROSSO LOUNGE yazısı iletişim bölümüne, haritanın sağına
+       taşındı. Bu yüzden eski "sabit footer perdesi" (fixed konum +
+       .finale-bosluk yer ayırma) kaldırıldı — iki satır için gereksizdi
+       ve main'e verdiği z-index bağlamı katmanları hapsediyordu. *@
     <footer class="finale" id="finale">
         <div class="kap finale__ic">
 
-
-            @* Devasa imza. Harfler tek tek maskeden yükselir; ekran
-               okuyucu harf harf okumasın diye kap gizli, adı altta veriliyor. *@
-            <p class="gorsel-gizli">Rosso Lounge</p>
-            <div class="finale__imza" aria-hidden="true">
-                @foreach (var soz in new[] { "ROSSO", "LOUNGE" })
-                {
-                    <span class="finale__soz">
-                        @foreach (var harf in soz)
-                        {
-                            <span class="finale__harf"><span>@harf</span></span>
-                        }
-                    </span>
-                }
-            </div>
 
             <div class="finale__alt">
                 <p class="finale__telif">&copy; @yil Rosso Lounge Bistro</p>

@@ -13,6 +13,11 @@
    aynı biçim kullanılıyor: rosso-hareket.js'teki çapa yakalayıcı
    yolun aynı olduğunu görüp sayfayı yeniden yüklemeden Lenis ile
    kaydırıyor. Böylece bu partial hiçbir koşul taşımıyor.
+
+   data-bolum: scrollspy hangi bağlantının hangi bölüme ait olduğunu
+   buradan okuyor. "Menü" başka sayfaya gidiyor ama ana sayfadaki
+   vitrin bölümü de ona ait — eşleme olmadığı için o bölümde
+   "Ana Sayfa" altı çizili kalıyordu.
    ============================================================ *@
 <header class="nav" id="navbar">
     <div class="kap nav__ic">
@@ -20,12 +25,12 @@
 
         <nav aria-label="Ana menü">
             <ul class="nav__menu">
-                <li><a href="/" class="nav__link@(Aktif(anaSayfada))">Ana Sayfa</a></li>
-                <li><a href="/#about" class="nav__link">Hakkımızda</a></li>
-                <li><a href="/Home/Menu" class="nav__link@(Aktif(string.Equals(eylem, "Menu", StringComparison.OrdinalIgnoreCase)))">Menü</a></li>
-                <li><a href="/#gallery" class="nav__link">Galeri</a></li>
-                <li><a href="/#reviews" class="nav__link">Yorumlar</a></li>
-                <li><a href="/#contact" class="nav__link">İletişim</a></li>
+                <li><a href="/" class="nav__link@(Aktif(anaSayfada))" data-bolum="home">Ana Sayfa</a></li>
+                <li><a href="/#about" class="nav__link" data-bolum="about">Hakkımızda</a></li>
+                <li><a href="/Home/Menu" class="nav__link@(Aktif(string.Equals(eylem, "Menu", StringComparison.OrdinalIgnoreCase)))" data-bolum="menu">Menü</a></li>
+                <li><a href="/#gallery" class="nav__link" data-bolum="gallery">Galeri</a></li>
+                <li><a href="/#reviews" class="nav__link" data-bolum="reviews">Yorumlar</a></li>
+                <li><a href="/#contact" class="nav__link" data-bolum="contact">İletişim</a></li>
                 <li class="nav__mobil"><a href="/#rezervasyon" class="nav__eylem">Rezervasyon</a></li>
             </ul>
         </nav>

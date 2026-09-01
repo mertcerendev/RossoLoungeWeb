@@ -323,15 +323,16 @@
         var linkler = Array.prototype.slice.call(document.querySelectorAll('.nav__link'));
         if (!linkler.length) return;
 
-        var anaLink = null;
         var hedefler = [];
 
+        /* Eşleme href'ten DEĞİL data-bolum'dan okunuyor: "Menü" bağlantısı
+           /Home/Menu'ye gidiyor ama ana sayfadaki vitrin bölümü de ona ait.
+           href'e bakıldığında o bölümde hiçbir eşleşme bulunamıyor ve
+           "Ana Sayfa" altı çizili kalıyordu. */
         linkler.forEach(function (bag) {
-            // Başka sayfaya giden bağlantılar (ör. /Home/Menu) izlenmez
-            if (bag.pathname !== window.location.pathname) return;
-            if (!bag.hash) { anaLink = bag; return; }
-
-            var bolum = document.getElementById(bag.hash.slice(1));
+            var bolumId = bag.getAttribute('data-bolum');
+            if (!bolumId) return;
+            var bolum = document.getElementById(bolumId);
             if (bolum) hedefler.push({ bag: bag, bolum: bolum });
         });
 
@@ -355,7 +356,9 @@
                 }
             });
 
-            if (!gorunen.length) { isaretle(anaLink); return; }
+            /* Hiçbir bölüm bantta değilse (ör. footer) son durum kalsın;
+               temizlemek çizginin kaybolup geri gelmesine yol açıyordu. */
+            if (!gorunen.length) return;
 
             // Birden fazla bölüm görünüyorsa en yukarıdaki kazanır
             var enUst = gorunen.slice().sort(function (a, b) {
@@ -366,7 +369,7 @@
             for (var i = 0; i < hedefler.length; i++) {
                 if (hedefler[i].bolum === enUst) { eslesen = hedefler[i].bag; break; }
             }
-            isaretle(eslesen || anaLink);
+            if (eslesen) isaretle(eslesen);
         }, {
             /* Üstte sabit navbar kadar pay bırakılıyor; altta %55 kesilerek
                "ekranın üst yarısındaki bölüm aktiftir" kuralı kuruluyor. */
@@ -413,18 +416,44 @@
         }
     }
 
+    /* Bölümlerin üst dolgusu ~200px. Kutunun tepesine gidince ekranın
+       üst yarısı boş kalıyor, içerik aşağıda başlıyordu. Bölüm hedefiyse
+       BAŞLIĞINA hizalıyoruz — tıklayan kişi içeriği görsün. */
+    /* Hedefe göre hem hizalanacak öğeyi hem üstte bırakılacak payı verir. */
+    function hizaBilgisi(hedef) {
+        var varsayilanPay = capaOfseti() + 28;
+        if (!hedef || hedef.tagName !== 'SECTION') {
+            return { oge: hedef, pay: varsayilanPay };
+        }
+
+        /* Pin'li bölüm (galeri): sahne 100vh ve kaydırmayla yatay akıyor.
+           Pay bırakmak sahnenin ÖNCESİNE düşürüyor — ölçüldü, tıklayınca
+           hâlâ vitrin bölümündeydi. Tam tepeye oturuyoruz. */
+        if (hedef.querySelector('.pin-spacer')) {
+            return { oge: hedef, pay: 0 };
+        }
+
+        var baslik = hedef.querySelector('h1, h2, .hero__baslik');
+        return { oge: baslik || hedef, pay: varsayilanPay };
+    }
+
     /* Tek genel kaydırma girişi. script.js (rezervasyon formu ilk hatalı
        alana giderken) buradan çağırıyor — ikinci bir kaydırma mantığı
        yazmasın diye bilerek dışarı açıldı. */
     window.rossoKaydir = function (hedef, aninda) {
         if (!hedef) return;
 
+        var bilgi = hizaBilgisi(hedef);
+        var ust = bilgi.oge.getBoundingClientRect().top + window.pageYOffset - bilgi.pay;
+
+        // Sayfanın en başındaki bölüm için tepeye git, araya boşluk girmesin
+        if (ust < 140) ust = 0;
+
         if (lenis && !aninda) {
-            lenis.scrollTo(hedef, { offset: -capaOfseti(), duration: 1.2 });
+            lenis.scrollTo(ust, { duration: 1.2 });
             return;
         }
 
-        var ust = hedef.getBoundingClientRect().top + window.pageYOffset - capaOfseti();
         window.scrollTo({
             top: Math.max(ust, 0),
             behavior: (aninda || azHareket) ? 'auto' : 'smooth'
@@ -1502,108 +1531,92 @@
     }
 
     /* =========================================================
-       FİNALE — sinematik perde
+       İMZA + BAŞA DÖN
 
-       Perde: footer sabitlenir (CSS'te body.finale-acik), .finale-bosluk
-       onun yüksekliği kadar yer ayırır. Böylece son bölüm yukarı kayarken
-       footer altta duruyormuş gibi açığa çıkar. Mod YALNIZCA JS ile açılır;
-       script çalışmazsa footer normal akışta kalır.
+       Devasa ROSSO LOUNGE yazısı artık footer'da değil, iletişim
+       bölümünde haritanın sağında. Eski "sabit footer perdesi"
+       (fixed footer + boşluk ölçme) tamamen kaldırıldı: footer iki
+       satıra indi, perdeye gerek kalmadı.
 
-       İki emniyet: footer ekrandan uzunsa sabitlemek onu okunamaz yapar,
-       sayfa kısaysa sabit footer içeriğin üstüne biner — ikisinde de
-       perde açılmaz.
+       İmza görünürken NAVBAR gizleniyor — aynı anda iki ROSSO LOUNGE
+       yazısı ekranda durmasın. IntersectionObserver kullanılıyor,
+       kaydırma dinleyicisi yok.
        ========================================================= */
-    var finaleOlcuZaman = null;
+    function imzaBolumu() {
+        var imza = document.querySelector('.imza');
+        var nav = document.querySelector('.nav');
 
-    function finaleBolumu() {
-        var finale = document.querySelector('.finale');
-        var bosluk = document.querySelector('.finale-bosluk');
-        if (!finale || !bosluk) return;
-
-        var govde = document.body;
-
-        function perdeKapat() {
-            govde.classList.remove('finale-acik');
-            bosluk.style.height = '';
+        /* --- Navbarı gizle/göster --- */
+        if (imza && nav && 'IntersectionObserver' in window) {
+            new IntersectionObserver(function (girisler) {
+                girisler.forEach(function (giris) {
+                    nav.classList.toggle('nav--gizli', giris.isIntersecting);
+                });
+            }, {
+                /* Üstte navbar yüksekliği kadar pay: imza gerçekten
+                   navbarın hizasına gelmeden gizlemeye gerek yok. */
+                rootMargin: '-72px 0px -25% 0px',
+                threshold: 0
+            }).observe(imza);
         }
 
-        function perdeOlc() {
-            // Önce kapat: sabitken ölçersek boşluk kendi kendini besler
-            perdeKapat();
-
-            if (document.documentElement.scrollHeight < window.innerHeight * 1.5) return;
-
-            govde.classList.add('finale-acik');
-
-            // Yükseklik sabit konumdayken ölçülmeli — genişlik değişebiliyor
-            /* Footer ekrandan UZUNSA sabitlemek onu okunamaz yapar.
-               Tam ekranı doldurması sorun değil — finalin amacı bu. */
-            var yukseklik = finale.offsetHeight;
-            if (yukseklik > window.innerHeight) {
-                perdeKapat();
-                return;
+        /* --- Harflerin maskeden yükselmesi --- */
+        if (imza && kinetik) {
+            var harfler = imza.querySelectorAll('.imza__harf > span');
+            if (harfler.length) {
+                /* y: 0 ŞART. GSAP, CSS'teki translateY(105%) değerini kendi
+                   PX kanalına emiyor; yPercent ayrı kanal olduğu için ikisi
+                   toplanıyor ve harfler bitişte hâlâ aşağıda kalıyordu. */
+                gsap.fromTo(harfler,
+                    { yPercent: 105, y: 0 },
+                    {
+                        yPercent: 0,
+                        duration: 1.05,
+                        ease: 'expo.out',
+                        stagger: 0.035,
+                        scrollTrigger: { trigger: imza, start: 'top 88%' }
+                    });
             }
-
-            bosluk.style.height = yukseklik + 'px';
         }
 
-        perdeOlc();
-
-        function yenidenOlc() {
-            perdeOlc();
-            if (stVar) ScrollTrigger.refresh();
+        /* --- Footer şeridi --- */
+        var serit = document.querySelector('.finale__alt');
+        if (serit && kinetik) {
+            gsap.fromTo(serit,
+                { autoAlpha: 0, y: 20 },
+                {
+                    autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out',
+                    /* 'top bottom': şerit görünmeye başlar başlamaz.
+                       'top 95%' ULAŞILAMIYORDU — ölçüldü: tetik başlangıcı
+                       9275, sayfanın gidebildiği son nokta 9274. Sayfanın
+                       en dibindeki öğede yüzdeli başlangıç bu yüzden riskli. */
+                    scrollTrigger: { trigger: serit, start: 'top bottom' }
+                });
         }
 
-        window.addEventListener('resize', function () {
-            clearTimeout(finaleOlcuZaman);
-            finaleOlcuZaman = setTimeout(yenidenOlc, 180);
+        /* --- Başa dön --- */
+        var dugme = document.querySelector('.basa-don');
+        if (!dugme) return;
+
+        dugme.hidden = false;
+
+        dugme.addEventListener('click', function () {
+            if (lenis) lenis.scrollTo(0, { duration: 1.1 });
+            else window.scrollTo({ top: 0, behavior: azHareket ? 'auto' : 'smooth' });
         });
 
-        // Serif font geç yüklenirse imza yüksekliği değişir
-        if (document.fonts && document.fonts.ready) {
-            document.fonts.ready.then(yenidenOlc).catch(function () { /* yoksay */ });
-        }
-
-        /* ---------- Giriş animasyonu ----------
-           Perde açıkken footer sabit; tetikleyici olarak kendisi
-           kullanılamaz (konumu hiç değişmediği için sayfa açılır
-           açılmaz tetiklenir). Kayan öğe boşluk, tetik o. */
-        if (!kinetik) return;
-
-        var tetik = govde.classList.contains('finale-acik') ? bosluk : finale;
-
-        var harfler = finale.querySelectorAll('.finale__harf > span');
-        if (harfler.length) {
-            /* y: 0 ŞART. GSAP, CSS'teki translateY(105%) değerini kendi
-               PX kanalına (y = 117.6px) emiyor; yPercent ayrı bir kanal
-               olduğu için 105 -> 0 animasyonu bitse bile o px kayması
-               duruyor ve harfler maskenin altında kalıyordu. Ölçüldü:
-               bitişte inline transform "translate(0px, 117.6px)". */
-            gsap.fromTo(harfler,
-                { yPercent: 105, y: 0 },
-                {
-                    yPercent: 0,
-                    duration: 1.15,
-                    ease: 'expo.out',
-                    stagger: 0.035,
-                    scrollTrigger: { trigger: tetik, start: 'top 88%' }
+        var esik = document.querySelector('.finale') || serit;
+        if (esik && 'IntersectionObserver' in window) {
+            new IntersectionObserver(function (girisler) {
+                girisler.forEach(function (giris) {
+                    dugme.classList.toggle('basa-don--gorunur', giris.isIntersecting);
                 });
-        }
-
-        var seritler = finale.querySelectorAll('.finale__alt');
-        if (seritler.length) {
-            gsap.fromTo(seritler,
-                { autoAlpha: 0, y: 28 },
-                {
-                    autoAlpha: 1,
-                    y: 0,
-                    duration: 0.9,
-                    ease: 'power2.out',
-                    stagger: 0.12,
-                    scrollTrigger: { trigger: tetik, start: 'top 92%' }
-                });
+            }, { rootMargin: '0px 0px 20% 0px', threshold: 0 }).observe(esik);
+        } else {
+            dugme.classList.add('basa-don--gorunur');
         }
     }
+
 
     /* ---------- Katman modu ---------- */
     function katmanKur(kat, panel) {
@@ -1835,7 +1848,7 @@
                temizlesek bile maskeli başlık kelimeleri yPercent 118'de
                kalıp taşan kabın dışında görünmez oluyordu. Ölçümle
                yakalandı — hem konsiyer hem hakkımızda başlığı etkiliyordu. */
-            var kinetikOgeler = document.querySelectorAll('.kelime-kap > *, .kn-satir-ic, .finale__harf > span');
+            var kinetikOgeler = document.querySelectorAll('.kelime-kap > *, .kn-satir-ic, .imza__harf > span');
             if (kinetikOgeler.length) {
                 gsap.killTweensOf(kinetikOgeler);
                 gsap.set(kinetikOgeler, { clearProps: 'all' });
@@ -1854,7 +1867,7 @@
                 ' .paylas__panel, .paylas__zemin, .paylas__ustbaslik, .paylas__baslik,' +
                 ' .paylas__alt, .paylas__form > *,' +
                 ' .kelime-kap > *, .konsiyer__satir, .konsiyer__baslik,' +
-                ' .finale__alt, .finale__harf > span'
+                ' .finale__alt, .imza__harf > span'
             ).forEach(function (oge) {
                 oge.style.opacity = '';
                 oge.style.visibility = '';
@@ -1915,7 +1928,7 @@
         if (acildi) return;
         acildi = true;
 
-        [lenisBaslat, capaBagla, navIzleyici, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, finaleBolumu, gorunurlukEmniyeti]
+        [lenisBaslat, capaBagla, navIzleyici, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, imzaBolumu, gorunurlukEmniyeti]
             .forEach(function (modul) {
                 try { modul(); } catch (h) {
                     if (window.console) console.error('rosso:', modul.name, h);
