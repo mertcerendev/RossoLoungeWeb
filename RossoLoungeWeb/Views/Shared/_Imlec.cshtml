@@ -1,0 +1,23 @@
+@* ============================================================
+   GLOBAL ÖZEL İMLEÇ
+
+   Tüm durumlar TEK DOM örneği üzerinde çalışır: hover başına öğe
+   yaratılmaz, yalnızca sınıf değişir. Halka içindeki yazı ve görsel
+   kutuları hep burada durur, boşken görünmezler.
+
+   Sayfaya eklemek için: @@await Html.PartialAsync("_Imlec")
+
+   NOT: Bu projede hiçbir view _Layout.cshtml kullanmıyor (18 view de
+   "Layout = null" diyor), bu yüzden imleç ana şablona değil ortak
+   partial'a taşındı — tek kaynak burası.
+
+   Görsel <img> bilerek src'siz: boş src bazı tarayıcılarda gereksiz
+   istek açıyor, kaynağı JS ilk hover'da yazıyor.
+   ============================================================ *@
+<div class="imlec" aria-hidden="true">
+    <span class="imlec__halka">
+        <span class="imlec__yazi"></span>
+        <img class="imlec__gorsel" alt="" decoding="async">
+    </span>
+    <span class="imlec__nokta"></span>
+</div>

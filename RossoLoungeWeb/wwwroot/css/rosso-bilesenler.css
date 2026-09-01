@@ -903,27 +903,6 @@
     text-align: center;
 }
 
-/* --- İmleci takip eden görsel önizleme --- */
-.menu__onizleme {
-    position: fixed;
-    inset-block-start: 0;
-    inset-inline-start: 0;
-    z-index: calc(var(--k-imlec) - 1);
-    width: clamp(200px, 19vw, 300px);
-    aspect-ratio: 4 / 5;
-    overflow: hidden;
-    pointer-events: none;
-    opacity: 0;
-    display: none; /* JS yalnızca fare olan cihazlarda açar */
-    will-change: transform;
-}
-
-.menu__onizleme-foto {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
 @media (max-width: 720px) {
     .menu__kalem {
         grid-template-columns: minmax(0, 1fr);
@@ -1384,10 +1363,11 @@
 .imlec__yazi {
     opacity: 0;
     color: var(--obsidyen);
-    font-family: var(--f-serif);
-    font-size: 0.8125rem;
-    font-style: italic;
+    font-family: var(--f-sans);
+    font-size: 0.6875rem;
+    font-weight: 500;
     letter-spacing: 0.16em;
+    text-transform: uppercase;
     white-space: nowrap;
     transform: scale(0.86);
     transition: opacity var(--h2) var(--egri), transform var(--h2) var(--egri);
@@ -3027,5 +3007,52 @@ body.finale-acik footer.finale {
 
 .rosso-kinetik .finale__ust,
 .rosso-kinetik .finale__alt {
+    opacity: 0;
+}
+
+/* =============================================================
+   İMLEÇ — GÖRSEL AÇIĞA ÇIKARMA  (data-cursor-image)
+
+   Halka dikdörtgen bir maskeye dönüşür ve fotoğraf aşağıdan
+   yukarı açılır. Kurallar rosso-tema.css'teki .imlec--yakin ile
+   aynı özgüllükte, sonra geldikleri için kazanırlar.
+
+   Karışım modu burada KAPATILIR: difference fotoğrafı negatife
+   çevirirdi, ayrıca büyük bir yüzeyi her karede zemine karıştırmak
+   küçük noktaya göre belirgin şekilde pahalı.
+   ============================================================= */
+.imlec--gorselli,
+.imlec--etiketli {
+    mix-blend-mode: normal;
+}
+
+.imlec__gorsel {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    clip-path: inset(100% 0 0 0);
+    transition: clip-path var(--h3) var(--egri), opacity var(--h1) var(--egri);
+}
+
+.imlec--gorselli .imlec__halka {
+    width: 240px;
+    height: 300px;
+    margin: -150px 0 0 -120px;
+    background: var(--antrasit-3);
+    border-color: transparent;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.imlec--gorselli .imlec__gorsel {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+}
+
+/* Fotoğrafın üstünde küçük nokta kirlilik yapıyor */
+.imlec--gorselli .imlec__nokta {
     opacity: 0;
 }

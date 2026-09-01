@@ -48,23 +48,6 @@
        kenar bölgeleri buraya yazıyor, imleç döngüsü okuyor. */
     var imlecCekim = { x: 0, y: 0 };
 
-    /* İmlecin etiketli durumu — galeri "Keşfet", defter "İleri/Geri".
-       Metni tek yerden yazıyoruz; işaretleme boş geliyor. */
-    function imlecEtiketle(metin) {
-        var imlec = document.querySelector('.imlec');
-        if (!imlec) return;
-
-        if (metin) {
-            var yazi = imlec.querySelector('.imlec__yazi');
-            if (yazi) yazi.textContent = metin;
-            imlec.classList.add('imlec--etiketli');
-        } else {
-            imlec.classList.remove('imlec--etiketli');
-            imlecCekim.x = 0;
-            imlecCekim.y = 0;
-        }
-    }
-
     function lenisBaslat() {
         if (!lenisVar || azHareket) return;
 
@@ -269,6 +252,25 @@
     /* =========================================================
        6. SIVI İMLEÇ
        ========================================================= */
+    /* =========================================================
+       GLOBAL ÖZEL İMLEÇ
+
+       Tek DOM örneği, tek delege dinleyici. Hover başına öğe
+       yaratılmaz, öğe başına listener bağlanmaz — yalnızca sınıf
+       değişir. Bütün durumlar (manyetik / metin / görsel) aynı
+       halkanın üstünde yaşar.
+
+       Konum gsap.quickTo ile: nokta kısa süreli (ani), halka uzun
+       süreli (gecikmeli) → sıvı momentum ve ağırlık hissi.
+
+       Manyetik kutu hover'da BİR KEZ ölçülür. Her mousemove'da
+       getBoundingClientRect çağırmak kare başına zorunlu layout
+       okuması demek olurdu; kaydırma ve yeniden boyutlandırmada
+       tazeleniyor.
+       ========================================================= */
+    var ETKILESIM_SECICI = 'a, button, input, textarea, select, [role="button"]';
+    var IMLEC_SECICI = '[data-cursor-image], [data-cursor-text], ' + ETKILESIM_SECICI;
+
     function imlecBaslat() {
         if (!inceIsaretci || azHareket || !gsapVar) return;
 
@@ -279,32 +281,90 @@
 
         var nokta = imlec.querySelector('.imlec__nokta');
         var halka = imlec.querySelector('.imlec__halka');
+        var yazi = imlec.querySelector('.imlec__yazi');
+        var gorsel = imlec.querySelector('.imlec__gorsel');
+        if (!nokta || !halka) return;
 
-        // Nokta ani, halka gecikmeli → sıvı/ağırlık hissi
         var nx = gsap.quickTo(nokta, 'x', { duration: 0.12, ease: 'power3.out' });
         var ny = gsap.quickTo(nokta, 'y', { duration: 0.12, ease: 'power3.out' });
         var hx = gsap.quickTo(halka, 'x', { duration: 0.55, ease: 'power3.out' });
         var hy = gsap.quickTo(halka, 'y', { duration: 0.55, ease: 'power3.out' });
 
+        var sonHedef = null;
+        var manyetik = null;
+        var manyetikKutu = null;
+        var sonX = 0, sonY = 0;
+
+        function kutuyuTazele() {
+            if (manyetik) manyetikKutu = manyetik.getBoundingClientRect();
+        }
+
+        function durumSifirla() {
+            imlec.classList.remove('imlec--yakin', 'imlec--etiketli', 'imlec--gorselli');
+            manyetik = null;
+            manyetikKutu = null;
+        }
+
+        function durumUygula(hedef) {
+            // Aynı hedefin çocukları arasında gezinirken iş yapma
+            if (hedef === sonHedef) return;
+            sonHedef = hedef;
+            durumSifirla();
+            if (!hedef) return;
+
+            var kaynak = gorsel && hedef.getAttribute('data-cursor-image');
+            if (kaynak) {
+                // Aynı görsel tekrar atanırsa tarayıcı yeniden çözmesin
+                if (gorsel.getAttribute('src') !== kaynak) gorsel.setAttribute('src', kaynak);
+                imlec.classList.add('imlec--gorselli');
+                return;
+            }
+
+            var metin = yazi && hedef.getAttribute('data-cursor-text');
+            if (metin) {
+                yazi.textContent = metin;
+                imlec.classList.add('imlec--etiketli');
+                return;
+            }
+
+            imlec.classList.add('imlec--yakin');
+            manyetik = hedef;
+            manyetikKutu = hedef.getBoundingClientRect();
+        }
+
         window.addEventListener('mousemove', function (olay) {
-            nx(olay.clientX); ny(olay.clientY);
-            // Halka manyetik çekimle kayabilir; nokta imlecin gerçek
-            // yerinde kalır (bkz. yorumDefteri kenar bölgeleri)
-            hx(olay.clientX + imlecCekim.x); hy(olay.clientY + imlecCekim.y);
+            sonX = olay.clientX;
+            sonY = olay.clientY;
+
+            nx(sonX); ny(sonY);
+
+            /* Halka manyetik olarak hedefin merkezine kayar, nokta
+               imlecin gerçek yerinde kalır → "yapışma" hissi.
+               imlecCekim'i yorum defteri de besliyor, ikisi toplanır. */
+            var kx = imlecCekim.x, ky = imlecCekim.y;
+            if (manyetikKutu) {
+                kx += (manyetikKutu.left + manyetikKutu.width / 2 - sonX) * 0.32;
+                ky += (manyetikKutu.top + manyetikKutu.height / 2 - sonY) * 0.32;
+            }
+            hx(sonX + kx); hy(sonY + ky);
         }, { passive: true });
 
-        // Tıklanabilir öğelerde halka büyür
+        // TEK delege dinleyici — öğe başına bağlama yok
         document.addEventListener('mouseover', function (olay) {
-            if (olay.target.closest('a, button, input, textarea, select, [role="button"]')) {
-                imlec.classList.add('imlec--yakin');
-            }
+            var oge = olay.target;
+            if (!oge || oge.nodeType !== 1) return;
+            durumUygula(oge.closest(IMLEC_SECICI));
+        }, { passive: true });
+
+        // Pencereden çıkınca durum takılı kalmasın
+        document.addEventListener('mouseleave', function () {
+            sonHedef = null;
+            durumSifirla();
         });
 
-        document.addEventListener('mouseout', function (olay) {
-            if (olay.target.closest('a, button, input, textarea, select, [role="button"]')) {
-                imlec.classList.remove('imlec--yakin');
-            }
-        });
+        // Ölçülen kutu kaydırma/boyut değişiminde bayatlar
+        window.addEventListener('scroll', kutuyuTazele, { passive: true });
+        window.addEventListener('resize', kutuyuTazele);
     }
 
     /* =========================================================
@@ -459,7 +519,7 @@
        11. MENÜ SERGİSİ
        - Kategori filtresi: GSAP Flip ile pürüzsüz yer değiştirme,
          girenlerde blur + yukarıdan kayma
-       - İmleç görsel önizlemesi: hıza bağlı skew ile fareyi takip
+       - Görsel önizleme: satırlardaki data-cursor-image ile global imleç
        ========================================================= */
     /* Ana sayfadaki vitrin (seçilmiş birkaç tabak) */
     function vitrinBolumu() {
@@ -572,65 +632,6 @@
             });
         }
 
-        /* ---------- İmleç görsel önizlemesi ---------- */
-        var onizleme = bolum.querySelector('.menu__onizleme');
-        var foto = onizleme && onizleme.querySelector('.menu__onizleme-foto');
-
-        // Yalnızca gerçek fare + GSAP varken; dokunmatikte hiç açılmaz
-        if (!onizleme || !foto || !inceIsaretci || azHareket || !gsapVar) return;
-
-        onizleme.style.display = 'block';
-
-        var xAyar = gsap.quickTo(onizleme, 'x', { duration: 0.55, ease: 'power3.out' });
-        var yAyar = gsap.quickTo(onizleme, 'y', { duration: 0.55, ease: 'power3.out' });
-        var egimAyar = gsap.quickTo(onizleme, 'skewY', { duration: 0.5, ease: 'power3.out' });
-
-        var sonX = 0, sonZaman = 0, aktifKalem = null;
-
-        window.addEventListener('mousemove', function (olay) {
-            if (!aktifKalem) return;
-
-            // Görsel imlecin sağ-altında dursun, ekran dışına taşmasın
-            var g = onizleme.offsetWidth, y = onizleme.offsetHeight;
-            var hx = Math.min(olay.clientX + 28, window.innerWidth - g - 16);
-            var hy = Math.min(Math.max(olay.clientY - y / 2, 16), window.innerHeight - y - 16);
-            xAyar(hx); yAyar(hy);
-
-            // Yatay hıza göre hafif eğilme
-            var simdi = performance.now();
-            var dt = simdi - sonZaman;
-            if (dt > 0) {
-                var hiz = (olay.clientX - sonX) / dt;
-                egimAyar(Math.max(-9, Math.min(9, hiz * -5)));
-            }
-            sonX = olay.clientX;
-            sonZaman = simdi;
-        }, { passive: true });
-
-        kalemler.forEach(function (kalem) {
-            kalem.addEventListener('mouseenter', function () {
-                var kaynak = kalem.dataset.gorsel;
-                if (!kaynak) return;
-
-                aktifKalem = kalem;
-                foto.src = kaynak;
-                foto.alt = '';
-
-                gsap.killTweensOf(onizleme);
-                gsap.fromTo(onizleme,
-                    { autoAlpha: 0, scale: 0.9, clipPath: 'inset(100% 0 0 0)' },
-                    { autoAlpha: 1, scale: 1, clipPath: 'inset(0% 0 0 0)', duration: 0.55, ease: 'expo.out' });
-            });
-
-            kalem.addEventListener('mouseleave', function () {
-                if (aktifKalem !== kalem) return;
-                aktifKalem = null;
-                gsap.to(onizleme, {
-                    autoAlpha: 0, scale: 0.94, duration: 0.3, ease: 'power2.in',
-                    clipPath: 'inset(100% 0 0 0)'
-                });
-            });
-        });
     }
 
     /* =========================================================
@@ -656,7 +657,6 @@
 
         // Tam ekran her koşulda bağlanır (kinetik olmasa da tıklanabilir)
         tamEkranBagla(bolum, kareler);
-        imlecKesfet(kareler);
 
         if (!kinetik || typeof gsap.matchMedia !== 'function') return;
 
@@ -744,22 +744,6 @@
                 bolum.classList.remove('galeri--pinli');
                 galeriPin = null;
             };
-        });
-    }
-
-    /* =========================================================
-       12a. GALERİ İMLECİ — "Keşfet"
-       Kare üzerinde halka büyüyüp şampanya dolgulu bir daireye
-       dönüşür, ortasında serif "Keşfet" yazısı belirir.
-       ========================================================= */
-    function imlecKesfet(kareler) {
-        if (!inceIsaretci || azHareket) return;
-
-        if (!document.querySelector('.imlec')) return;
-
-        kareler.forEach(function (kare) {
-            kare.addEventListener('mouseenter', function () { imlecEtiketle('Keşfet'); });
-            kare.addEventListener('mouseleave', function () { imlecEtiketle(null); });
         });
     }
 
@@ -1195,8 +1179,8 @@
 
             if (!inceIsaretci || azHareket) return;
 
-            dugme.addEventListener('mouseenter', function () { imlecEtiketle(uc[1]); });
-            dugme.addEventListener('mouseleave', function () { imlecEtiketle(null); });
+            // Metin imlecini artık global imleç nitelikten okuyor
+            dugme.setAttribute('data-cursor-text', uc[1]);
 
             // Manyetik çekim: halka bölgenin eksenine doğru kayar,
             // nokta imlecin gerçek yerinde kalır → "çekiliyor" hissi
@@ -1204,6 +1188,9 @@
                 var r = dugme.getBoundingClientRect();
                 imlecCekim.x = ((r.left + r.width / 2) - olay.clientX) * 0.38;
             }, { passive: true });
+
+            // Bölgeden çıkınca çekim sıfırlanmalı, yoksa halka kayık kalır
+            dugme.addEventListener('mouseleave', function () { imlecCekim.x = 0; });
         });
     }
 

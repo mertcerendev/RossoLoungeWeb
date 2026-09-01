@@ -333,6 +333,10 @@ html:not(.rosso-kinetik) .sahne-perde__panel {
     display: none;
     pointer-events: none;
     will-change: transform;
+    /* Zıtlık uyumu: koyu zeminde açık, açık görselin üstünde negatif.
+       Görsel ve etiket durumlarında kapatılıyor (rosso-bilesenler.css):
+       orada karışım fotoğrafı negatife çevirir, maliyeti de artar. */
+    mix-blend-mode: difference;
 }
 
 .imlec__nokta {
@@ -353,7 +357,7 @@ html:not(.rosso-kinetik) .sahne-perde__panel {
     border-radius: 50%;
     transition: width var(--h2) var(--egri), height var(--h2) var(--egri),
                 margin var(--h2) var(--egri), border-color var(--h2) var(--egri),
-                background var(--h2) var(--egri);
+                background var(--h2) var(--egri), border-radius var(--h2) var(--egri);
 }
 
 /* Tıklanabilir öğe üzerinde halka büyür ve şampanya rengine döner */

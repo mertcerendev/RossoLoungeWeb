@@ -125,10 +125,7 @@
     <div class="sahne-perde__panel sahne-perde__panel--alt" aria-hidden="true"></div>
 
     @* ---- Sıvı imleç (yalnızca fare olan cihazlarda görünür) ---- *@
-    <div class="imlec" aria-hidden="true">
-        <span class="imlec__halka"><span class="imlec__yazi"></span></span>
-        <span class="imlec__nokta"></span>
-    </div>
+    @await Html.PartialAsync("_Imlec")
 
     @* Controller'lar rezervasyon/mesaj/yorum sonucunu TempData'ya yazıyordu
        ama ziyaretçi sitesinde hiçbir yerde okunmuyordu — form gönderen
@@ -394,6 +391,7 @@
                             class="galeri__kare@(kare.Genis ? " galeri__kare--genis" : "")"
                             data-galeri-no="@galeriSira.ToString("00")"
                             data-galeri-etiket="@kare.Etiket"
+                            data-cursor-text="Keşfet"
                             aria-label="Tam ekranda aç: @kare.Etiket">
                         <span class="galeri__cerceve">
                             <img class="galeri__foto" src="@kare.Gorsel" alt="@kare.Alt" loading="lazy" draggable="false">
