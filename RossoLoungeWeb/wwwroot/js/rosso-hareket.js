@@ -1537,7 +1537,7 @@
                 });
         }
 
-        var seritler = finale.querySelectorAll('.finale__ust, .finale__alt');
+        var seritler = finale.querySelectorAll('.finale__alt');
         if (seritler.length) {
             gsap.fromTo(seritler,
                 { autoAlpha: 0, y: 28 },
@@ -1550,12 +1550,6 @@
                     scrollTrigger: { trigger: tetik, start: 'top 92%' }
                 });
         }
-
-        /* ---------- Manyetik sosyal kısaltmalar ---------- */
-        Array.prototype.forEach.call(
-            finale.querySelectorAll('.finale__rumuz'),
-            function (rumuz) { manyetikDugme(rumuz); }
-        );
     }
 
     /* ---------- Katman modu ---------- */
@@ -1805,7 +1799,7 @@
                 ' .paylas__panel, .paylas__zemin, .paylas__ustbaslik, .paylas__baslik,' +
                 ' .paylas__alt, .paylas__form > *,' +
                 ' .kelime-kap > *, .konsiyer__satir, .konsiyer__baslik,' +
-                ' .finale__ust, .finale__alt, .finale__harf > span'
+                ' .finale__alt, .finale__harf > span'
             ).forEach(function (oge) {
                 oge.style.opacity = '';
                 oge.style.visibility = '';

@@ -406,76 +406,6 @@
                 </p>
             </div>
 
-            @* =========================================================
-               YORUM GÖNDERME PANELİ
-               Standart MVC POST: /Home/YorumYap AdSoyad + Puan + Mesaj
-               bekliyor, anti-forgery token formun ilk çocuğu.
-
-               JS devralırsa (.paylas--katman) panel sağdan kayan bir
-               off-canvas katmana dönüşür. Devralmazsa akışın içinde
-               normal bir form olarak durur — hiçbir koşulda erişilmez
-               hâle gelmez.
-               ========================================================= *@
-            <div class="paylas" id="paylas">
-                <div class="paylas__zemin" aria-hidden="true"></div>
-
-                <div class="paylas__panel" id="paylas-panel" tabindex="-1" aria-labelledby="paylas-baslik">
-                    <button type="button" class="paylas__kapat" aria-label="Formu kapat" hidden>
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-
-                    <p class="paylas__ustbaslik">Ziyaretçi defteri</p>
-                    <h3 class="paylas__baslik" id="paylas-baslik">Deneyiminizi <em>yazın</em></h3>
-                    <p class="paylas__alt">Birkaç cümle yeter. Yorumunuz onaylandıktan sonra defterde yerini alır.</p>
-
-                    <form class="paylas__form" method="post" action="/Home/YorumYap">
-                        @Html.AntiForgeryToken()
-
-                        @* placeholder=" " şart: yüzen etiket :placeholder-shown
-                           ile "alan boş mu" sorusunu yanıtlıyor. Etiket girdiden
-                           SONRA geliyor ki + kardeş seçicisi çalışsın. *@
-                        <div class="alan">
-                            <input class="alan__girdi" type="text" id="paylas-ad" name="AdSoyad"
-                                   placeholder=" " autocomplete="name" maxlength="100" required>
-                            <label class="alan__etiket" for="paylas-ad">Ad Soyad</label>
-                            <span class="alan__cizgi" aria-hidden="true"></span>
-                        </div>
-
-                        @* Puan: 5→1 sırasıyla yazılıp CSS'te row-reverse ile
-                           çevriliyor. Böylece "seçilen ve altındakiler dolu"
-                           kuralı ~ kardeş seçicisiyle JS'siz çalışıyor. *@
-                        <fieldset class="puan">
-                            <legend class="puan__baslik">Puanınız</legend>
-
-                            <div class="puan__sira">
-                                @for (int p = 5; p >= 1; p--)
-                                {
-                                    <input class="puan__radyo" type="radio" name="Puan"
-                                           id="paylas-puan-@p" value="@p" required>
-                                    <label class="puan__isaret" for="paylas-puan-@p">
-                                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                            <path d="M12 1.8 22.2 12 12 22.2 1.8 12Z" />
-                                        </svg>
-                                        <span class="gorsel-gizli">@p puan</span>
-                                    </label>
-                                }
-                            </div>
-
-                            <p class="puan__yazi" aria-live="polite"></p>
-                        </fieldset>
-
-                        <div class="alan alan--govde">
-                            <textarea class="alan__girdi" id="paylas-mesaj" name="Mesaj" rows="4"
-                                      placeholder=" " maxlength="1000" required></textarea>
-                            <label class="alan__etiket" for="paylas-mesaj">Yorumunuz</label>
-                            <span class="alan__cizgi" aria-hidden="true"></span>
-                            <span class="alan__sayac" aria-hidden="true"></span>
-                        </div>
-
-                        <button type="submit" class="paylas__gonder">Yorumu Gönder</button>
-                    </form>
-                </div>
-            </div>
         </section>
 
         @* =========================================================
@@ -666,6 +596,79 @@
 
     </main>
 
+@* Yorum gönderme paneli — BİLEREK <main> DIŞINDA.
+   #tamekran ile aynı sebep: finale perdesi için main'e verilen
+   "z-index: 1" bir yığılma bağlamı yaratıyor, panelin 9999'u o
+   bağlamın İÇİNDE yorumlanıyor ve navbar (900, main'in kardeşi)
+   panelin üstüne biniyordu. Ölçüldü: panelin y=30 noktasında
+   REZERVASYON düğmesi, y=60'ta navbar vardı; formun üst kısmı
+   navbarın altında kalıyordu.
+
+   JS devralırsa (.paylas--katman) panel sağdan kayan bir off-canvas
+   katmana dönüşür. Devralmazsa akışın içinde normal bir form olarak
+   durur — hiçbir koşulda erişilmez hâle gelmez.
+*@
+            <div class="paylas" id="paylas">
+                <div class="paylas__zemin" aria-hidden="true"></div>
+
+                <div class="paylas__panel" id="paylas-panel" tabindex="-1" aria-labelledby="paylas-baslik">
+                    <button type="button" class="paylas__kapat" aria-label="Formu kapat" hidden>
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+
+                    <p class="paylas__ustbaslik">Ziyaretçi defteri</p>
+                    <h3 class="paylas__baslik" id="paylas-baslik">Deneyiminizi <em>yazın</em></h3>
+                    <p class="paylas__alt">Birkaç cümle yeter. Yorumunuz onaylandıktan sonra defterde yerini alır.</p>
+
+                    <form class="paylas__form" method="post" action="/Home/YorumYap">
+                        @Html.AntiForgeryToken()
+
+                        @* placeholder=" " şart: yüzen etiket :placeholder-shown
+                           ile "alan boş mu" sorusunu yanıtlıyor. Etiket girdiden
+                           SONRA geliyor ki + kardeş seçicisi çalışsın. *@
+                        <div class="alan">
+                            <input class="alan__girdi" type="text" id="paylas-ad" name="AdSoyad"
+                                   placeholder=" " autocomplete="name" maxlength="100" required>
+                            <label class="alan__etiket" for="paylas-ad">Ad Soyad</label>
+                            <span class="alan__cizgi" aria-hidden="true"></span>
+                        </div>
+
+                        @* Puan: 5→1 sırasıyla yazılıp CSS'te row-reverse ile
+                           çevriliyor. Böylece "seçilen ve altındakiler dolu"
+                           kuralı ~ kardeş seçicisiyle JS'siz çalışıyor. *@
+                        <fieldset class="puan">
+                            <legend class="puan__baslik">Puanınız</legend>
+
+                            <div class="puan__sira">
+                                @for (int p = 5; p >= 1; p--)
+                                {
+                                    <input class="puan__radyo" type="radio" name="Puan"
+                                           id="paylas-puan-@p" value="@p" required>
+                                    <label class="puan__isaret" for="paylas-puan-@p">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                            <path d="M12 1.8 22.2 12 12 22.2 1.8 12Z" />
+                                        </svg>
+                                        <span class="gorsel-gizli">@p puan</span>
+                                    </label>
+                                }
+                            </div>
+
+                            <p class="puan__yazi" aria-live="polite"></p>
+                        </fieldset>
+
+                        <div class="alan alan--govde">
+                            <textarea class="alan__girdi" id="paylas-mesaj" name="Mesaj" rows="4"
+                                      placeholder=" " maxlength="1000" required></textarea>
+                            <label class="alan__etiket" for="paylas-mesaj">Yorumunuz</label>
+                            <span class="alan__cizgi" aria-hidden="true"></span>
+                            <span class="alan__sayac" aria-hidden="true"></span>
+                        </div>
+
+                        <button type="submit" class="paylas__gonder">Yorumu Gönder</button>
+                    </form>
+                </div>
+            </div>
+
 @* Tam ekran görüntüleyici — çerçeve, tıklanan karenin üstünden GSAP ile büyür.
 
    BİLEREK <main> DIŞINDA: finale perdesi için main'e
@@ -711,66 +714,6 @@
     <footer class="finale" id="finale">
         <div class="kap finale__ic">
 
-            <div class="finale__ust">
-                <div class="finale__yer">
-                    <p class="finale__etiket">Bulun</p>
-                    <address class="finale__adres">
-                        <a class="finale__adres-link" target="_blank" rel="noopener"
-                           href="https://www.google.com/maps/dir/?api=1&amp;destination=Rosso+lounge+bistro+Bandırma">
-                            Yeni Mahalle, 21002 Sokak No: 3B<br>Bandırma / Balıkesir
-                        </a>
-                    </address>
-
-                    <ul class="finale__kanal">
-                        <li><a class="finale__cizik" href="tel:+902667121313">+90 266 712 13 13</a></li>
-                        <li><a class="finale__cizik" href="mailto:info@@rossolounge.com">info@@rossolounge.com</a></li>
-                    </ul>
-
-                    <p class="finale__saat">
-                        Her gün <span>11.30 – 00.00</span>
-                        @if (ViewBag.SuAnAcik is bool finaleAcik)
-                        {
-                            <span class="finale__durum @(finaleAcik ? "finale__durum--acik" : "")">
-                                <span class="finale__nokta" aria-hidden="true"></span>
-                                @(finaleAcik ? "Şu an açığız" : "Şu an kapalıyız")
-                            </span>
-                        }
-                    </p>
-                </div>
-
-                <div class="finale__sag">
-                    <nav class="finale__gezinti" aria-label="Alt bilgi menüsü">
-                        <p class="finale__etiket">Keşfet</p>
-                        <ul>
-                            <li><a class="finale__cizik" href="#about">Hakkımızda</a></li>
-                            <li><a class="finale__cizik" href="/Home/Menu">Menü</a></li>
-                            <li><a class="finale__cizik" href="#gallery">Galeri</a></li>
-                            <li><a class="finale__cizik" href="#reviews">Yorumlar</a></li>
-                            <li><a class="finale__cizik" href="#rezervasyon">Rezervasyon</a></li>
-                        </ul>
-                    </nav>
-
-                    @* Tek alanlı bülten formu — MVC [HttpPost] BultenKayit *@
-                    <div class="finale__bulten">
-                        <p class="finale__etiket">Bülten</p>
-                        <p class="finale__bulten-not">Yeni menü ve özel akşamlar için ayda bir e-posta.</p>
-
-                        <form class="bulten" method="post" asp-controller="Home" asp-action="BultenKayit">
-                            @Html.AntiForgeryToken()
-                            <label class="gorsel-gizli" for="bulten-eposta">E-posta adresiniz</label>
-                            <input class="bulten__girdi" type="email" id="bulten-eposta" name="Email"
-                                   placeholder="e-posta adresiniz" required maxlength="150"
-                                   autocomplete="email" inputmode="email" spellcheck="false">
-                            <button type="submit" class="bulten__gonder" aria-label="Bültene kaydol">
-                                <svg viewBox="0 0 32 12" aria-hidden="true" focusable="false">
-                                    <path d="M0 6h29M24 1l5 5-5 5" fill="none" stroke="currentColor"
-                                          stroke-width="1" vector-effect="non-scaling-stroke" />
-                                </svg>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
 
             @* Devasa imza. Harfler tek tek maskeden yükselir; ekran
                okuyucu harf harf okumasın diye kap gizli, adı altta veriliyor. *@
@@ -788,17 +731,6 @@
             </div>
 
             <div class="finale__alt">
-                <ul class="finale__sosyal">
-                    <li>
-                        <a class="finale__rumuz" target="_blank" rel="noopener"
-                           href="https://www.instagram.com/rosso.lounge.bistro/" aria-label="Instagram sayfamız">IG</a>
-                    </li>
-                    <li>
-                        <a class="finale__rumuz" target="_blank" rel="noopener"
-                           href="https://www.facebook.com/rossolounge" aria-label="Facebook sayfamız">FB</a>
-                    </li>
-                </ul>
-
                 <p class="finale__telif">&copy; @yil Rosso Lounge Bistro</p>
 
                 <div class="footer-signature">Software &amp; Design by <span class="developer-name">Mert CEREN</span></div>
