@@ -41,6 +41,9 @@
        ========================================================= */
     var lenis = null;
 
+    // Galeri pin'i: ticker olurse emniyet katmani buradan soker
+    var galeriPin = null;
+
     function lenisBaslat() {
         if (!lenisVar || azHareket) return;
 
@@ -608,6 +611,333 @@
     }
 
     /* =========================================================
+       12. GALERİ SERGİSİ — yatay akış
+       -------------------------------------------------------------
+       - ScrollTrigger pin: dikey kaydırma yatay çeviriye dönüşür
+       - containerAnimation ile çerçeve içi ZIT YÖNLÜ parallax
+       - Kaydırma hızına bağlı skewX, durunca yumuşak düzelme
+       - Tıklanınca çerçeve bulunduğu yerden tam ekrana büyür
+
+       TASARIM KARARI — pin YALNIZCA burada kurulursa .galeri--pinli
+       eklenir. Sınıf yoksa CSS rayı doğal bir yatay kaydırıcı olarak
+       bırakır; JS/GSAP düşse bile kareler gezilebilir kalır.
+       ========================================================= */
+    function galeriSergisi() {
+        var bolum = document.querySelector('.galeri');
+        if (!bolum) return;
+
+        var sahne = bolum.querySelector('.galeri__sahne');
+        var ray = bolum.querySelector('.galeri__ray');
+        var kareler = Array.prototype.slice.call(bolum.querySelectorAll('.galeri__kare'));
+        if (!sahne || !ray || !kareler.length) return;
+
+        // Tam ekran her koşulda bağlanır (kinetik olmasa da tıklanabilir)
+        tamEkranBagla(bolum, kareler);
+        imlecKesfet(kareler);
+
+        if (!kinetik || typeof gsap.matchMedia !== 'function') return;
+
+        var mm = gsap.matchMedia();
+
+        /* Yatay akış yalnızca geniş ekranda. Dar ekranda parmakla
+           kaydırılan doğal ray daha rahat — pin dokunmatikte hantal. */
+        mm.add('(min-width: 900px)', function () {
+            bolum.classList.add('galeri--pinli');
+
+            var dolgu = bolum.querySelector('.galeri__ilerleme-dolgu');
+
+            // Ray ekran genişliğinden ne kadar taşıyorsa o kadar yol var
+            function mesafe() {
+                return Math.max(0, ray.scrollWidth - window.innerWidth);
+            }
+
+            /* --- Hıza bağlı eğilme ---
+               Yatay harekette sürüklenme hissini skewX verir (skewY
+               dikey kaydırmanın karşılığı). Kaydırma durduğunda
+               ScrollTrigger artık onUpdate yollamaz; bu yüzden
+               düzelmeyi zamanlayıcı tetikler. */
+            var egimAyar = gsap.quickTo(kareler, 'skewX', { duration: 0.5, ease: 'power3.out' });
+            var durakZaman;
+
+            function egimUygula(hiz) {
+                egimAyar(gsap.utils.clamp(-7, 7, hiz / -260));
+                clearTimeout(durakZaman);
+                durakZaman = setTimeout(function () { egimAyar(0); }, 120);
+            }
+
+            /* --- Yatay çeviri ---
+               scrub: 1 → kaydırmayı bir saniyelik gecikmeyle takip
+               eder; momentum hissi buradan geliyor. */
+            var yatay = gsap.to(ray, {
+                x: function () { return -mesafe(); },
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: sahne,
+                    start: 'top top',
+                    end: function () { return '+=' + mesafe(); },
+                    pin: true,
+                    anticipatePin: 1,
+                    scrub: 1,
+                    invalidateOnRefresh: true,
+                    onUpdate: function (kendi) {
+                        if (dolgu) gsap.set(dolgu, { scaleX: kendi.progress });
+                        egimUygula(kendi.getVelocity());
+                    }
+                }
+            });
+
+            galeriPin = yatay.scrollTrigger;
+
+            /* --- Çerçeve içi zıt yönlü parallax ---
+               Kare sağdan sola akarken foto çerçeve içinde sola→sağa
+               kayar. Foto %124 genişlikte olduğu için ±%8.7'lik kayma
+               hiçbir kenarda boşluk açmaz.
+               containerAnimation: tetikleyici, sayfanın dikey kaydırması
+               değil yukarıdaki yatay tween'dir. */
+            kareler.forEach(function (kare) {
+                var foto = kare.querySelector('.galeri__foto');
+                if (!foto) return;
+
+                gsap.fromTo(foto,
+                    { xPercent: -7 },
+                    {
+                        xPercent: 7,
+                        ease: 'none',
+                        scrollTrigger: {
+                            trigger: kare,
+                            containerAnimation: yatay,
+                            start: 'left right',
+                            end: 'right left',
+                            scrub: true
+                        }
+                    });
+            });
+
+            // matchMedia sorgu dışına çıkınca tween'leri kendisi geri alır;
+            // sınıfı ve eğimi biz temizliyoruz.
+            return function () {
+                clearTimeout(durakZaman);
+                gsap.set(kareler, { skewX: 0 });
+                bolum.classList.remove('galeri--pinli');
+                galeriPin = null;
+            };
+        });
+    }
+
+    /* =========================================================
+       12a. GALERİ İMLECİ — "Keşfet"
+       Kare üzerinde halka büyüyüp şampanya dolgulu bir daireye
+       dönüşür, ortasında serif "Keşfet" yazısı belirir.
+       ========================================================= */
+    function imlecKesfet(kareler) {
+        if (!inceIsaretci || azHareket) return;
+
+        var imlec = document.querySelector('.imlec');
+        if (!imlec) return;
+
+        kareler.forEach(function (kare) {
+            kare.addEventListener('mouseenter', function () {
+                imlec.classList.add('imlec--kesfet');
+            });
+            kare.addEventListener('mouseleave', function () {
+                imlec.classList.remove('imlec--kesfet');
+            });
+        });
+    }
+
+    /* =========================================================
+       12b. TAM EKRAN GÖRÜNTÜLEYİCİ
+       -------------------------------------------------------------
+       Çerçeve, tıklanan karenin çerçevesinin ölçüldüğü dikdörtgenden
+       doğal tam ekran yerine doğru büyür ("seamless scale").
+
+       NEDEN Flip DEĞİL: Flip.from öğeyi ya grid akışında bırakıp
+       transform yazar (kap `place-items:center` olduğu için genişlik
+       değişirken merkez kayar) ya da absolute:true ile akıştan çıkarır
+       (bu sefer de kapanışta yerine oturması kırılgan). Ölçülen iki
+       dikdörtgen arasında position:fixed ile tweenlemek aynı görüntüyü
+       verir ve tamamen belirlenimli — kenar durumu yok.
+       ========================================================= */
+    function tamEkranBagla(bolum, kareler) {
+        var kat = document.getElementById('tamekran');
+        if (!kat) return;
+
+        var zemin = kat.querySelector('.tamekran__zemin');
+        var cerceve = kat.querySelector('.tamekran__cerceve');
+        var foto = kat.querySelector('.tamekran__foto');
+        var noEt = kat.querySelector('.tamekran__no');
+        var etiketEt = kat.querySelector('.tamekran__etiket');
+        var ayak = kat.querySelector('.tamekran__ayak');
+        var kapatDugme = kat.querySelector('.tamekran__kapat');
+        var oncekiDugme = kat.querySelector('.tamekran__ok--onceki');
+        var sonrakiDugme = kat.querySelector('.tamekran__ok--sonraki');
+        if (!cerceve || !foto || !kapatDugme) return;
+
+        /* Canlandırma kararı HER ÇAĞRIDA yeniden veriliyor.
+           `kinetik` açılışta bir kez hesaplanıyor; emniyet katmanı ticker
+           ölü olduğunda rosso-kinetik sınıfını sonradan kaldırıyor. Bayrağı
+           dondurursak tween'ler hiç ilerlemez ve katman açık kilitli kalır —
+           bir kez yaşandı. Sınıf canlı sağlık sinyali, onu okuyoruz. */
+        function canlandirMi() {
+            return gsapVar && kok.classList.contains('rosso-kinetik');
+        }
+
+        var suSira = 0;
+        var acanKare = null;
+        var acik = false;
+
+        var arayuz = [ayak, kapatDugme, oncekiDugme, sonrakiDugme].filter(Boolean);
+
+        function karedekiCerceve(kare) { return kare.querySelector('.galeri__cerceve'); }
+
+        function icerikYaz(sira) {
+            suSira = (sira + kareler.length) % kareler.length;
+            var kare = kareler[suSira];
+            var kaynak = kare.querySelector('.galeri__foto');
+            if (!kaynak) return;
+
+            foto.src = kaynak.currentSrc || kaynak.src;
+            foto.alt = kaynak.alt || '';
+            if (noEt) noEt.textContent = kare.dataset.galeriNo || '';
+            if (etiketEt) etiketEt.textContent = kare.dataset.galeriEtiket || '';
+        }
+
+        /* Pin sırasında sayfa kaymasın. Pinli modda body overflow'una
+           dokunmuyoruz — pin-spacer'ın yüksekliğini bozup ScrollTrigger'ı
+           şaşırtıyor. Lenis'i durdurmak tekerleği zaten kesiyor. */
+        function kaydirmaKilidi(kilit) {
+            if (lenis) {
+                if (kilit) { lenis.stop(); } else { lenis.start(); }
+            }
+            if (!bolum.classList.contains('galeri--pinli')) {
+                document.body.style.overflow = kilit ? 'hidden' : '';
+            }
+        }
+
+        function ac(sira) {
+            icerikYaz(sira);
+            acanKare = kareler[suSira];
+            acik = true;
+
+            kat.hidden = false;
+            kok.classList.add('tamekran-acik');
+            kaydirmaKilidi(true);
+            kapatDugme.focus();
+
+            if (!canlandirMi()) {
+                // Canlandırmasız açılış: önceki animasyonlu turdan kalmış
+                // opaklıklar katmanı görünmez bırakmasın
+                if (gsapVar) gsap.set([zemin].concat(arayuz), { clearProps: 'opacity' });
+                return;
+            }
+
+            // Eğim açıkken ölçüm bozulur; kareleri düz bırak
+            gsap.set(kareler, { skewX: 0 });
+
+            var kaynakCerceve = karedekiCerceve(acanKare);
+            var k = kaynakCerceve ? kaynakCerceve.getBoundingClientRect() : null;
+            var h = cerceve.getBoundingClientRect(); // doğal tam ekran yeri
+
+            /* set + to; fromTo başlangıç değerini bir sonraki kareye
+                erteleyebilir ve çerçeve bir kare boyu tam boy görünür. */
+            gsap.set(zemin, { opacity: 0 });
+            gsap.to(zemin, { opacity: 1, duration: 0.5, ease: 'power2.out' });
+            gsap.set(arayuz, { opacity: 0 });
+
+            if (!k || !k.width) {
+                gsap.set(cerceve, { opacity: 0, scale: 0.94 });
+                gsap.to(cerceve, { opacity: 1, scale: 1, duration: 0.5, ease: 'expo.out' });
+                gsap.to(arayuz, { opacity: 1, duration: 0.4, delay: 0.25 });
+                return;
+            }
+
+            gsap.set(cerceve, { position: 'fixed', margin: 0, left: k.left, top: k.top, width: k.width, height: k.height });
+            gsap.to(cerceve, {
+                left: h.left, top: h.top, width: h.width, height: h.height,
+                duration: 0.85, ease: 'expo.inOut',
+                onComplete: function () {
+                    gsap.set(cerceve, { clearProps: 'position,margin,left,top,width,height' });
+                    gsap.to(arayuz, { opacity: 1, duration: 0.4, ease: 'power2.out' });
+                }
+            });
+        }
+
+        function kapat() {
+            if (!acik) return;
+            acik = false;
+            kok.classList.remove('tamekran-acik');
+
+            function bitir() {
+                kat.hidden = true;
+                if (gsap.set) {
+                    gsap.set(cerceve, { clearProps: 'position,margin,left,top,width,height,opacity,scale' });
+                    // Kare değiştirme tween'i yarıda kalmışsa foto opak 0 kalmasın
+                    gsap.set(foto, { clearProps: 'opacity,scale' });
+                }
+                foto.removeAttribute('src');
+                kaydirmaKilidi(false);
+                if (acanKare) acanKare.focus();
+            }
+
+            var kaynakCerceve = acanKare ? karedekiCerceve(acanKare) : null;
+            var k = kaynakCerceve ? kaynakCerceve.getBoundingClientRect() : null;
+
+            if (!canlandirMi() || !k || !k.width) { bitir(); return; }
+
+            var h = cerceve.getBoundingClientRect();
+
+            gsap.to(arayuz, { opacity: 0, duration: 0.2, ease: 'power2.in' });
+            gsap.to(zemin, { opacity: 0, duration: 0.45, ease: 'power2.in', delay: 0.15 });
+
+            gsap.set(cerceve, { position: 'fixed', margin: 0, left: h.left, top: h.top, width: h.width, height: h.height });
+            gsap.to(cerceve, {
+                left: k.left, top: k.top, width: k.width, height: k.height,
+                duration: 0.6, ease: 'expo.inOut', onComplete: bitir
+            });
+        }
+
+        function goster(sira) {
+            icerikYaz(sira);
+            acanKare = kareler[suSira];
+            if (!canlandirMi()) return;
+            gsap.set(foto, { opacity: 0, scale: 1.04 });
+            gsap.to(foto, { opacity: 1, scale: 1, duration: 0.45, ease: 'power2.out' });
+        }
+
+        kareler.forEach(function (kare, sira) {
+            kare.addEventListener('click', function () { ac(sira); });
+        });
+
+        kapatDugme.addEventListener('click', kapat);
+        if (oncekiDugme) oncekiDugme.addEventListener('click', function () { goster(suSira - 1); });
+        if (sonrakiDugme) sonrakiDugme.addEventListener('click', function () { goster(suSira + 1); });
+
+        // Boşluğa tıklayınca kapansın (çerçevenin ve butonların dışı)
+        kat.addEventListener('click', function (olay) {
+            if (olay.target === kat || olay.target === zemin) kapat();
+        });
+
+        document.addEventListener('keydown', function (olay) {
+            if (!acik) return;
+
+            if (olay.key === 'Escape') {
+                kapat();
+            } else if (olay.key === 'ArrowLeft') {
+                goster(suSira - 1);
+            } else if (olay.key === 'ArrowRight') {
+                goster(suSira + 1);
+            } else if (olay.key === 'Tab') {
+                // Odak tuzağı: sekme katman içinde dönsün
+                var odaklanabilir = [kapatDugme, oncekiDugme, sonrakiDugme].filter(Boolean);
+                var su = odaklanabilir.indexOf(document.activeElement);
+                olay.preventDefault();
+                var yon = olay.shiftKey ? -1 : 1;
+                odaklanabilir[(su + yon + odaklanabilir.length) % odaklanabilir.length].focus();
+            }
+        });
+    }
+
+    /* =========================================================
        10. GÖRÜNÜRLÜK EMNİYETİ
        -------------------------------------------------------------
        rosso-kinetik sınıfı GSAP'in YÜKLENDİĞİNİ doğrular, ÇALIŞTIĞINI
@@ -648,6 +978,16 @@
                 oge.style.transform = '';
             });
 
+            /* Galeri pin'i tickersız ilerleyemez: kullanıcı 100vh'lik
+               kıpırdamayan bir bölümde sıkışır. Pin sökülür, ray CSS'teki
+               doğal yatay kaydırıcı hâline geri döner. */
+            if (galeriPin) {
+                galeriPin.kill(true);
+                galeriPin = null;
+            }
+            var galeri = document.querySelector('.galeri');
+            if (galeri) galeri.classList.remove('galeri--pinli');
+
             var perde = document.querySelector('.sahne-perde');
             if (perde) perde.remove();
             document.querySelectorAll('.sahne-perde__panel').forEach(function (p) { p.remove(); });
@@ -664,7 +1004,7 @@
         if (acildi) return;
         acildi = true;
 
-        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, gorunurlukEmniyeti]
+        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, gorunurlukEmniyeti]
             .forEach(function (modul) {
                 try { modul(); } catch (h) {
                     if (window.console) console.error('rosso:', modul.name, h);

@@ -10,6 +10,21 @@
     // Ekranda gösterilen fiyat/tarih Türkçe olsun diye kültürü açıkça belirtiyoruz.
     var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
     var yil = RossoLoungeWeb.Services.TurkiyeSaati.Simdi.Year;
+
+    // GALERİ SERGİSİ — kareler tek kaynaktan geliyor.
+    // Görseller veritabanına taşındığında YALNIZCA bu atama değişir
+    // (ör. ViewBag.Galeri as List<Galeri>); aşağıdaki @foreach bloğu
+    // ve tüm animasyon kancaları aynen çalışmaya devam eder.
+    var galeriKareleri = new[]
+    {
+        new { Gorsel = "/img/site/ic-mekan.jpg", Etiket = "Salon",       Alt = "Koyu ahşap ve pirinç detaylı iç mekân, hazırlanmış masalar", Genis = true  },
+        new { Gorsel = "/img/site/bar.jpg",      Etiket = "Bar",         Alt = "Bar tezgâhı ve arkasındaki içki rafları",                    Genis = false },
+        new { Gorsel = "/img/site/bahce.jpg",    Etiket = "Deniz Terası", Alt = "Deniz manzaralı, tenteli açık hava terası",                 Genis = true  },
+        new { Gorsel = "/img/site/sef.jpg",      Etiket = "Mutfak",      Alt = "Şefimiz servis öncesi malzemeleri hazırlarken",              Genis = false },
+        new { Gorsel = "/img/site/sunum.jpg",    Etiket = "Sunum",       Alt = "Tepeden çekilmiş, tabakta sunulan ana yemekler",             Genis = false },
+        new { Gorsel = "/img/site/paylasim.jpg", Etiket = "Paylaşmak",   Alt = "Masada paylaşılan tabaklar ve arkadaş sofrası",              Genis = true  },
+        new { Gorsel = "/img/site/sofra.jpg",    Etiket = "Akşam Sofrası", Alt = "Mum ışığında kurulmuş akşam sofrası",                      Genis = false }
+    };
 }
 
 <!DOCTYPE html>
@@ -111,7 +126,7 @@
 
     @* ---- Sıvı imleç (yalnızca fare olan cihazlarda görünür) ---- *@
     <div class="imlec" aria-hidden="true">
-        <span class="imlec__halka"></span>
+        <span class="imlec__halka"><span class="imlec__yazi">Keşfet</span></span>
         <span class="imlec__nokta"></span>
     </div>
 
@@ -331,48 +346,74 @@
             </div>
         </section>
 
-        <section id="gallery" class="section-padding">
-            <div class="container">
-                <div class="bolum-basi">
-                    <p class="bolum-ustbaslik">Galeri</p>
-                    <h2 class="section-title">Mekân &amp; Atmosfer</h2>
-                    <p class="bolum-alt-metin">Işığı, masaları ve deniz terasıyla sizi bekleyen ortamdan birkaç kare.</p>
+        @* =========================================================
+           GALERİ SERGİSİ
+           Dikey kaydırma bu bölümde yatay akışa dönüşür (GSAP ScrollTrigger
+           pin). JS/GSAP yoksa .galeri--pinli sınıfı hiç eklenmez ve ray
+           doğal bir yatay kaydırıcı olarak kalır — içerik her koşulda erişilir.
+           ========================================================= *@
+        <section id="gallery" class="galeri" aria-labelledby="galeri-baslik">
+            <div class="galeri__sahne">
+                <div class="galeri__ray">
+                    <header class="galeri__giris">
+                        <p class="galeri__ustbaslik">Galeri</p>
+                        <h2 class="galeri__baslik" id="galeri-baslik">Mekân &amp; <em>Atmosfer</em></h2>
+                        <p class="galeri__alt">Işığı, masaları ve deniz terasıyla sizi bekleyen ortamdan kareler. Kaydırdıkça sergi yanınızdan akar.</p>
+                        <p class="galeri__ipucu">
+                            <span class="galeri__ipucu-cizgi" aria-hidden="true"></span>
+                            Kaydırarak gezin
+                        </p>
+                    </header>
+
+@{ var galeriSira = 0; }
+@foreach (var kare in galeriKareleri)
+{
+    galeriSira++;
+                    <button type="button"
+                            class="galeri__kare@(kare.Genis ? " galeri__kare--genis" : "")"
+                            data-galeri-no="@galeriSira.ToString("00")"
+                            data-galeri-etiket="@kare.Etiket"
+                            aria-label="Tam ekranda aç: @kare.Etiket">
+                        <span class="galeri__cerceve">
+                            <img class="galeri__foto" src="@kare.Gorsel" alt="@kare.Alt" loading="lazy" draggable="false">
+                        </span>
+                        <span class="galeri__ayak">
+                            <span class="galeri__no">@galeriSira.ToString("00")</span>
+                            <span class="galeri__etiket">@kare.Etiket</span>
+                        </span>
+                    </button>
+}
                 </div>
 
-                <div class="mozaik">
-                    <button type="button" class="mozaik-kare kare-genis" data-buyuk="/img/site/ic-mekan.jpg" aria-label="Görseli büyüt: İç mekân">
-                        <img src="/img/site/ic-mekan.jpg" alt="Koyu ahşap ve pirinç detaylı iç mekân, hazırlanmış masalar" loading="lazy">
-                        <span class="mozaik-ortu"><span class="mozaik-yazi">İç mekân</span></span>
-                    </button>
-                    <button type="button" class="mozaik-kare" data-buyuk="/img/site/sef.jpg" aria-label="Görseli büyüt: Mutfakta hazırlık">
-                        <img src="/img/site/sef.jpg" alt="Şefimiz servis öncesi malzemeleri hazırlarken" loading="lazy">
-                        <span class="mozaik-ortu"><span class="mozaik-yazi">Mutfak</span></span>
-                    </button>
-                    <button type="button" class="mozaik-kare" data-buyuk="/img/site/bahce.jpg" aria-label="Görseli büyüt: Deniz manzaralı teras">
-                        <img src="/img/site/bahce.jpg" alt="Deniz manzaralı, tenteli açık hava terası" loading="lazy">
-                        <span class="mozaik-ortu"><span class="mozaik-yazi">Deniz terası</span></span>
-                    </button>
-                    <button type="button" class="mozaik-kare" data-buyuk="/img/site/sunum.jpg" aria-label="Görseli büyüt: Tabak sunumu">
-                        <img src="/img/site/sunum.jpg" alt="Tepeden çekilmiş, tabakta sunulan ana yemekler" loading="lazy">
-                        <span class="mozaik-ortu"><span class="mozaik-yazi">Tabaklarımız</span></span>
-                    </button>
-                    <button type="button" class="mozaik-kare" data-buyuk="/img/site/bar.jpg" aria-label="Görseli büyüt: Bar">
-                        <img src="/img/site/bar.jpg" alt="Bar tezgahı ve içki rafları" loading="lazy">
-                        <span class="mozaik-ortu"><span class="mozaik-yazi">Bar</span></span>
-                    </button>
-                    <button type="button" class="mozaik-kare kare-genis" data-buyuk="/img/site/paylasim.jpg" aria-label="Görseli büyüt: Paylaşımlı masa">
-                        <img src="/img/site/paylasim.jpg" alt="Masada paylaşılan tabaklar ve arkadaş sofrası" loading="lazy">
-                        <span class="mozaik-ortu"><span class="mozaik-yazi">Paylaşmak</span></span>
-                    </button>
+                <div class="galeri__ilerleme" aria-hidden="true">
+                    <span class="galeri__ilerleme-dolgu"></span>
                 </div>
             </div>
         </section>
 
-        <div class="buyutec" id="buyutec" role="dialog" aria-modal="true" aria-label="Görsel önizleme" hidden>
-            <button type="button" class="buyutec-kapat" aria-label="Kapat">&times;</button>
-            <button type="button" class="buyutec-ok buyutec-onceki" aria-label="Önceki görsel">&#10094;</button>
-            <img class="buyutec-gorsel" src="" alt="">
-            <button type="button" class="buyutec-ok buyutec-sonraki" aria-label="Sonraki görsel">&#10095;</button>
+        @* Tam ekran görüntüleyici — çerçeve, tıklanan karenin üstünden
+           GSAP Flip ile büyür; arka plan bulanıklaşır. *@
+        <div class="tamekran" id="tamekran" role="dialog" aria-modal="true" aria-label="Görsel önizleme" hidden>
+            <div class="tamekran__zemin"></div>
+
+            <div class="tamekran__cerceve">
+                <img class="tamekran__foto" src="" alt="">
+            </div>
+
+            <div class="tamekran__ayak">
+                <span class="tamekran__no"></span>
+                <span class="tamekran__etiket"></span>
+            </div>
+
+            <button type="button" class="tamekran__kapat" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <button type="button" class="tamekran__ok tamekran__ok--onceki" aria-label="Önceki görsel">
+                <span aria-hidden="true">&#10094;</span>
+            </button>
+            <button type="button" class="tamekran__ok tamekran__ok--sonraki" aria-label="Sonraki görsel">
+                <span aria-hidden="true">&#10095;</span>
+            </button>
         </div>
 
         <section id="reviews" class="section-padding bg-dark">

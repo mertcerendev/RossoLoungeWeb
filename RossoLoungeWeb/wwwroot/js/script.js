@@ -183,7 +183,7 @@
         var hedefler = document.querySelectorAll(
             '.section-title, .bolum-ustbaslik, .menu-card, .menu-category,' +
             ' .hakkimizda-gorseller, .hakkimizda-metin, .rakam-serit,' +
-            ' .mozaik-kare, .review-card, .review-form-container,' +
+            ' .review-card, .review-form-container,' +
             ' .bilgi-kart, .harita-kutu, .form-panel'
         );
 
@@ -520,77 +520,6 @@
 
         // Sunucudan hata/başarı dönerse ilgili sekme açık gelsin
         if (location.hash === '#mesaj' && mesajSekmesi) sekmeAc(mesajSekmesi, false);
-    }
-
-
-    // ============================================================
-    // 9. GALERİ BÜYÜTECİ (lightbox)
-    // ============================================================
-    const buyutec = document.getElementById('buyutec');
-
-    if (buyutec) {
-        const kareler = [...document.querySelectorAll('.mozaik-kare')];
-        const gorsel = buyutec.querySelector('.buyutec-gorsel');
-        const kapatDugmesi = buyutec.querySelector('.buyutec-kapat');
-        const oncekiDugme = buyutec.querySelector('.buyutec-onceki');
-        const sonrakiDugme = buyutec.querySelector('.buyutec-sonraki');
-        let suSira = 0;
-        let acanKare = null;
-
-        const goster = (sira) => {
-            suSira = (sira + kareler.length) % kareler.length;
-            const kare = kareler[suSira];
-            gorsel.src = kare.dataset.buyuk;
-            gorsel.alt = kare.querySelector('img')?.alt || '';
-        };
-
-        const ac = (sira) => {
-            acanKare = kareler[sira];
-            goster(sira);
-            buyutec.hidden = false;
-            document.body.style.overflow = 'hidden'; // arkadaki sayfa kaymasın
-            kapatDugmesi.focus();
-        };
-
-        const kapat = () => {
-            buyutec.hidden = true;
-            gorsel.src = '';
-            document.body.style.overflow = '';
-            if (acanKare) acanKare.focus(); // odak geldiği yere dönsün
-        };
-
-        kareler.forEach((kare, sira) => {
-            kare.addEventListener('click', () => ac(sira));
-        });
-
-        kapatDugmesi.addEventListener('click', kapat);
-        oncekiDugme.addEventListener('click', () => goster(suSira - 1));
-        sonrakiDugme.addEventListener('click', () => goster(suSira + 1));
-
-        // Boşluğa tıklayınca kapansın (görselin veya butonların üstü hariç)
-        buyutec.addEventListener('click', (olay) => {
-            if (olay.target === buyutec) kapat();
-        });
-
-        document.addEventListener('keydown', (olay) => {
-            if (buyutec.hidden) return;
-
-            if (olay.key === 'Escape') {
-                kapat();
-            } else if (olay.key === 'ArrowLeft') {
-                goster(suSira - 1);
-            } else if (olay.key === 'ArrowRight') {
-                goster(suSira + 1);
-            } else if (olay.key === 'Tab') {
-                // Odak tuzağı: sekme büyüteç içinde dönsün, arkadaki sayfaya kaçmasın
-                const odaklanabilir = [kapatDugmesi, oncekiDugme, sonrakiDugme];
-                const su = odaklanabilir.indexOf(document.activeElement);
-                olay.preventDefault();
-                const yon = olay.shiftKey ? -1 : 1;
-                const yeni = (su + yon + odaklanabilir.length) % odaklanabilir.length;
-                odaklanabilir[yeni].focus();
-            }
-        });
     }
 
 

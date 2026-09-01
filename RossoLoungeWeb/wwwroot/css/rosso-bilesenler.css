@@ -1146,3 +1146,415 @@
     justify-content: center;
     margin-block-start: clamp(3rem, 7vw, 5rem);
 }
+
+/* =============================================================
+   GALERİ SERGİSİ — yatay akış
+   -------------------------------------------------------------
+   İKİ KATMANLI KURULUM (bozulmaya dayanıklılık)
+   1) VARSAYILAN: ray, kendi kendine yeten yatay bir kaydırıcıdır.
+      JS kapalı, GSAP düşük, hareket azaltma açık ya da ekran dar —
+      hangisi olursa olsun kareler parmakla / kaydırma çubuğuyla gezilir.
+   2) .galeri--pinli: bu sınıfı rosso-hareket.js YALNIZCA pin kurulumu
+      gerçekten yapıldığında ekler. O zaman sahne ekrana sabitlenir ve
+      dikey kaydırma yatay akışa dönüşür.
+   Sınıf eklenmezse hiçbir içerik gizli kalmaz.
+   ============================================================= */
+.galeri {
+    position: relative;
+    background: var(--obsidyen);
+}
+
+.galeri__sahne {
+    position: relative;
+    padding-block: var(--bolum);
+}
+
+/* --- Ray: varsayılan hâli doğal yatay kaydırıcı --- */
+.galeri__ray {
+    display: flex;
+    align-items: flex-end;
+    gap: clamp(1rem, 2.4vw, 2.75rem);
+    padding-inline: var(--kap-yan);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+    .galeri__ray::-webkit-scrollbar {
+        display: none;
+    }
+
+/* --- Pinli mod: dikey kaydırma yatay akışa dönüşür --- */
+.galeri--pinli .galeri__sahne {
+    display: flex;
+    align-items: center;
+    height: 100vh;
+    padding-block: 0;
+    /* Ray ekranın dışına taşar; pin sırasında kırpılması şart */
+    overflow: hidden;
+}
+
+.galeri--pinli .galeri__ray {
+    width: max-content;
+    overflow: visible;
+    scroll-snap-type: none;
+    will-change: transform;
+}
+
+/* --- Ray'ın ilk paneli: sergi başlıkla açılır --- */
+.galeri__giris {
+    flex: 0 0 auto;
+    width: clamp(16rem, 32vw, 26rem);
+    padding-inline-end: clamp(1rem, 3vw, 3.5rem);
+    padding-block-end: clamp(2rem, 5vh, 4rem);
+    scroll-snap-align: center;
+}
+
+.galeri__ustbaslik {
+    margin-block-end: var(--b4);
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: var(--harf-genis);
+    text-transform: uppercase;
+}
+
+.galeri__baslik {
+    margin-block-end: var(--b4);
+    font-size: clamp(2rem, 1.2rem + 2.6vw, 3.75rem);
+    font-weight: 300;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+}
+
+    .galeri__baslik em {
+        font-style: italic;
+        color: var(--sampanya);
+    }
+
+.galeri__alt {
+    max-width: 34ch;
+    color: var(--metin-2);
+    line-height: var(--satir-genis);
+}
+
+.galeri__ipucu {
+    display: flex;
+    align-items: center;
+    gap: var(--b3);
+    margin-block-start: var(--b6);
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.galeri__ipucu-cizgi {
+    display: block;
+    width: 3rem;
+    height: 1px;
+    background: var(--bronz);
+}
+
+/* --- Kare --- */
+.galeri__kare {
+    flex: 0 0 auto;
+    width: clamp(14rem, 27vw, 23rem);
+    padding: 0;
+    background: none;
+    border: 0;
+    text-align: start;
+    scroll-snap-align: center;
+    cursor: pointer;
+    /* Hız eğimi (skewX) buradan uygulanır; merkezden bükülsün */
+    transform-origin: center center;
+}
+
+.galeri__kare--genis {
+    width: clamp(17rem, 38vw, 34rem);
+}
+
+.galeri__cerceve {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    height: clamp(15rem, 54vh, 30rem);
+    background: var(--antrasit-2);
+    box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.9);
+}
+
+.galeri__kare--genis .galeri__cerceve {
+    height: clamp(12rem, 42vh, 24rem);
+}
+
+/* İnce iç çerçeve — camlı vitrin hissi */
+.galeri__cerceve::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--cizgi);
+    pointer-events: none;
+}
+
+/* Foto çerçeveden geniştir: iç parallax kayarken asla boşluk açılmaz.
+   %124 genişlik + %-12 başlangıç kayması → ±%8.7'lik kayma payı güvenli. */
+.galeri__foto {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: -12%;
+    width: 124%;
+    height: 100%;
+    object-fit: cover;
+    will-change: transform;
+    transition: filter var(--h3) var(--egri);
+}
+
+.galeri__kare:hover .galeri__foto,
+.galeri__kare:focus-visible .galeri__foto {
+    filter: brightness(1.08);
+}
+
+.galeri__ayak {
+    display: flex;
+    align-items: baseline;
+    gap: var(--b3);
+    padding-block-start: var(--b4);
+}
+
+.galeri__no {
+    color: var(--bronz);
+    font-family: var(--f-serif);
+    font-size: var(--t-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+.galeri__etiket {
+    color: var(--metin-2);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    transition: color var(--h2) var(--egri);
+}
+
+.galeri__kare:hover .galeri__etiket,
+.galeri__kare:focus-visible .galeri__etiket {
+    color: var(--metin);
+}
+
+/* --- İlerleme çubuğu --- */
+.galeri__ilerleme {
+    position: absolute;
+    inset-inline: var(--kap-yan);
+    inset-block-end: clamp(1.25rem, 4vh, 2.5rem);
+    height: 1px;
+    background: var(--cizgi);
+}
+
+.galeri__ilerleme-dolgu {
+    display: block;
+    height: 100%;
+    background: var(--sampanya);
+    transform: scaleX(0);
+    transform-origin: left center;
+}
+
+/* Doğal kaydırıcı modunda ilerlemeyi sürecek bir şey yok */
+.galeri:not(.galeri--pinli) .galeri__ilerleme {
+    display: none;
+}
+
+/* =============================================================
+   İMLEÇ — "KEŞFET" DURUMU
+   -------------------------------------------------------------
+   Etiket halkanın İÇİNDE duruyor: halka gecikmeli takip ettiği için
+   yazı da aynı sıvı gecikmeyle akar, ayrıca konumlandırma gerekmez.
+   Bu kurallar rosso-tema.css'teki .imlec--yakin'den SONRA geldiği
+   için (aynı özgüllük) galeri karelerinde kazanır — kare bir <button>.
+   ============================================================= */
+.imlec__halka {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.imlec__yazi {
+    opacity: 0;
+    color: var(--obsidyen);
+    font-family: var(--f-serif);
+    font-size: 0.8125rem;
+    font-style: italic;
+    letter-spacing: 0.16em;
+    white-space: nowrap;
+    transform: scale(0.86);
+    transition: opacity var(--h2) var(--egri), transform var(--h2) var(--egri);
+}
+
+.imlec--kesfet .imlec__halka {
+    width: 108px;
+    height: 108px;
+    margin: -54px 0 0 -54px;
+    background: rgba(230, 217, 189, 0.88);
+    border-color: transparent;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+}
+
+.imlec--kesfet .imlec__nokta {
+    opacity: 0;
+}
+
+.imlec--kesfet .imlec__yazi {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* =============================================================
+   TAM EKRAN GÖRÜNTÜLEYİCİ
+   -------------------------------------------------------------
+   .tamekran__cerceve, tıklanan karenin çerçevesinin üstüne Flip.fit
+   ile oturtulup oradan büyütülür. Bu yüzden iki çerçeve aynı
+   davranışta olmalı: overflow:hidden + içinde object-fit:cover foto.
+   ============================================================= */
+.tamekran {
+    position: fixed;
+    inset: 0;
+    z-index: var(--k-loader);
+    display: grid;
+    place-items: center;
+}
+
+.tamekran[hidden] {
+    display: none;
+}
+
+.tamekran__zemin {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 8, 10, 0.72);
+    -webkit-backdrop-filter: blur(20px) saturate(115%);
+    backdrop-filter: blur(20px) saturate(115%);
+}
+
+.tamekran__cerceve {
+    position: relative;
+    overflow: hidden;
+    width: min(1120px, 92vw);
+    height: min(76vh, 44rem);
+    background: var(--antrasit-2);
+    box-shadow: 0 60px 140px -40px rgba(0, 0, 0, 0.95);
+    will-change: transform;
+}
+
+.tamekran__foto {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tamekran__ayak {
+    position: absolute;
+    inset-block-end: clamp(1rem, 3.5vh, 2.25rem);
+    inset-inline-start: 50%;
+    display: flex;
+    align-items: baseline;
+    gap: var(--b3);
+    transform: translateX(-50%);
+}
+
+.tamekran__no {
+    color: var(--bronz);
+    font-family: var(--f-serif);
+    font-size: var(--t-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+.tamekran__etiket {
+    color: var(--metin-2);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.tamekran__kapat,
+.tamekran__ok {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: var(--dokunma);
+    height: var(--dokunma);
+    padding: 0;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--cizgi-2);
+    border-radius: 50%;
+    color: var(--metin);
+    font-size: var(--t-lg);
+    line-height: 1;
+    cursor: pointer;
+    transition: background var(--h2) var(--egri), border-color var(--h2) var(--egri);
+}
+
+    .tamekran__kapat:hover,
+    .tamekran__ok:hover {
+        background: var(--sampanya-sis);
+        border-color: var(--sampanya);
+    }
+
+.tamekran__kapat {
+    inset-block-start: clamp(1rem, 3vh, 2rem);
+    inset-inline-end: clamp(1rem, 3vw, 2rem);
+}
+
+.tamekran__ok {
+    inset-block-start: 50%;
+    margin-block-start: calc(var(--dokunma) / -2);
+}
+
+.tamekran__ok--onceki {
+    inset-inline-start: clamp(0.75rem, 2.5vw, 2rem);
+}
+
+.tamekran__ok--sonraki {
+    inset-inline-end: clamp(0.75rem, 2.5vw, 2rem);
+}
+
+/* Tam ekran açıkken imleç sergi durumunda takılı kalmasın */
+.tamekran-acik .imlec--kesfet .imlec__halka {
+    width: 68px;
+    height: 68px;
+    margin: -34px 0 0 -34px;
+    background: var(--sampanya-sis);
+    border-color: var(--sampanya);
+}
+
+.tamekran-acik .imlec--kesfet .imlec__yazi {
+    opacity: 0;
+}
+
+/* =============================================================
+   GALERİ — DAR EKRAN
+   ============================================================= */
+@media (max-width: 899.98px) {
+    .galeri__ray {
+        align-items: flex-start;
+        padding-block-end: var(--b4);
+    }
+
+    .galeri__giris {
+        width: min(78vw, 24rem);
+    }
+
+    .galeri__kare,
+    .galeri__kare--genis {
+        width: min(76vw, 22rem);
+    }
+
+    .galeri__cerceve,
+    .galeri__kare--genis .galeri__cerceve {
+        height: clamp(14rem, 46vh, 22rem);
+    }
+}
