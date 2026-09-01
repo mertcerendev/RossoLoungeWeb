@@ -609,10 +609,6 @@
         text-transform: uppercase;
     }
 
-.hakkinda__eylemler {
-    margin-block-start: var(--b6);
-}
-
 /* --- İmza alıntısı --- */
 .hakkinda__alinti {
     max-width: 44rem;
@@ -679,7 +675,6 @@
 /* Kinetik başlangıç durumları — yalnızca html.rosso-kinetik altında */
 .rosso-kinetik .hakkinda__govde,
 .rosso-kinetik .hakkinda__olcut,
-.rosso-kinetik .hakkinda__eylemler,
 .rosso-kinetik .hakkinda__yil,
 .rosso-kinetik .hakkinda__alinti {
     opacity: 0;

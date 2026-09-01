@@ -710,11 +710,6 @@
             scrollTrigger: { trigger: '.hakkinda__olcut', start: 'top 88%' }
         });
 
-        gsap.to('.hakkinda__eylemler', {
-            autoAlpha: 1, duration: 1, ease: 'power2.out',
-            scrollTrigger: { trigger: '.hakkinda__eylemler', start: 'top 92%' }
-        });
-
         gsap.to('.hakkinda__yil', {
             autoAlpha: 1, duration: 0.9, ease: 'power2.out', delay: 0.5,
             scrollTrigger: { trigger: '.hakkinda__gorseller', start: 'top 70%' }
@@ -1848,7 +1843,7 @@
 
             // GSAP'in inline yazdığı gizlemeleri de temizle
             document.querySelectorAll(
-                '.hakkinda__govde, .hakkinda__olcut, .hakkinda__eylemler, .hakkinda__yil,' +
+                '.hakkinda__govde, .hakkinda__olcut, .hakkinda__yil,' +
                 ' .hakkinda__alinti, .hakkinda__cerceve, .kn-maske, .kn-kaydir, .kn-solgun,' +
                 ' .hero__baslik, .hero__ustbaslik, .hero__alt, .hero__eylemler,' +
                 ' .hero__eylemler > *, .hero__durum,' +
