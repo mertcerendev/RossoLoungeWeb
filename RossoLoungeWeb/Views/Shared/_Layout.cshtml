@@ -37,6 +37,32 @@
     <link rel="stylesheet" href="~/css/rosso-tema.css" asp-append-version="true">
     <link rel="stylesheet" href="~/css/rosso-bilesenler.css" asp-append-version="true">
 
+    @* Kinetik sınıfı İLK BOYAMADAN ÖNCE eklenmeli.
+       Bunu ertelenmiş (defer) script'e bırakınca sayfa bir kez tamamen
+       görünüyor, hemen ardından JS her şeyi gizleyip baştan oynatıyordu:
+       "sayfa yeniden yükleniyor" hissi bundandı. Ölçüldü — 80ms'de içerik
+       açık (kinetik yok), 160ms'de gizleniyordu.
+
+       Açılış perdesi ve tüm giriş animasyonları CSS'te
+       html:not(.rosso-kinetik) ile kapalı olduğu için sınıfın erken
+       eklenmesi perdeyi de ilk kareden itibaren gösteriyor. *@
+    <script>
+        (function () {
+            try {
+                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+                document.documentElement.classList.add('rosso-kinetik');
+
+                /* EMNİYET: rosso-hareket.js hiç çalışmazsa (CDN düşer, JS
+                   hatası olur) sayfa perdenin altında gizli kalmasın. */
+                setTimeout(function () {
+                    if (!window.__rossoBasladi) {
+                        document.documentElement.classList.remove('rosso-kinetik', 'rosso-kilit');
+                    }
+                }, 5000);
+            } catch (h) { /* yoksay */ }
+        })();
+    </script>
+
     @await RenderSectionAsync("Basliklar", required: false)
 </head>
 <body>

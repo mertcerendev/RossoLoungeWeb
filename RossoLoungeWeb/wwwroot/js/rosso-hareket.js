@@ -14,6 +14,10 @@
 (function () {
     'use strict';
 
+    /* Head'deki satır içi betiğin emniyet zamanlayıcısı bunu görüyor:
+       ayarlanmazsa kinetik sınıfını söküp içeriği açığa çıkarıyor. */
+    window.__rossoBasladi = true;
+
     var kok = document.documentElement;
     var azHareket = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var inceIsaretci = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
@@ -27,6 +31,12 @@
        Kinetik moda ancak her şey hazırsa geçilir.
        ========================================================= */
     var kinetik = gsapVar && stVar && !azHareket;
+
+    if (!kinetik) {
+        /* Sınıfı head'deki betik iyimser şekilde eklemiş olabilir;
+           GSAP gelmediyse ya da hareket azaltma açıksa geri al. */
+        kok.classList.remove('rosso-kinetik');
+    }
 
     if (kinetik) {
         kok.classList.add('rosso-kinetik');
@@ -861,7 +871,12 @@
                     start: 'top top',
                     end: function () { return '+=' + mesafe(); },
                     pin: true,
-                    anticipatePin: 1,
+                    /* anticipatePin KAPALI. Pini hıza göre erken uygulayıp
+                       öğeyi yerine "atıyordu": ölçümde pin devreye girerken
+                       sahne tek karede 46px zıplıyordu (scroll o karede
+                       yalnızca 18px ilerlemişti). Lenis'in yumuşak
+                       kaydırmasında zaten flaş riski yok. */
+                    anticipatePin: 0,
                     scrub: 1,
                     invalidateOnRefresh: true,
                     onUpdate: function (kendi) {
