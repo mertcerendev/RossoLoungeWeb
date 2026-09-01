@@ -183,7 +183,7 @@
         var hedefler = document.querySelectorAll(
             '.section-title, .bolum-ustbaslik, .menu-card, .menu-category,' +
             ' .hakkimizda-gorseller, .hakkimizda-metin, .rakam-serit,' +
-            ' .review-card, .review-form-container,' +
+            ' .review-form-container,' +
             ' .bilgi-kart, .harita-kutu, .form-panel'
         );
 

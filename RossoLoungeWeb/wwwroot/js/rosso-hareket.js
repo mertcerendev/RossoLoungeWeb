@@ -44,6 +44,27 @@
     // Galeri pin'i: ticker olurse emniyet katmani buradan soker
     var galeriPin = null;
 
+    /* Sıvı imlecin halkasına uygulanan manyetik kayma. Yorum defterinin
+       kenar bölgeleri buraya yazıyor, imleç döngüsü okuyor. */
+    var imlecCekim = { x: 0, y: 0 };
+
+    /* İmlecin etiketli durumu — galeri "Keşfet", defter "İleri/Geri".
+       Metni tek yerden yazıyoruz; işaretleme boş geliyor. */
+    function imlecEtiketle(metin) {
+        var imlec = document.querySelector('.imlec');
+        if (!imlec) return;
+
+        if (metin) {
+            var yazi = imlec.querySelector('.imlec__yazi');
+            if (yazi) yazi.textContent = metin;
+            imlec.classList.add('imlec--etiketli');
+        } else {
+            imlec.classList.remove('imlec--etiketli');
+            imlecCekim.x = 0;
+            imlecCekim.y = 0;
+        }
+    }
+
     function lenisBaslat() {
         if (!lenisVar || azHareket) return;
 
@@ -267,7 +288,9 @@
 
         window.addEventListener('mousemove', function (olay) {
             nx(olay.clientX); ny(olay.clientY);
-            hx(olay.clientX); hy(olay.clientY);
+            // Halka manyetik çekimle kayabilir; nokta imlecin gerçek
+            // yerinde kalır (bkz. yorumDefteri kenar bölgeleri)
+            hx(olay.clientX + imlecCekim.x); hy(olay.clientY + imlecCekim.y);
         }, { passive: true });
 
         // Tıklanabilir öğelerde halka büyür
@@ -732,16 +755,11 @@
     function imlecKesfet(kareler) {
         if (!inceIsaretci || azHareket) return;
 
-        var imlec = document.querySelector('.imlec');
-        if (!imlec) return;
+        if (!document.querySelector('.imlec')) return;
 
         kareler.forEach(function (kare) {
-            kare.addEventListener('mouseenter', function () {
-                imlec.classList.add('imlec--kesfet');
-            });
-            kare.addEventListener('mouseleave', function () {
-                imlec.classList.remove('imlec--kesfet');
-            });
+            kare.addEventListener('mouseenter', function () { imlecEtiketle('Keşfet'); });
+            kare.addEventListener('mouseleave', function () { imlecEtiketle(null); });
         });
     }
 
@@ -938,6 +956,258 @@
     }
 
     /* =========================================================
+       13. ZİYARETÇİ DEFTERİ — tipografik yorum sergisi
+       -------------------------------------------------------------
+       - Sürükleyerek geçiş (pointer events), sönümlü takip + eşik
+       - Kenar bölgelerinde sıvı imleç "Geri/İleri" etiketine dönüşür
+         ve halka bölgeye doğru manyetik olarak çekilir
+       - Geçiş: eski yorum satır satır bulanıklaşıp dağılır, yeni
+         yorum maskeden yükselerek gelir (SplitText)
+       - İnce ilerleme çizgisi + sayaç
+
+       Galerideki desenin aynısı: .defter--sahnede sınıfı yalnızca
+       sergi gerçekten devralındığında ekleniyor. Yoksa yapraklar
+       CSS'te alt alta okunur bir liste olarak kalıyor.
+       ========================================================= */
+    function yorumDefteri() {
+        var bolum = document.querySelector('.defter');
+        if (!bolum) return;
+
+        var sahne = bolum.querySelector('.defter__sahne');
+        var yapraklar = Array.prototype.slice.call(bolum.querySelectorAll('.defter__yaprak'));
+        // Tek yorumda sergiye gerek yok; sıfırda zaten boş durum var
+        if (!sahne || yapraklar.length < 2 || !kinetik) return;
+
+        var geri = bolum.querySelector('.defter__yon--geri');
+        var ileri = bolum.querySelector('.defter__yon--ileri');
+        var dolgu = bolum.querySelector('.defter__ilerleme-dolgu');
+        var suEt = bolum.querySelector('.defter__su');
+        var bolmeVar = typeof window.SplitText !== 'undefined';
+
+        var suSira = 0;
+        var mesgul = false;
+
+        bolum.classList.add('defter--sahnede');
+
+        // Tek döngü: ilk yaprak daha ilk adımda açılıyor, arada bir
+        // hata olsa bile "hepsi gizli" durumu oluşmuyor.
+        yapraklar.forEach(function (yaprak, i) {
+            gsap.set(yaprak, { autoAlpha: i === 0 ? 1 : 0 });
+            yaprak.setAttribute('aria-hidden', i === 0 ? 'false' : 'true');
+        });
+        durumYaz(0);
+
+        function durumYaz(i) {
+            if (dolgu) {
+                gsap.to(dolgu, {
+                    scaleX: (i + 1) / yapraklar.length,
+                    duration: 0.7, ease: 'expo.out'
+                });
+            }
+            if (suEt) suEt.textContent = ('0' + (i + 1)).slice(-2);
+        }
+
+        /* ---------- Satır bölme ----------
+           Bölme her geçişte yapılıp sonra geri alınıyor. Satır kutuları
+           böylece HER ZAMAN o anki genişliğe göre hesaplanır; yeniden
+           boyutlandırmada bayat bölme kalmaz, resize dinleyicisi
+           gerekmez. Birkaç satır için maliyeti yok denecek kadar az. */
+        function satirlaraBol(yaprak) {
+            var hedef = yaprak.querySelector('.defter__metin');
+            if (!bolmeVar || !hedef) return null;
+
+            var bol = new SplitText(hedef, { type: 'lines', linesClass: 'defter__satir' });
+
+            // Her satırı taşan bir kaba al → maske etkisi
+            var kaplar = bol.lines.map(function (satir) {
+                var kap = document.createElement('span');
+                kap.className = 'defter__satir-kap';
+                satir.parentNode.insertBefore(kap, satir);
+                kap.appendChild(satir);
+                return kap;
+            });
+
+            return {
+                satirlar: bol.lines,
+                geriAl: function () {
+                    // Önce kapları söküyoruz; revert() sarmalanmış
+                    // düğümleri geride bırakabiliyor.
+                    kaplar.forEach(function (kap) {
+                        if (kap.firstChild) kap.parentNode.insertBefore(kap.firstChild, kap);
+                        if (kap.parentNode) kap.parentNode.removeChild(kap);
+                    });
+                    bol.revert();
+                }
+            };
+        }
+
+        function suslerOf(yaprak) {
+            return yaprak.querySelectorAll('.defter__isaret, .defter__imza');
+        }
+
+        /* ---------- Geçiş ---------- */
+        function gecis(hedef, yon) {
+            if (mesgul || hedef === suSira || hedef < 0 || hedef >= yapraklar.length) return;
+            mesgul = true;
+
+            var eski = yapraklar[suSira];
+            var yeni = yapraklar[hedef];
+
+            eski.setAttribute('aria-hidden', 'true');
+            yeni.setAttribute('aria-hidden', 'false');
+            suSira = hedef;
+            durumYaz(hedef);
+
+            var eskiBol = satirlaraBol(eski);
+            var yeniBol = satirlaraBol(yeni);
+
+            var zc = gsap.timeline({
+                onComplete: function () {
+                    if (eskiBol) eskiBol.geriAl();
+                    if (yeniBol) yeniBol.geriAl();
+                    gsap.set(eski, { autoAlpha: 0, x: 0, rotate: 0, filter: 'none' });
+                    gsap.set(yeni, { clearProps: 'transform,filter' });
+                    mesgul = false;
+                }
+            });
+
+            // Yeni yaprağın süsleri girişten önce kapalı olsun
+            zc.set(suslerOf(yeni), { autoAlpha: 0 }, 0);
+
+            /* ÇIKIŞ — satırlar bulanıklaşıp sürükleme yönünde dağılır */
+            if (eskiBol) {
+                zc.to(eskiBol.satirlar, {
+                    autoAlpha: 0, filter: 'blur(7px)', yPercent: -14 * yon,
+                    duration: 0.42, ease: 'power2.in', stagger: 0.03
+                }, 0);
+            } else {
+                zc.to(eski, { autoAlpha: 0, filter: 'blur(7px)', duration: 0.4, ease: 'power2.in' }, 0);
+            }
+
+            zc.to(suslerOf(eski), { autoAlpha: 0, duration: 0.3, ease: 'power2.in' }, 0);
+
+            // Sahneyi devret
+            zc.set(eski, { autoAlpha: 0 }, 0.44);
+            zc.set(yeni, { autoAlpha: 1 }, 0.44);
+
+            /* GİRİŞ — satırlar maskeden yükselir */
+            if (yeniBol) {
+                zc.fromTo(yeniBol.satirlar,
+                    { yPercent: 112, autoAlpha: 0, filter: 'blur(9px)' },
+                    {
+                        yPercent: 0, autoAlpha: 1, filter: 'blur(0px)',
+                        duration: 0.85, ease: 'expo.out', stagger: 0.055
+                    }, 0.46);
+            } else {
+                zc.fromTo(yeni,
+                    { autoAlpha: 0, filter: 'blur(9px)' },
+                    { autoAlpha: 1, filter: 'blur(0px)', duration: 0.7, ease: 'expo.out' }, 0.46);
+            }
+
+            zc.fromTo(suslerOf(yeni),
+                { autoAlpha: 0, y: 14 },
+                { autoAlpha: 1, y: 0, duration: 0.7, ease: 'expo.out', stagger: 0.08 }, 0.62);
+        }
+
+        function git(yon) {
+            gecis((suSira + yon + yapraklar.length) % yapraklar.length, yon);
+        }
+
+        /* ---------- Sürükleme ----------
+           Yaprak imleci sönümlü takip eder (1 px → 0.34 px); eşiği
+           geçerse geçiş yapılır, geçmezse yaylanarak yerine döner. */
+        var basX = 0, basY = 0, kayma = 0, tutuluyor = false, niyet = null;
+
+        sahne.addEventListener('pointerdown', function (olay) {
+            if (mesgul) return;
+            if (olay.pointerType === 'mouse' && olay.button !== 0) return;
+            tutuluyor = true;
+            niyet = null;
+            kayma = 0;
+            basX = olay.clientX;
+            basY = olay.clientY;
+        });
+
+        sahne.addEventListener('pointermove', function (olay) {
+            if (!tutuluyor) return;
+
+            var gx = olay.clientX - basX;
+            var gy = olay.clientY - basY;
+
+            /* İlk 10 px'te niyeti belirle. Dikey ise sürüklemeyi bırak:
+               dokunmatikte sayfanın kendi kaydırması bloke olmasın. */
+            if (niyet === null) {
+                if (Math.abs(gx) < 10 && Math.abs(gy) < 10) return;
+                niyet = Math.abs(gx) > Math.abs(gy) ? 'yatay' : 'dikey';
+                if (niyet === 'yatay') {
+                    bolum.classList.add('defter--tutuluyor');
+                    try { sahne.setPointerCapture(olay.pointerId); } catch (h) { /* yoksay */ }
+                } else {
+                    tutuluyor = false;
+                    return;
+                }
+            }
+
+            kayma = gx;
+            gsap.set(yapraklar[suSira], { x: kayma * 0.34, rotate: kayma * 0.0035 });
+        });
+
+        function birak(olay) {
+            if (!tutuluyor) return;
+            tutuluyor = false;
+            bolum.classList.remove('defter--tutuluyor');
+
+            if (olay && olay.pointerId != null) {
+                try { sahne.releasePointerCapture(olay.pointerId); } catch (h) { /* yoksay */ }
+            }
+
+            var esik = Math.min(110, sahne.offsetWidth * 0.11);
+            var yeter = Math.abs(kayma) >= esik;
+            var yon = kayma < 0 ? 1 : -1;
+            kayma = 0;
+
+            if (yeter) {
+                // Yaprak sürüklendiği yerden çıkışa devam etsin diye
+                // x sıfırlanmıyor; geçiş sonunda temizleniyor.
+                git(yon);
+            } else {
+                gsap.to(yapraklar[suSira], {
+                    x: 0, rotate: 0, duration: 0.7, ease: 'elastic.out(1, 0.55)'
+                });
+            }
+        }
+
+        sahne.addEventListener('pointerup', birak);
+        sahne.addEventListener('pointercancel', birak);
+
+        /* ---------- Klavye ---------- */
+        sahne.addEventListener('keydown', function (olay) {
+            if (olay.key === 'ArrowLeft') { olay.preventDefault(); git(-1); }
+            else if (olay.key === 'ArrowRight') { olay.preventDefault(); git(1); }
+        });
+
+        /* ---------- Kenar bölgeleri + manyetik imleç ---------- */
+        [[geri, 'Geri', -1], [ileri, 'İleri', 1]].forEach(function (uc) {
+            var dugme = uc[0];
+            if (!dugme) return;
+
+            dugme.addEventListener('click', function () { git(uc[2]); });
+
+            if (!inceIsaretci || azHareket) return;
+
+            dugme.addEventListener('mouseenter', function () { imlecEtiketle(uc[1]); });
+            dugme.addEventListener('mouseleave', function () { imlecEtiketle(null); });
+
+            // Manyetik çekim: halka bölgenin eksenine doğru kayar,
+            // nokta imlecin gerçek yerinde kalır → "çekiliyor" hissi
+            dugme.addEventListener('mousemove', function (olay) {
+                var r = dugme.getBoundingClientRect();
+                imlecCekim.x = ((r.left + r.width / 2) - olay.clientX) * 0.38;
+            }, { passive: true });
+        });
+    }
+
+    /* =========================================================
        10. GÖRÜNÜRLÜK EMNİYETİ
        -------------------------------------------------------------
        rosso-kinetik sınıfı GSAP'in YÜKLENDİĞİNİ doğrular, ÇALIŞTIĞINI
@@ -970,7 +1240,8 @@
                 ' .hakkinda__alinti, .hakkinda__cerceve, .kn-maske, .kn-kaydir, .kn-solgun,' +
                 ' .hero__baslik, .hero__ustbaslik, .hero__alt, .hero__eylemler, .hero__durum,' +
                 ' .menu__kalem, .menu__bas > *,' +
-                ' .vitrin__kart, .vitrin__bas > *, .vitrin__eylem'
+                ' .vitrin__kart, .vitrin__bas > *, .vitrin__eylem,' +
+                ' .defter__yaprak, .defter__satir, .defter__isaret, .defter__imza'
             ).forEach(function (oge) {
                 oge.style.opacity = '';
                 oge.style.visibility = '';
@@ -988,6 +1259,11 @@
             var galeri = document.querySelector('.galeri');
             if (galeri) galeri.classList.remove('galeri--pinli');
 
+            /* Defter sergisi de tickersız ilerlemez: yapraklar alt alta
+               okunur listeye dönsün, hiçbir yorum gizli kalmasın. */
+            var defter = document.querySelector('.defter');
+            if (defter) defter.classList.remove('defter--sahnede');
+
             var perde = document.querySelector('.sahne-perde');
             if (perde) perde.remove();
             document.querySelectorAll('.sahne-perde__panel').forEach(function (p) { p.remove(); });
@@ -1004,7 +1280,7 @@
         if (acildi) return;
         acildi = true;
 
-        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, gorunurlukEmniyeti]
+        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, gorunurlukEmniyeti]
             .forEach(function (modul) {
                 try { modul(); } catch (h) {
                     if (window.console) console.error('rosso:', modul.name, h);

@@ -13,7 +13,7 @@
      .hamburger .nav-links .active #navbar .kaydirildi
      .reveal .gorunur .toast-bildirim .toast-kapat .kapaniyor
      .hata .basarili .section-title .about-text .about-image
-     .menu-card .gallery-item .review-card .contact-details
+     .menu-card .gallery-item .contact-details
      .map-container .reservation-container .review-form-container
      .menu-category
 
@@ -622,123 +622,6 @@ section.bg-dark,
     }
 
 /* =========================================
-   9. YORUMLAR (SLIDER)
-   ========================================= */
-.review-card {
-    position: relative;
-    height: 320px; /* sabit yükseklik: slider geçişinde sayfa zıplamasın */
-    margin: var(--bosluk-4);
-    padding: var(--bosluk-8);
-    background-color: var(--yz-zemin-vurgu);
-    border-left: 5px solid var(--renk-marka);
-    border-radius: var(--yaricap-lg);
-    box-shadow: var(--golge-koyu-3);
-    color: var(--beyaz);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    overflow: hidden;
-    transition: transform var(--sure-normal) var(--gecis), box-shadow var(--sure-normal) var(--gecis);
-}
-
-    .review-card:hover {
-        transform: translateY(-6px);
-        box-shadow: var(--golge-4);
-    }
-
-    /* Silik tırnak filigranı */
-    .review-card::before {
-        content: '\201C';
-        position: absolute;
-        top: -20px;
-        right: var(--bosluk-5);
-        left: auto;
-        z-index: var(--z-zemin);
-        font-family: serif;
-        font-size: 8rem;
-        color: var(--renk-marka);
-        opacity: 0.1;
-        pointer-events: none;
-    }
-
-    .review-card .stars {
-        position: relative;
-        z-index: var(--z-icerik);
-        margin-bottom: var(--bosluk-4);
-        color: #f1c40f;
-        font-size: var(--olcek-lg);
-    }
-
-    .review-card p {
-        position: relative;
-        z-index: var(--z-icerik);
-        flex-grow: 1;
-        overflow-y: auto;
-        padding-right: var(--bosluk-1);
-        color: #eeeeee;
-        font-style: italic;
-        font-size: var(--olcek-md);
-        line-height: var(--satir-normal);
-    }
-
-        .review-card p::-webkit-scrollbar {
-            width: 5px;
-        }
-
-        .review-card p::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: var(--yaricap-tam);
-        }
-
-        .review-card p::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-.review-info {
-    position: relative;
-    z-index: var(--z-icerik);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--bosluk-3);
-    margin-top: var(--bosluk-2);
-    padding-top: var(--bosluk-4);
-    border-top: 1px solid var(--siyah-kenar);
-}
-
-    .review-info h5 {
-        margin: 0;
-        color: var(--renk-marka-metin-koyu); /* koyu kart üzerinde AA */
-        font-size: var(--olcek-md);
-        font-weight: 700;
-    }
-
-    .review-info small {
-        padding: var(--bosluk-1) var(--bosluk-2);
-        background: var(--siyah-2);
-        border-radius: var(--yaricap-sm);
-        color: #bbbbbb;
-        font-size: var(--olcek-xs);
-        white-space: nowrap;
-    }
-
-/* Slider okları */
-.carousel-control-prev-icon,
-.carousel-control-next-icon {
-    background-color: var(--renk-marka);
-    border-radius: 50%;
-    padding: 25px;
-    background-size: 50%;
-    box-shadow: var(--golge-koyu-2);
-}
-
-.carousel-control-prev,
-.carousel-control-next {
-    width: 5%;
-    opacity: 0.9;
-}
-
-/* =========================================
    10. İLETİŞİM & ADRES
    ========================================= */
 .contact-top-wrapper {
@@ -1166,9 +1049,6 @@ section[id],
         height: 320px;
     }
 
-    .review-card {
-        height: 360px;
-    }
 }
 
 /* --- Telefon: mobil menü --- */
@@ -1261,26 +1141,6 @@ section[id],
         display: none;
     }
 
-    /* Slider okları kartın üstüne binmesin ama taşma da yaratmasın */
-    .carousel-control-prev,
-    .carousel-control-next {
-        width: 12%;
-        left: auto;
-        right: auto;
-    }
-
-    .carousel-control-prev {
-        left: 0;
-    }
-
-    .carousel-control-next {
-        right: 0;
-    }
-
-    .carousel-control-prev-icon,
-    .carousel-control-next-icon {
-        padding: 18px;
-    }
     /* Mobilde header daha ince */
     :root {
         --cipa-payi: 74px;
@@ -1304,15 +1164,6 @@ section[id],
         height: 200px;
     }
 
-    .review-card {
-        height: 380px;
-        margin: var(--bosluk-2);
-        padding: var(--bosluk-5);
-    }
-
-        .review-card::before {
-            font-size: 5rem;
-        }
 
     .map-container {
         height: 260px;
@@ -2181,7 +2032,6 @@ body:not(.panel) .hero-alt {
 
 /* --- Kartlar (menü, yorum, bilgi) --- */
 body:not(.panel) .menu-card,
-body:not(.panel) .review-card,
 body:not(.panel) .bilgi-kart,
 body:not(.panel) .form-panel {
     background: var(--sahne-3);
@@ -2199,8 +2049,7 @@ body:not(.panel) .menu-info h3 {
     letter-spacing: -0.01em;
 }
 
-body:not(.panel) .menu-info p,
-body:not(.panel) .review-card p {
+body:not(.panel) .menu-info p {
     color: var(--metin-2);
 }
 
@@ -2409,15 +2258,6 @@ body:not(.panel) .rs-btn-ikincil {
         border-color: var(--altin);
         color: var(--altin-acik);
     }
-
-/* --- Yorum kartları --- */
-body:not(.panel) .review-info h5 {
-    color: var(--altin-acik);
-}
-
-body:not(.panel) .stars {
-    color: var(--altin);
-}
 
 body:not(.panel) .review-form-container {
     background: var(--sahne-3);

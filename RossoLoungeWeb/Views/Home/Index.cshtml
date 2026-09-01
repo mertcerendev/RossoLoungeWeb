@@ -126,7 +126,7 @@
 
     @* ---- Sıvı imleç (yalnızca fare olan cihazlarda görünür) ---- *@
     <div class="imlec" aria-hidden="true">
-        <span class="imlec__halka"><span class="imlec__yazi">Keşfet</span></span>
+        <span class="imlec__halka"><span class="imlec__yazi"></span></span>
         <span class="imlec__nokta"></span>
     </div>
 
@@ -416,66 +416,107 @@
             </button>
         </div>
 
-        <section id="reviews" class="section-padding bg-dark">
-            <div class="container">
-                <div class="bolum-basi">
-                    <p class="bolum-ustbaslik">Misafirlerimiz</p>
-                    <h2 class="section-title text-light">Bizim İçin Ne Dediler?</h2>
-                    <p class="bolum-alt-metin">Yorumlar onaylandıktan sonra yayınlanır; hepsi gerçek misafirlerimizden.</p>
+        @* =========================================================
+           ZİYARETÇİ DEFTERİ
+           Karusel değil: tek yorum ekranın merkezinde, tipografi odaklı.
+           Yapraklar @foreach ile üretiliyor — kaynak Model'deki onaylı
+           yorum listesi, blok başka hiçbir şeye bağlı değil.
+
+           JS devralmazsa (.defter--sahnede yoksa) yapraklar alt alta
+           okunur bir liste olarak kalır; sürükleme/ilerleme gizlenir.
+           ========================================================= *@
+        <section id="reviews" class="defter" aria-labelledby="defter-baslik">
+            <div class="kap">
+                <header class="defter__bas">
+                    <p class="defter__ustbaslik">Misafirlerimiz</p>
+                    <h2 class="defter__baslik" id="defter-baslik">Ziyaretçi <em>Defteri</em></h2>
+                    <p class="defter__alt">Yorumlar onaylandıktan sonra yayınlanır; hepsi gerçek misafirlerimizden.</p>
+                </header>
+            </div>
+
+            @if (yorumlar.Count > 0)
+            {
+                <div class="defter__sergi">
+                    <div class="defter__sahne kap" role="group"
+                         aria-roledescription="yorum sergisi" aria-label="Misafir yorumları"
+                         tabindex="0">
+@{ var yorumSira = 0; }
+@foreach (var y in yorumlar)
+{
+    yorumSira++;
+    // Yorum uzunlukları çok değişken; tek bir dev punto uzun metinde
+    // ekranı taşırıyor. Punto metnin uzunluğuna göre kademeleniyor.
+    var uzunluk = (y.Mesaj ?? string.Empty).Length;
+    var boyut = uzunluk <= 130 ? "defter__soz--dev"
+              : uzunluk <= 320 ? "defter__soz--orta"
+                               : "defter__soz--sik";
+                        <article class="defter__yaprak" data-defter-sira="@yorumSira">
+                            <p class="defter__isaret" aria-hidden="true">&ldquo;</p>
+
+                            <blockquote class="defter__soz @boyut">
+                                <p class="defter__metin">@y.Mesaj</p>
+                            </blockquote>
+
+                            <footer class="defter__imza">
+                                <p class="defter__ad">@y.AdSoyad</p>
+                                <p class="defter__ayrinti">
+                                    <span class="defter__puan" role="img" aria-label="5 üzerinden @y.Puan puan">
+                                        @for (int p = 1; p <= 5; p++)
+                                        {
+                                            <span class="defter__cizik@(p <= y.Puan ? " defter__cizik--dolu" : "")" aria-hidden="true"></span>
+                                        }
+                                    </span>
+                                    <span class="defter__tarih">@y.Tarih.ToString("MMMM yyyy", tr)</span>
+                                </p>
+                            </footer>
+                        </article>
+}
+                    </div>
+
+                    @if (yorumlar.Count > 1)
+                    {
+                        @* Kenar bölgeleri: masaüstünde görünmez, imleç üstlerine
+                           gelince sıvı imleç "Geri/İleri" etiketine dönüşüyor.
+                           Gerçek <button> oldukları için klavye ve dokunmatik
+                           kullanıcıları da geçiş yapabiliyor. *@
+                        <button type="button" class="defter__yon defter__yon--geri" aria-label="Önceki yorum">
+                            <span class="defter__yon-yazi" aria-hidden="true">Geri</span>
+                        </button>
+                        <button type="button" class="defter__yon defter__yon--ileri" aria-label="Sonraki yorum">
+                            <span class="defter__yon-yazi" aria-hidden="true">İleri</span>
+                        </button>
+                    }
                 </div>
 
-                @if (yorumlar.Count > 0)
+                @if (yorumlar.Count > 1)
                 {
-                    <div id="reviewsCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
-                        <div class="carousel-inner">
-                            @for (int i = 0; i < yorumlar.Count; i += 2)
-                            {
-                                <div class="carousel-item @(i == 0 ? "active" : "")">
-                                    <div class="row justify-content-center">
-                                        @for (int j = 0; j < 2 && i + j < yorumlar.Count; j++)
-                                        {
-                                            var y = yorumlar[i + j];
-                                            <div class="col-md-5 col-12 mb-3">
-                                                <blockquote class="review-card">
-                                                    <div class="stars" role="img" aria-label="5 üzerinden @y.Puan puan">
-                                                        @for (int s = 0; s < y.Puan; s++)
-                                                        {
-                                                            <i class="fas fa-star" aria-hidden="true"></i>
-                                                        }
-                                                    </div>
-                                                    <p>@y.Mesaj</p>
-                                                    <div class="review-info">
-                                                        <h5>@y.AdSoyad</h5>
-                                                        <small>@y.Tarih.ToString("dd.MM.yyyy", tr)</small>
-                                                    </div>
-                                                </blockquote>
-                                            </div>
-                                        }
-                                    </div>
-                                </div>
-                            }
+                    <div class="kap">
+                        <div class="defter__ayak">
+                            <p class="defter__sayac">
+                                <span class="defter__su" aria-live="polite">01</span>
+                                <span class="defter__bolu" aria-hidden="true">/</span>
+                                <span class="defter__toplam">@yorumlar.Count.ToString("00")</span>
+                            </p>
+                            <div class="defter__ilerleme" aria-hidden="true">
+                                <span class="defter__ilerleme-dolgu"></span>
+                            </div>
+                            <p class="defter__ipucu" aria-hidden="true">Sürükleyin</p>
                         </div>
-
-                        @if (yorumlar.Count > 2)
-                        {
-                            <button class="carousel-control-prev" type="button" data-bs-target="#reviewsCarousel" data-bs-slide="prev" aria-label="Önceki yorumlar">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#reviewsCarousel" data-bs-slide="next" aria-label="Sonraki yorumlar">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            </button>
-                        }
                     </div>
                 }
-                else
-                {
-                    <div class="rs-bos-durum mb-5">
-                        <i class="fas fa-comments" aria-hidden="true"></i>
-                        <h3>Henüz yorum yok</h3>
-                        <p>İlk yorumu siz yapın — deneyiminiz bizden sonra gelecek misafirlere yol gösterir.</p>
+            }
+            else
+            {
+                <div class="kap">
+                    <div class="defter__bos">
+                        <p class="defter__isaret" aria-hidden="true">&ldquo;</p>
+                        <p class="defter__bos-baslik">Defter henüz boş</p>
+                        <p class="defter__bos-alt">İlk satırı siz yazın — deneyiminiz bizden sonra gelecek misafirlere yol gösterir.</p>
                     </div>
-                }
+                </div>
+            }
 
+            <div class="kap">
                 <div class="review-form-container" id="yorum-formu">
                     <button type="button" class="yorum-ac" aria-expanded="false" aria-controls="yorum-govde">
                         <span>

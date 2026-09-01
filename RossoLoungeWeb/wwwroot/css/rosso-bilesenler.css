@@ -1367,12 +1367,13 @@
 }
 
 /* =============================================================
-   İMLEÇ — "KEŞFET" DURUMU
+   İMLEÇ — ETİKETLİ DURUM
    -------------------------------------------------------------
    Etiket halkanın İÇİNDE duruyor: halka gecikmeli takip ettiği için
    yazı da aynı sıvı gecikmeyle akar, ayrıca konumlandırma gerekmez.
-   Bu kurallar rosso-tema.css'teki .imlec--yakin'den SONRA geldiği
-   için (aynı özgüllük) galeri karelerinde kazanır — kare bir <button>.
+   Etiket metnini JS yazıyor: galeride "Keşfet", yorum defterinde
+   "İleri/Geri". Bu kurallar rosso-tema.css'teki .imlec--yakin'den SONRA
+   geldiği için (aynı özgüllük) kazanır — her iki hedef de <button>.
    ============================================================= */
 .imlec__halka {
     display: flex;
@@ -1392,7 +1393,7 @@
     transition: opacity var(--h2) var(--egri), transform var(--h2) var(--egri);
 }
 
-.imlec--kesfet .imlec__halka {
+.imlec--etiketli .imlec__halka {
     width: 108px;
     height: 108px;
     margin: -54px 0 0 -54px;
@@ -1402,11 +1403,11 @@
     backdrop-filter: blur(2px);
 }
 
-.imlec--kesfet .imlec__nokta {
+.imlec--etiketli .imlec__nokta {
     opacity: 0;
 }
 
-.imlec--kesfet .imlec__yazi {
+.imlec--etiketli .imlec__yazi {
     opacity: 1;
     transform: scale(1);
 }
@@ -1523,7 +1524,7 @@
 }
 
 /* Tam ekran açıkken imleç sergi durumunda takılı kalmasın */
-.tamekran-acik .imlec--kesfet .imlec__halka {
+.tamekran-acik .imlec--etiketli .imlec__halka {
     width: 68px;
     height: 68px;
     margin: -34px 0 0 -34px;
@@ -1531,7 +1532,7 @@
     border-color: var(--sampanya);
 }
 
-.tamekran-acik .imlec--kesfet .imlec__yazi {
+.tamekran-acik .imlec--etiketli .imlec__yazi {
     opacity: 0;
 }
 
@@ -1557,4 +1558,336 @@
     .galeri__kare--genis .galeri__cerceve {
         height: clamp(14rem, 46vh, 22rem);
     }
+}
+
+/* =============================================================
+   ZİYARETÇİ DEFTERİ — tipografik yorum sergisi
+   -------------------------------------------------------------
+   İKİ KATMANLI KURULUM (galeriyle aynı desen)
+   1) VARSAYILAN: yapraklar alt alta, hepsi okunur bir liste.
+      JS kapalı / GSAP düşük / hareket azaltma açık → içerik tam.
+   2) .defter--sahnede: sınıfı rosso-hareket.js yalnızca sergiyi
+      gerçekten devraldığında ekliyor. O zaman yapraklar tek ızgara
+      gözünde üst üste binip teker teker gösteriliyor.
+   ============================================================= */
+.defter {
+    position: relative;
+    padding-block: var(--bolum);
+    background: var(--antrasit);
+    overflow: hidden;
+}
+
+.defter__bas {
+    max-width: 46rem;
+    margin-block-end: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+.defter__ustbaslik {
+    margin-block-end: var(--b4);
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: var(--harf-genis);
+    text-transform: uppercase;
+}
+
+.defter__baslik {
+    margin-block-end: var(--b4);
+    font-size: clamp(2rem, 1.2rem + 2.6vw, 3.75rem);
+    font-weight: 300;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+}
+
+    .defter__baslik em {
+        font-style: italic;
+        color: var(--sampanya);
+    }
+
+.defter__alt {
+    max-width: 42ch;
+    color: var(--metin-2);
+    line-height: var(--satir-genis);
+}
+
+/* --- Sergi alanı: kenar bölgeleri buna göre konumlanır --- */
+.defter__sergi {
+    position: relative;
+}
+
+/* --- Sahne --- */
+.defter__sahne {
+    /* Varsayılan: alt alta okunur liste */
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3rem, 8vw, 6rem);
+    /* Yatay sürükleme bizim, dikey kaydırma sayfanın */
+    touch-action: pan-y;
+}
+
+    .defter__sahne:focus-visible {
+        outline: 2px solid var(--sampanya);
+        outline-offset: clamp(0.75rem, 2vw, 1.5rem);
+    }
+
+/* Sergi modunda yapraklar tek gözde üst üste biner: yükseklik en uzun
+   yoruma göre sabitlenir, geçişlerde sayfa zıplamaz. */
+.defter--sahnede .defter__sahne {
+    display: grid;
+    align-content: center;
+    min-height: clamp(17rem, 40vh, 28rem);
+}
+
+    .defter--sahnede .defter__yaprak {
+        grid-area: 1 / 1;
+    }
+
+.defter__yaprak {
+    text-align: center;
+    /* Sürüklerken imleci takip eder; GSAP x/rotate yazar */
+    will-change: transform;
+}
+
+/* --- Tipografik işaret (yıldız yerine) --- */
+.defter__isaret {
+    margin-block-end: clamp(0.5rem, 2vh, 1.25rem);
+    color: var(--bronz);
+    font-family: var(--f-serif);
+    font-size: clamp(3rem, 5vw, 5rem);
+    font-weight: 400;
+    line-height: 0.6;
+    opacity: 0.6;
+}
+
+/* --- Yorum metni ---
+   Punto metnin uzunluğuna göre kademeli (Razor sınıf veriyor).
+   ch ölçüsü doğru çıksın diye serif yüzü .defter__soz'e yazıyoruz;
+   <p> miras alıyor. */
+.defter__soz {
+    margin: 0 auto;
+    color: var(--metin);
+    font-family: var(--f-serif);
+    font-weight: 300;
+    letter-spacing: -0.015em;
+}
+
+    .defter__soz p {
+        margin: 0;
+        font: inherit;
+        letter-spacing: inherit;
+    }
+
+.defter__soz--dev {
+    max-width: 17ch;
+    font-size: clamp(1.75rem, 1.05rem + 3vw, 4rem);
+    line-height: 1.16;
+}
+
+.defter__soz--orta {
+    max-width: 26ch;
+    font-size: clamp(1.375rem, 0.95rem + 1.9vw, 2.75rem);
+    line-height: 1.24;
+}
+
+.defter__soz--sik {
+    max-width: 46ch;
+    font-size: clamp(1.0625rem, 0.9rem + 0.9vw, 1.75rem);
+    line-height: 1.42;
+}
+
+/* SplitText satırları: maskeli giriş için taşan kap */
+.defter__satir-kap {
+    display: block;
+    overflow: hidden;
+}
+
+.defter__satir {
+    display: block;
+    will-change: transform, filter;
+}
+
+/* --- İmza --- */
+.defter__imza {
+    margin-block-start: clamp(1.75rem, 4vw, 3.25rem);
+}
+
+.defter__ad {
+    color: var(--metin);
+    font-size: var(--t-sm);
+    font-weight: 500;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+}
+
+.defter__ayrinti {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--b4);
+    margin-block-start: var(--b3);
+}
+
+.defter__tarih {
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+/* Puan: beş ince çizik. Yıldız yok — değer aria-label'da. */
+.defter__puan {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.defter__cizik {
+    display: block;
+    width: 1px;
+    height: 14px;
+    background: var(--cizgi-2);
+}
+
+.defter__cizik--dolu {
+    background: var(--sampanya);
+}
+
+/* --- Kenar bölgeleri (İleri / Geri) ---
+   Masaüstünde görünmezler: iş sıvı imlecin etiketinde. Dokunmatikte
+   ve klavye odağında etiket görünür olur. */
+.defter__yon {
+    position: absolute;
+    inset-block: 0;
+    z-index: var(--k-icerik);
+    display: grid;
+    place-items: center;
+    width: clamp(3.25rem, 10vw, 10rem);
+    padding: 0;
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+
+.defter__yon--geri {
+    inset-inline-start: 0;
+}
+
+.defter__yon--ileri {
+    inset-inline-end: 0;
+}
+
+.defter__yon-yazi {
+    color: var(--metin-3);
+    font-family: var(--f-serif);
+    font-size: var(--t-lg);
+    font-style: italic;
+    opacity: 0;
+    transition: opacity var(--h2) var(--egri), color var(--h2) var(--egri);
+}
+
+.defter__yon:focus-visible .defter__yon-yazi {
+    color: var(--metin);
+    opacity: 1;
+}
+
+/* İmleci olmayan cihazda etiket görünsün — yoksa geçişin yolu kalmaz */
+@media (hover: none) {
+    .defter__yon-yazi {
+        opacity: 1;
+    }
+}
+
+/* --- Ayak: sayaç + sinematik ilerleme çizgisi --- */
+.defter__ayak {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(1rem, 3vw, 2.5rem);
+    margin-block-start: clamp(2.5rem, 5vw, 4rem);
+}
+
+.defter__sayac {
+    display: flex;
+    gap: 0.4em;
+    color: var(--metin-3);
+    font-family: var(--f-serif);
+    font-size: var(--t-lg);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.08em;
+}
+
+.defter__su {
+    color: var(--sampanya);
+}
+
+.defter__ilerleme {
+    height: 1px;
+    background: var(--cizgi);
+}
+
+.defter__ilerleme-dolgu {
+    display: block;
+    height: 100%;
+    background: var(--sampanya);
+    transform: scaleX(0);
+    transform-origin: left center;
+}
+
+.defter__ipucu {
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+/* Sergiyi JS devralmadıysa gezinme araçlarının anlamı yok */
+.defter:not(.defter--sahnede) .defter__yon,
+.defter:not(.defter--sahnede) .defter__ayak {
+    display: none;
+}
+
+/* --- Boş durum --- */
+.defter__bos {
+    max-width: 34rem;
+    padding-block: clamp(2rem, 6vw, 4rem);
+    text-align: center;
+    margin-inline: auto;
+}
+
+.defter__bos-baslik {
+    margin-block-end: var(--b4);
+    color: var(--metin);
+    font-family: var(--f-serif);
+    font-size: var(--t-2xl);
+    font-weight: 300;
+}
+
+.defter__bos-alt {
+    color: var(--metin-2);
+    line-height: var(--satir-genis);
+}
+
+@media (max-width: 720px) {
+    .defter__ayak {
+        grid-template-columns: auto minmax(0, 1fr);
+        row-gap: var(--b4);
+    }
+
+    .defter__ipucu {
+        grid-column: 1 / -1;
+        text-align: center;
+    }
+}
+
+/* Sürüklerken metin seçilmesin; özel imleç yoksa tutma imleci görünsün */
+.defter--tutuluyor .defter__sahne {
+    user-select: none;
+}
+
+html:not(.rosso-imlec) .defter--sahnede .defter__sahne {
+    cursor: grab;
+}
+
+html:not(.rosso-imlec) .defter--tutuluyor .defter__sahne {
+    cursor: grabbing;
 }
