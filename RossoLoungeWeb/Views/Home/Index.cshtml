@@ -81,16 +81,11 @@
                     <a href="/Home/Menu" class="btn btn--hat">Menüyü Keşfet</a>
                 </div>
 
-                @if (ViewBag.SuAnAcik is bool heroAcik)
-                {
-                    <p class="hero__durum">
-                        <span class="rozet @(heroAcik ? "rozet--acik" : "rozet--kapali")">
-                            <span class="rozet__nokta" aria-hidden="true"></span>
-                            @(heroAcik ? "Şu an açığız" : "Şu an kapalıyız")
-                        </span>
-                        <span class="hero__saat">Her gün 11.30 – 00.00</span>
-                    </p>
-                }
+                @* Açık/kapalı rozeti kaldırıldı; saat tek başına ortada.
+                   Durum bilgisi iletişim bölümünde duruyor. *@
+                <p class="hero__durum">
+                    <span class="hero__saat">Her gün 11.30 – 00.00</span>
+                </p>
             </div>
 
             <a href="#about" class="hero__kaydir" aria-label="Aşağı kaydır"></a>

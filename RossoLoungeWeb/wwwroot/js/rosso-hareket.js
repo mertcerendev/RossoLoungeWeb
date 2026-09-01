@@ -218,21 +218,41 @@
         var zemin = document.querySelector('.hero__zemin');
         if (!sahne || !zemin || !kinetik || !inceIsaretci) return;
 
+        /* AYRI KANALLAR — titremenin sebebi buydu.
+           Fare parallaxı yüzde kanalına (xPercent/yPercent), kaydırma
+           parallaxı PX kanalına (y) yazıyor. İkisi de yPercent'e
+           yazarken quickTo tweeni ile scrub her karede birbirinin
+           değerini eziyordu; fotoğraf kaydırırken titriyordu.
+           GSAP bu iki kanalı ayrı tutup nihai matriste topluyor. */
         var xAyar = gsap.quickTo(zemin, 'xPercent', { duration: 0.9, ease: 'power3.out' });
         var yAyar = gsap.quickTo(zemin, 'yPercent', { duration: 0.9, ease: 'power3.out' });
 
+        /* Hero belgenin başında; kutusu bir kez ölçülüp kaydırma
+           konumuyla birlikte hesaplanıyor. Her mousemove'da
+           getBoundingClientRect çağırmak, tam da kaydırırken zorunlu
+           layout okuması demekti. */
+        var kutu = null;
+        function kutuyuOlc() {
+            var r = sahne.getBoundingClientRect();
+            kutu = { sol: r.left, belgeUst: r.top + window.pageYOffset, gen: r.width, yuk: r.height };
+        }
+        kutuyuOlc();
+        window.addEventListener('resize', kutuyuOlc);
+
         sahne.addEventListener('mousemove', function (olay) {
-            var k = sahne.getBoundingClientRect();
-            xAyar(((olay.clientX - k.left) / k.width - 0.5) * -2.4);
-            yAyar(((olay.clientY - k.top) / k.height - 0.5) * -2.4);
-        });
+            if (!kutu || !kutu.gen || !kutu.yuk) return;
+            var ust = kutu.belgeUst - window.pageYOffset;
+            xAyar(((olay.clientX - kutu.sol) / kutu.gen - 0.5) * -2.4);
+            yAyar(((olay.clientY - ust) / kutu.yuk - 0.5) * -2.4);
+        }, { passive: true });
 
         sahne.addEventListener('mouseleave', function () { xAyar(0); yAyar(0); });
 
-        // Kaydırdıkça arka plan geride kalır
+        // Kaydırdıkça arka plan geride kalır (px kanalı; yPercent 12 ile aynı mesafe)
         gsap.to(zemin, {
-            yPercent: 12,
+            y: function () { return zemin.offsetHeight * 0.12; },
             ease: 'none',
+            invalidateOnRefresh: true,
             scrollTrigger: { trigger: sahne, start: 'top top', end: 'bottom top', scrub: true }
         });
     }
