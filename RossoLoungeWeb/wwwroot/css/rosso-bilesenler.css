@@ -434,3 +434,246 @@
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.35; transform: scale(1.45); }
 }
+
+/* =============================================================
+   HAKKIMIZDA
+   -------------------------------------------------------------
+   Parallax mekaniği: .hakkinda__cerceve sabit kalır (overflow:hidden),
+   içindeki .hakkinda__foto çerçeveden %28 daha uzundur ve GSAP onu
+   yPercent ile kaydırır. Bu yüzden foto asla boşluk göstermez.
+   İki çerçeve data-parallax'ta zıt işaretli değer taşır → ters yönde akar.
+   ============================================================= */
+.hakkinda {
+    position: relative;
+    padding-block: var(--bolum);
+    background: var(--obsidyen);
+}
+
+.hakkinda__izgara {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(2.5rem, 7vw, 7rem);
+    align-items: center;
+}
+
+/* --- Görsel kompozisyon --- */
+.hakkinda__gorseller {
+    position: relative;
+    /* Dar çerçevenin taşan kısmına yer aç */
+    padding-block-end: clamp(3rem, 9vw, 7rem);
+    padding-inline-end: clamp(2rem, 7vw, 5.5rem);
+}
+
+.hakkinda__cerceve {
+    position: relative;
+    overflow: hidden;
+    margin: 0;
+    background: var(--antrasit-2);
+}
+
+/* Geniş yatay çerçeve */
+.hakkinda__cerceve--genis {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+}
+
+/* Dar dikey çerçeve — geniş olanın üzerine biner */
+.hakkinda__cerceve--dar {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    width: clamp(9rem, 34%, 15rem);
+    aspect-ratio: 2 / 3;
+    /* Sınır yok; ayrım obsidyen bir hâle ile veriliyor */
+    box-shadow: 0 0 0 clamp(6px, 1.2vw, 14px) var(--obsidyen),
+                var(--rs-golge, 0 30px 70px rgba(0, 0, 0, 0.55));
+}
+
+.hakkinda__foto {
+    position: absolute;
+    inset-block-start: -14%;
+    inset-inline: 0;
+    width: 100%;
+    height: 128%; /* parallax payı: %28 fazla yükseklik */
+    object-fit: cover;
+    will-change: transform;
+}
+
+/* Kuruluş yılı — çerçevelerin arasında süzülür */
+.hakkinda__yil {
+    /* Geniş çerçevenin sol alt köşesine kararlı biçimde biner —
+       önce boşlukta asılı duruyor, kompozisyondan kopuk görünüyordu. */
+    position: absolute;
+    inset-block-end: clamp(2.5rem, 8vw, 6rem);
+    inset-inline-start: 0;
+    transform: translateX(-18%);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--b4) var(--b5);
+    background: var(--obsidyen);
+    color: var(--sampanya);
+    text-align: center;
+}
+
+    .hakkinda__yil em {
+        font-family: var(--f-serif);
+        font-size: var(--t-xl);
+        font-style: normal;
+        font-weight: 400;
+        letter-spacing: 0.08em;
+        line-height: 1;
+    }
+
+    .hakkinda__yil span {
+        color: var(--metin-3);
+        font-size: 0.6875rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+    }
+
+/* --- Metin --- */
+.hakkinda__ustbaslik {
+    margin-block-end: var(--b5);
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: var(--harf-genis);
+    text-transform: uppercase;
+}
+
+.hakkinda__baslik {
+    margin-block-end: var(--b6);
+    font-size: clamp(2rem, 1.2rem + 2.6vw, 3.75rem);
+    font-weight: 300;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+}
+
+    .hakkinda__baslik em {
+        font-style: italic;
+        color: var(--sampanya);
+    }
+
+/* SplitText kelime kabı — maskeleme buradan geliyor */
+.kelime-kap {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+}
+
+.hakkinda__govde {
+    display: flex;
+    flex-direction: column;
+    gap: var(--b4);
+    max-width: 46ch;
+    color: var(--metin-2);
+    font-size: var(--t-md);
+    line-height: var(--satir-genis);
+}
+
+.hakkinda__olcut {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    margin-block: var(--b7) 0;
+    padding-block-start: var(--b5);
+    border-block-start: 1px solid var(--cizgi);
+}
+
+    .hakkinda__olcut dt {
+        font-family: var(--f-serif);
+        font-size: var(--t-xl);
+        font-weight: 400;
+        color: var(--sampanya);
+        line-height: 1;
+    }
+
+    .hakkinda__olcut dd {
+        margin: var(--b2) 0 0;
+        color: var(--metin-3);
+        font-size: 0.75rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+
+.hakkinda__eylemler {
+    margin-block-start: var(--b6);
+}
+
+/* --- İmza alıntısı --- */
+.hakkinda__alinti {
+    max-width: 44rem;
+    margin: clamp(4rem, 11vw, 9rem) auto 0;
+    padding-inline: var(--kap-yan);
+    text-align: center;
+}
+
+    .hakkinda__alinti blockquote {
+        margin: 0;
+    }
+
+    .hakkinda__alinti p {
+        margin: 0;
+        font-family: var(--f-serif);
+        font-size: clamp(1.5rem, 0.95rem + 1.9vw, 2.75rem);
+        font-style: italic;
+        font-weight: 300;
+        line-height: 1.34;
+        letter-spacing: -0.015em;
+        text-wrap: balance; /* öksüz satır bırakmadan dengeli sarsın */
+        /* Bronz → şampanya geçişi: metnin kendisi metalik görünür */
+        background: linear-gradient(100deg, var(--bronz) 0%, var(--sampanya) 45%, var(--bronz) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .hakkinda__alinti figcaption {
+        margin-block-start: var(--b5);
+        color: var(--metin-3);
+        font-size: 0.6875rem;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+    }
+
+    /* İnce ayraç çizgisi */
+    .hakkinda__alinti::before {
+        content: "";
+        display: block;
+        width: 1px;
+        height: clamp(2.5rem, 6vh, 4.5rem);
+        margin: 0 auto var(--b6);
+        background: linear-gradient(to bottom, transparent, var(--bronz));
+    }
+
+@media (max-width: 900px) {
+    .hakkinda__izgara {
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(2.5rem, 8vw, 4rem);
+    }
+
+    .hakkinda__gorseller {
+        /* width:100% şart: margin-inline:auto ızgara öğesinin stretch
+           davranışını iptal edip shrink-to-fit yapıyor. Geniş çerçevenin
+           tek çocuğu absolute olduğu için içsel genişliği yok ve
+           0x0'a çöküyordu. */
+        width: 100%;
+        max-width: 34rem;
+        margin-inline: auto;
+    }
+}
+
+/* Kinetik başlangıç durumları — yalnızca html.rosso-kinetik altında */
+.rosso-kinetik .hakkinda__govde,
+.rosso-kinetik .hakkinda__olcut,
+.rosso-kinetik .hakkinda__eylemler,
+.rosso-kinetik .hakkinda__yil,
+.rosso-kinetik .hakkinda__alinti {
+    opacity: 0;
+}
+
+.rosso-kinetik .hakkinda__cerceve {
+    clip-path: inset(0 0 100% 0);
+}

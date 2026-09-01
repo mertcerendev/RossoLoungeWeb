@@ -179,83 +179,87 @@
             <a href="#about" class="hero__kaydir" aria-label="Aşağı kaydır"></a>
         </section>
 
-        <section id="about" class="section-padding">
-            <div class="container">
-                <div class="hakkimizda-duzen">
-                    <div class="hakkimizda-gorseller">
-                        <figure class="hg-buyuk">
-                            <img src="/img/site/aksam-masa.jpg"
-                                 alt="Akşam ışığında hazırlanmış masa, kadehler ve tabaklar" loading="lazy">
-                        </figure>
-                        <figure class="hg-kucuk">
-                            <img src="/img/site/sofra.jpg"
-                                 alt="Şefimiz servis öncesi malzemeleri hazırlarken" loading="lazy">
-                        </figure>
-                        <div class="hg-rozet">
-                            <span class="hg-rozet-sayi">2019</span>
-                            <span class="hg-rozet-metin">Bandırma'da<br>o günden beri</span>
-                        </div>
-                    </div>
+        @* ============================================================
+           HAKKIMIZDA
+           Razor notu: bu blok olduğu gibi Views/Home/_Hakkinda.cshtml
+           dosyasına taşınabilir ve Index'ten
+           @await Html.PartialAsync("_Hakkinda") ile çağrılabilir.
+           Dışarıdan veri almıyor, bağımsız bir partial.
+           ============================================================ *@
+        <section id="about" class="hakkinda">
+            <div class="kap hakkinda__izgara">
 
-                    <div class="hakkimizda-metin">
-                        <p class="bolum-ustbaslik sola">Hakkımızda</p>
-                        <h2 class="hakkimizda-baslik">Bir masadan fazlası,<br><em>bir akşamın hikâyesi</em></h2>
-                        <p class="hakkimizda-giris">
-                            Rosso Lounge Bistro'da misafirlerimize sadece yemek değil, baştan sona kurgulanmış
-                            bir deneyim sunuyoruz. Marmara'nın kıyısında, sıcak bir ışık altında, iyi bir
-                            sohbetin hak ettiği tabaklar.
-                        </p>
+                @* --- Asimetrik görsel kompozisyon: iki çerçeve hafifçe binişik --- *@
+                <div class="hakkinda__gorseller">
+                    <figure class="hakkinda__cerceve hakkinda__cerceve--genis" data-parallax="-14">
+                        <img class="hakkinda__foto"
+                             src="/img/site/aksam-masa.jpg"
+                             alt="Akşam ışığında hazırlanmış masa, kadehler ve tabaklar"
+                             loading="eager" decoding="async" width="1800" height="1200">
+                    </figure>
 
-                        <ul class="ozellik-liste">
-                            <li>
-                                <i class="fas fa-seedling" aria-hidden="true"></i>
-                                <div>
-                                    <strong>Günlük ve taze</strong>
-                                    <span>Sebzeler yerel üreticiden, her sabah</span>
-                                </div>
-                            </li>
-                            <li>
-                                <i class="fas fa-utensils" aria-hidden="true"></i>
-                                <div>
-                                    <strong>Şef imzalı mutfak</strong>
-                                    <span>Klasikler, ustasının elinden</span>
-                                </div>
-                            </li>
-                            <li>
-                                <i class="fas fa-music" aria-hidden="true"></i>
-                                <div>
-                                    <strong>Canlı müzik akşamları</strong>
-                                    <span>Hafta sonları sahne bizde</span>
-                                </div>
-                            </li>
-                        </ul>
+                    <figure class="hakkinda__cerceve hakkinda__cerceve--dar" data-parallax="16">
+                        <img class="hakkinda__foto"
+                             src="/img/site/sef.jpg"
+                             alt="Şefimiz servis öncesi malzemeleri hazırlarken"
+                             loading="lazy" width="1200" height="1800">
+                    </figure>
 
-                        <div class="rs-satir mt-4">
-                            <a href="/Home/Menu" class="rs-btn rs-btn-ikincil">Menüyü İncele</a>
-                            <a href="#rezervasyon" class="rs-btn rs-btn-birincil">Masa Ayırt</a>
-                        </div>
-                    </div>
+                    <span class="hakkinda__yil" aria-hidden="true">
+                        <em>2019</em>
+                        <span>o günden beri</span>
+                    </span>
                 </div>
 
-                <dl class="rakam-serit">
-                    <div>
-                        <dt>@(ViewBag.ToplamUrun ?? 0)+</dt>
-                        <dd>Menüde lezzet</dd>
+                @* --- Metin --- *@
+                <div class="hakkinda__metin">
+                    <p class="hakkinda__ustbaslik">Hakkımızda</p>
+
+                    <h2 class="hakkinda__baslik" data-kelime-acilis>
+                        Sıradanlığın ötesinde <em>bir gastronomi</em>
+                    </h2>
+
+                    <div class="hakkinda__govde">
+                        <p>
+                            Rosso Lounge Bistro, Marmara'nın kıyısında bir akşamın nasıl
+                            geçmesi gerektiğine dair sessiz bir iddiadır. Burada tabak,
+                            sohbetin önüne geçmez; onu tamamlar.
+                        </p>
+                        <p>
+                            Sebzeler her sabah yerel üreticiden gelir, ateş gün boyu
+                            yanar, ışık akşama doğru yavaşça alçalır. Aceleye yer yoktur —
+                            ne mutfakta, ne masada.
+                        </p>
                     </div>
-                    <div>
-                        <dt>@(ViewBag.OrtalamaPuan ?? "5,0")</dt>
-                        <dd>Misafir puanı</dd>
+
+                    <dl class="hakkinda__olcut">
+                        <div>
+                            <dt>@(ViewBag.ToplamUrun ?? 0)</dt>
+                            <dd>menüde lezzet</dd>
+                        </div>
+                        <div>
+                            <dt>@(ViewBag.OrtalamaPuan ?? "—")</dt>
+                            <dd>misafir puanı</dd>
+                        </div>
+                        <div>
+                            <dt>12.5</dt>
+                            <dd>saat kesintisiz servis</dd>
+                        </div>
+                    </dl>
+
+                    <div class="hakkinda__eylemler">
+                        <a href="/Home/Menu" class="btn btn--hat">Menüyü İncele</a>
                     </div>
-                    <div>
-                        <dt>12.5</dt>
-                        <dd>Saat kesintisiz servis</dd>
-                    </div>
-                    <div>
-                        <dt>@(ViewBag.YorumSayisi ?? 0)</dt>
-                        <dd>Misafir yorumu</dd>
-                    </div>
-                </dl>
+                </div>
             </div>
+
+            @* --- İmza alıntısı --- *@
+            <figure class="hakkinda__alinti">
+                <blockquote>
+                    <p>Bir masa, sadece yemek yenen yer değildir; akşamın nerede başladığıdır.</p>
+                </blockquote>
+                <figcaption>Rosso Lounge Bistro — Bandırma</figcaption>
+            </figure>
         </section>
 
         <section id="menu" class="section-padding bg-dark">

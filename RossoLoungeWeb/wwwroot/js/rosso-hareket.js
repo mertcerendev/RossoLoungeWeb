@@ -328,6 +328,151 @@
         document.addEventListener('keydown', function (o) { if (o.key === 'Escape') ayarla(false); });
     }
 
+
+    /* =========================================================
+       9. HAKKIMIZDA BÖLÜMÜ
+       - Çerçeveler maskeyle açılır (clip-path)
+       - İçlerindeki fotoğraflar ZIT yönde, farklı hızda kayar
+       - Başlık kelime kelime maskeden yükselir
+       - Gövde metni okuma hizasına gelince yumuşak açılır
+       ========================================================= */
+    function hakkindaBolumu() {
+        var bolum = document.querySelector('.hakkinda');
+        if (!bolum || !kinetik) return;
+
+        /* --- Çerçevelerin maskeli açılışı --- */
+        gsap.utils.toArray('.hakkinda__cerceve').forEach(function (cerceve, i) {
+            gsap.to(cerceve, {
+                clipPath: 'inset(0 0 0% 0)',
+                duration: 1.4,
+                ease: 'expo.out',
+                delay: i * 0.12,
+                scrollTrigger: { trigger: cerceve, start: 'top 85%' }
+            });
+        });
+
+        /* --- Zıt yönlü parallax ---
+           data-parallax değeri yPercent hedefi. Geniş çerçeve negatif
+           (yukarı), dar çerçeve pozitif (aşağı) → ters akış. */
+        gsap.utils.toArray('.hakkinda__cerceve').forEach(function (cerceve) {
+            var foto = cerceve.querySelector('.hakkinda__foto');
+            var mesafe = parseFloat(cerceve.dataset.parallax || '0');
+            if (!foto || !mesafe) return;
+
+            gsap.fromTo(foto,
+                { yPercent: -mesafe },
+                {
+                    yPercent: mesafe,
+                    ease: 'none',
+                    scrollTrigger: {
+                        trigger: cerceve,
+                        start: 'top bottom',
+                        end: 'bottom top',
+                        scrub: 1.1
+                    }
+                });
+        });
+
+        /* --- Başlık: kelime kelime maskeden yükselir --- */
+        var baslik = bolum.querySelector('[data-kelime-acilis]');
+        if (baslik && typeof window.SplitText !== 'undefined') {
+            var bol = new SplitText(baslik, { type: 'words' });
+
+            // Her kelimeyi taşan bir kaba al → maske etkisi
+            bol.words.forEach(function (kelime) {
+                var kap = document.createElement('span');
+                kap.className = 'kelime-kap';
+                kelime.parentNode.insertBefore(kap, kelime);
+                kap.appendChild(kelime);
+            });
+
+            gsap.from(bol.words, {
+                yPercent: 118,
+                duration: 1.05,
+                ease: 'expo.out',
+                stagger: 0.045,
+                scrollTrigger: { trigger: baslik, start: 'top 84%' }
+            });
+        }
+
+        /* --- Gövde metni: okuma hizasına gelince --- */
+        gsap.to('.hakkinda__govde', {
+            autoAlpha: 1,
+            duration: 1.2,
+            ease: 'power2.out',
+            scrollTrigger: { trigger: '.hakkinda__govde', start: 'top 78%' }
+        });
+
+        /* --- Ölçütler, buton, yıl rozeti --- */
+        gsap.to('.hakkinda__olcut', {
+            autoAlpha: 1, duration: 1, ease: 'power2.out',
+            scrollTrigger: { trigger: '.hakkinda__olcut', start: 'top 88%' }
+        });
+
+        gsap.to('.hakkinda__eylemler', {
+            autoAlpha: 1, duration: 1, ease: 'power2.out',
+            scrollTrigger: { trigger: '.hakkinda__eylemler', start: 'top 92%' }
+        });
+
+        gsap.to('.hakkinda__yil', {
+            autoAlpha: 1, duration: 0.9, ease: 'power2.out', delay: 0.5,
+            scrollTrigger: { trigger: '.hakkinda__gorseller', start: 'top 70%' }
+        });
+
+        /* --- İmza alıntısı --- */
+        gsap.to('.hakkinda__alinti', {
+            autoAlpha: 1,
+            duration: 1.5,
+            ease: 'power2.out',
+            scrollTrigger: { trigger: '.hakkinda__alinti', start: 'top 86%' }
+        });
+    }
+
+    /* =========================================================
+       10. GÖRÜNÜRLÜK EMNİYETİ
+       -------------------------------------------------------------
+       rosso-kinetik sınıfı GSAP'in YÜKLENDİĞİNİ doğrular, ÇALIŞTIĞINI
+       değil. Ticker ilerlemezse (arka plan sekmesi, rAF kısıtlı ortam,
+       beklenmedik hata) clip-path ve opacity:0 kalır → içerik kalıcı
+       olarak görünmez olur. Burada tickerın gerçekten ilerlediğini
+       ölçüyoruz; ilerlemiyorsa kinetik mod tamamen bırakılır ve tüm
+       içerik açılır. İçerik hiçbir koşulda gizli kalmaz.
+       ========================================================= */
+    function gorunurlukEmniyeti() {
+        if (!kinetik) return;
+
+        var kareSayisi = 0;
+        function say() { kareSayisi++; }
+        gsap.ticker.add(say);
+
+        setTimeout(function () {
+            gsap.ticker.remove(say);
+            if (kareSayisi > 0) return; // ticker sağlıklı, dokunma
+
+            if (window.console) {
+                console.warn('rosso: GSAP tickerı ilerlemiyor — kinetik mod bırakıldı, içerik açılıyor.');
+            }
+
+            kok.classList.remove('rosso-kinetik', 'rosso-kilit');
+
+            // GSAP'in inline yazdığı gizlemeleri de temizle
+            document.querySelectorAll(
+                '.hakkinda__govde, .hakkinda__olcut, .hakkinda__eylemler, .hakkinda__yil,' +
+                ' .hakkinda__alinti, .hakkinda__cerceve, .kn-maske, .kn-kaydir, .kn-solgun,' +
+                ' .hero__baslik, .hero__ustbaslik, .hero__alt, .hero__eylemler, .hero__durum'
+            ).forEach(function (oge) {
+                oge.style.opacity = '';
+                oge.style.visibility = '';
+                oge.style.clipPath = '';
+                oge.style.transform = '';
+            });
+
+            var perde = document.querySelector('.sahne-perde');
+            if (perde) perde.remove();
+            document.querySelectorAll('.sahne-perde__panel').forEach(function (p) { p.remove(); });
+        }, 2600);
+    }
+
     /* =========================================================
        BAŞLAT
        Her modül kendi try/catch'inde — biri patlarsa sahne durmaz.
@@ -338,7 +483,7 @@
         if (acildi) return;
         acildi = true;
 
-        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri]
+        [lenisBaslat, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, gorunurlukEmniyeti]
             .forEach(function (modul) {
                 try { modul(); } catch (h) {
                     if (window.console) console.error('rosso:', modul.name, h);
