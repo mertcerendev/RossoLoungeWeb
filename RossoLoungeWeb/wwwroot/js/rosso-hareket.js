@@ -175,14 +175,25 @@
             gsap.set(baslik, { autoAlpha: 1 });
             zc.from(bolunmus.lines, { yPercent: 115, duration: 1.25, stagger: 0.09 });
         } else if (baslik) {
-            zc.from(baslik, { yPercent: 20, autoAlpha: 0, duration: 1.1 });
+            zc.fromTo(baslik, { yPercent: 20, autoAlpha: 0 },
+                      { yPercent: 0, autoAlpha: 1, duration: 1.1 });
         }
 
-        zc.from('.hero__ustbaslik', { autoAlpha: 0, y: 18, duration: 0.9 }, 0.15)
-          .from('.hero__alt', { autoAlpha: 0, y: 22, duration: 0.9 }, '-=0.85')
-          .from('.hero__eylemler > *', { autoAlpha: 0, y: 24, duration: 0.8, stagger: 0.1 }, '-=0.7')
-          .from('.hero__durum', { autoAlpha: 0, duration: 0.7 }, '-=0.5')
-          .from('.nav__marka, .nav__menu > li, .nav__eylem', { autoAlpha: 0, y: -14, duration: 0.7, stagger: 0.06 }, 0.3);
+        /* fromTo ŞART, from DEĞİL.
+           Başlangıç durumu artık CSS'te (.rosso-kinetik ... { opacity: 0 }),
+           çünkü perde yırtılınca hazır sayfa görünüyordu. gsap.from()
+           mevcut değeri BİTİŞ olarak okur; CSS 0 dediği için animasyon
+           0'dan 0'a giderdi ve hero hiç açılmazdı. Bitişi açıkça yazıyoruz. */
+        zc.fromTo('.hero__ustbaslik', { autoAlpha: 0, y: 18 },
+                  { autoAlpha: 1, y: 0, duration: 0.9 }, 0.15)
+          .fromTo('.hero__alt', { autoAlpha: 0, y: 22 },
+                  { autoAlpha: 1, y: 0, duration: 0.9 }, '-=0.85')
+          .fromTo('.hero__eylemler > *', { autoAlpha: 0, y: 24 },
+                  { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.1 }, '-=0.7')
+          .fromTo('.hero__durum', { autoAlpha: 0 },
+                  { autoAlpha: 1, duration: 0.7 }, '-=0.5')
+          .fromTo('.nav__marka, .nav__menu > li, .nav__eylem', { autoAlpha: 0, y: -14 },
+                  { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.06 }, 0.3);
 
         return zc;
     }
@@ -1807,7 +1818,9 @@
             document.querySelectorAll(
                 '.hakkinda__govde, .hakkinda__olcut, .hakkinda__eylemler, .hakkinda__yil,' +
                 ' .hakkinda__alinti, .hakkinda__cerceve, .kn-maske, .kn-kaydir, .kn-solgun,' +
-                ' .hero__baslik, .hero__ustbaslik, .hero__alt, .hero__eylemler, .hero__durum,' +
+                ' .hero__baslik, .hero__ustbaslik, .hero__alt, .hero__eylemler,' +
+                ' .hero__eylemler > *, .hero__durum,' +
+                ' .nav__marka, .nav__menu > li, .nav__eylem,' +
                 ' .menu__kalem, .menu__bas > *,' +
                 ' .vitrin__kart, .vitrin__bas > *, .vitrin__eylem,' +
                 ' .defter__yaprak, .defter__satir, .defter__isaret, .defter__imza,' +

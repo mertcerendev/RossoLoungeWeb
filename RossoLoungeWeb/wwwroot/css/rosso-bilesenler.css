@@ -2851,3 +2851,31 @@ body.finale-acik footer.finale {
 body.finale-acik main > section:last-of-type {
     padding-block-end: clamp(4rem, 8vw, 8rem);
 }
+
+/* =============================================================
+   HERO + NAVBAR — kinetik başlangıç durumu
+
+   Bunlar eksikti: perde yırtılıp sayfayı açtığında hero ve navbar
+   HAZIR görünüyordu, hemen ardından heroGirisi() onları gizleyip
+   baştan animasyonluyordu. Kullanıcı "yazılar tekrar yükleniyor"
+   diye bunu görüyordu (videoda 2.7sn'de tam, 3.0sn'de yeniden
+   animasyonda).
+
+   heroGirisi() bu yüzden fromTo kullanıyor: gsap.from() mevcut
+   değeri BİTİŞ olarak okuduğu için buradaki 0'ı görüp 0'dan 0'a
+   animasyon yapardı.
+
+   Emniyet: kinetik mod düşerse (GSAP yok, ticker durdu, JS hiç
+   çalışmadı) html'den .rosso-kinetik kalkıyor ve bu kural da
+   devre dışı kalıyor — içerik her koşulda görünür.
+   ============================================================= */
+.rosso-kinetik .hero__ustbaslik,
+.rosso-kinetik .hero__baslik,
+.rosso-kinetik .hero__alt,
+.rosso-kinetik .hero__eylemler > *,
+.rosso-kinetik .hero__durum,
+.rosso-kinetik .nav__marka,
+.rosso-kinetik .nav__menu > li,
+.rosso-kinetik .nav__eylem {
+    opacity: 0;
+}
