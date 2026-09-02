@@ -1,9 +1,13 @@
-@model RossoLoungeWeb.Models.RezervasyonListeModeli
+﻿@model RossoLoungeWeb.Models.RezervasyonListeModeli
 @*
     REZERVASYONLAR
     ===============================================================
-    Uçlar değişmedi: POST /Admin/Onayla/{id}, POST /Admin/Sil/{id}.
-    İkisi de artık `donus` alanıyla geldiği süzgeç/sayfaya dönüyor.
+    Uçlar: POST /Admin/Onayla/{id}, POST /Admin/Iptal/{id}, POST /Admin/Sil/{id}.
+    Üçü de `donus` alanıyla geldiği süzgeç/sayfaya dönüyor.
+
+    İPTAL ile SİLME farkı: iptal bir DURUM (kayıt duruyor, sayımların
+    dışında, geri alınabilir); silme kaydı yok eder. Vazgeçen misafir için
+    iptal, yanlış girilmiş kayıt için silme.
 
     HACİM SORUNU: liste eskiden bütün kayıtları tek sayfada basıyordu.
     Çözüm sunucu tarafında sekme + süzgeç + sayfalama. Tarayıcıda
@@ -33,6 +37,7 @@
         ("bugun", "Bugün"),
         ("bekleyen", "Onay bekleyen"),
         ("gecmis", "Geçmiş"),
+        ("iptal", "İptal"),
         ("tumu", "Tümü")
     };
 
@@ -163,13 +168,19 @@ else
                     var gecmis = item.Tarih.Date < bugun;
                     var bugunMu = item.Tarih.Date == bugun;
 
-                    // WhatsApp bildirim metni — onaylı/bekliyor durumuna göre değişir.
-                    string mesaj = item.OnaylandiMi
-                        ? $"Sayın {item.AdSoyad}, {item.Tarih:dd.MM.yyyy HH:mm} tarihli {item.KisiSayisi} kişilik rezervasyonunuz ONAYLANMIŞTIR. Sizi ağırlamaktan mutluluk duyarız. - Rosso Lounge Bistro"
-                        : $"Sayın {item.AdSoyad}, {item.Tarih:dd.MM.yyyy HH:mm} tarihli rezervasyon talebiniz alınmıştır. Müsaitlik durumuna göre size en kısa sürede dönüş yapılacaktır. - Rosso Lounge Bistro";
+                    var bekliyor = item.Durum == RezervasyonDurumu.Bekliyor;
+                    var iptalEdildi = item.Durum == RezervasyonDurumu.Iptal;
+
+                    // WhatsApp bildirim metni misafire gidecek: duruma göre değişmeli.
+                    string mesaj = item.Durum switch
+                    {
+                        RezervasyonDurumu.Onaylandi => $"Sayın {item.AdSoyad}, {item.Tarih:dd.MM.yyyy HH:mm} tarihli {item.KisiSayisi} kişilik rezervasyonunuz ONAYLANMIŞTIR. Sizi ağırlamaktan mutluluk duyarız. - Rosso Lounge Bistro",
+                        RezervasyonDurumu.Iptal => $"Sayın {item.AdSoyad}, {item.Tarih:dd.MM.yyyy HH:mm} tarihli rezervasyonunuz iptal edilmiştir. Anlayışınız için teşekkür eder, sizi başka bir tarihte ağırlamaktan memnuniyet duyarız. - Rosso Lounge Bistro",
+                        _ => $"Sayın {item.AdSoyad}, {item.Tarih:dd.MM.yyyy HH:mm} tarihli rezervasyon talebiniz alınmıştır. Müsaitlik durumuna göre size en kısa sürede dönüş yapılacaktır. - Rosso Lounge Bistro"
+                    };
                     string wpLink = $"https://wa.me/90{item.Telefon}?text={System.Net.WebUtility.UrlEncode(mesaj)}";
 
-                    <tr class="@(!item.OnaylandiMi ? "y-satir--dikkat" : null) @(gecmis ? "y-satir--gecmis" : null)">
+                    <tr class="@(bekliyor ? "y-satir--dikkat" : null) @(iptalEdildi ? "y-satir--iptal" : null) @(gecmis ? "y-satir--gecmis" : null)">
                         <td>
                             <span class="y-tablo__ad y-sayi">@item.Tarih.ToString("dd.MM.yyyy")</span>
                             <span class="y-tablo__ikincil y-sayi">
@@ -214,27 +225,46 @@ else
                         </td>
 
                         <td>
-                            @if (item.OnaylandiMi)
+                            @switch (item.Durum)
                             {
-                                <span class="y-rozet y-rozet--basari">Onaylı</span>
-                            }
-                            else
-                            {
-                                <span class="y-rozet y-rozet--uyari">Bekliyor</span>
+                                case RezervasyonDurumu.Onaylandi:
+                                    <span class="y-rozet y-rozet--basari">Onaylı</span>
+                                    break;
+                                case RezervasyonDurumu.Iptal:
+                                    <span class="y-rozet y-rozet--iptal">İptal</span>
+                                    break;
+                                default:
+                                    <span class="y-rozet y-rozet--uyari">Bekliyor</span>
+                                    break;
                             }
                         </td>
 
                         <td class="y-tablo__eylem">
                             <div class="y-eylemler">
-                                @if (!item.OnaylandiMi)
+                                @* Onayla: bekleyen talep için de, iptali geri almak için de aynı uç *@
+                                @if (item.Durum != RezervasyonDurumu.Onaylandi)
                                 {
                                     <form method="post" action="/Admin/Onayla/@item.Id">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="donus" value="@donusAdres">
                                         <button type="submit" class="y-hayalet"
-                                                title="Onayla"
+                                                title="@(iptalEdildi ? "İptali geri al ve onayla" : "Onayla")"
                                                 aria-label="@item.AdSoyad adına rezervasyonu onayla">
-                                            <i class="fas fa-check" aria-hidden="true"></i>
+                                            <i class="fas @(iptalEdildi ? "fa-rotate-left" : "fa-check")" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                }
+
+                                @* İptal geri alınabilir olduğu için onay sorusu yok; silmede var. *@
+                                @if (!iptalEdildi)
+                                {
+                                    <form method="post" action="/Admin/Iptal/@item.Id">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="donus" value="@donusAdres">
+                                        <button type="submit" class="y-hayalet"
+                                                title="@(bekliyor ? "Talebi geri çevir" : "Rezervasyonu iptal et")"
+                                                aria-label="@item.AdSoyad adına rezervasyonu iptal et">
+                                            <i class="fas fa-ban" aria-hidden="true"></i>
                                         </button>
                                     </form>
                                 }

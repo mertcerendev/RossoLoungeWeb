@@ -220,7 +220,7 @@
             <ul class="y-servis">
                 @foreach (var rez in Model.BugunListe)
                 {
-                    <li class="y-servis__satir @(rez.OnaylandiMi ? null : "y-servis__satir--bekliyor")">
+                    <li class="y-servis__satir @(rez.Durum == RezervasyonDurumu.Onaylandi ? null : "y-servis__satir--bekliyor")">
                         <span class="y-servis__saat y-sayi">@rez.Tarih.ToString("HH:mm")</span>
 
                         <span class="y-servis__kisi">
@@ -234,7 +234,7 @@
                             </span>
                         </span>
 
-                        @if (rez.OnaylandiMi)
+                        @if (rez.Durum == RezervasyonDurumu.Onaylandi)
                         {
                             <span class="y-rozet y-rozet--basari">Onaylı</span>
                         }

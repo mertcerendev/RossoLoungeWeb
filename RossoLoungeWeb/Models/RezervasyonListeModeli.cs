@@ -26,6 +26,7 @@ namespace RossoLoungeWeb.Models
         public int SayiBugun { get; set; }
         public int SayiBekleyen { get; set; }
         public int SayiGecmis { get; set; }
+        public int SayiIptal { get; set; }
         public int SayiTumu { get; set; }
 
         public int SayiGetir(string durum) => durum switch
@@ -33,6 +34,7 @@ namespace RossoLoungeWeb.Models
             "bugun" => SayiBugun,
             "bekleyen" => SayiBekleyen,
             "gecmis" => SayiGecmis,
+            "iptal" => SayiIptal,
             "tumu" => SayiTumu,
             _ => SayiYaklasan
         };
@@ -45,7 +47,7 @@ namespace RossoLoungeWeb.Models
     /// </summary>
     public class RezervasyonSuzgeci
     {
-        /// <summary>yaklasan | bugun | bekleyen | gecmis | tumu</summary>
+        /// <summary>yaklasan | bugun | bekleyen | gecmis | iptal | tumu</summary>
         public string Durum { get; set; } = "yaklasan";
 
         public string? Ara { get; set; }

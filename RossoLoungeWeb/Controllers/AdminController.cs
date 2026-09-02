@@ -211,8 +211,12 @@ namespace RossoLoungeWeb.Controllers
             /* ---------------------------------------------------------
                BEKLEYEN İŞLER + TOPLAMLAR
                --------------------------------------------------------- */
-            model.ToplamRezervasyon = await _context.Rezervasyons.CountAsync();
-            model.BekleyenRezervasyon = await _context.Rezervasyons.CountAsync(r => !r.OnaylandiMi);
+            // Operasyonel sayılar iptalleri dışlıyor: "bugün 20 kişi geliyor"
+            // dendiğinde iptal edilenler o 20'nin içinde olmamalı.
+            model.ToplamRezervasyon = await _context.Rezervasyons
+                .CountAsync(r => r.Durum != RezervasyonDurumu.Iptal);
+            model.BekleyenRezervasyon = await _context.Rezervasyons
+                .CountAsync(r => r.Durum == RezervasyonDurumu.Bekliyor);
             model.OkunmamisMesaj = await _context.IletisimMesajlari.CountAsync(m => !m.OkunduMu);
             model.ToplamMesaj = await _context.IletisimMesajlari.CountAsync();
             model.BekleyenYorum = await _context.Yorumlar.CountAsync(y => !y.OnaylandiMi);
@@ -227,7 +231,7 @@ namespace RossoLoungeWeb.Controllers
                geliyor, saat kaçta, kaç kişi, onaylı mı.
                --------------------------------------------------------- */
             model.BugunListe = await _context.Rezervasyons
-                .Where(r => r.Tarih.Date == bugun)
+                .Where(r => r.Tarih.Date == bugun && r.Durum != RezervasyonDurumu.Iptal)
                 .OrderBy(r => r.Tarih)
                 .ToListAsync();
 
@@ -243,9 +247,11 @@ namespace RossoLoungeWeb.Controllers
             var oncekiHaftaBasi = bugun.AddDays(-13);
 
             model.BuHaftaRezervasyon = await _context.Rezervasyons
-                .CountAsync(r => r.Tarih.Date >= haftaBasi && r.Tarih.Date <= bugun);
+                .CountAsync(r => r.Tarih.Date >= haftaBasi && r.Tarih.Date <= bugun
+                                 && r.Durum != RezervasyonDurumu.Iptal);
             model.GecenHaftaRezervasyon = await _context.Rezervasyons
-                .CountAsync(r => r.Tarih.Date >= oncekiHaftaBasi && r.Tarih.Date < haftaBasi);
+                .CountAsync(r => r.Tarih.Date >= oncekiHaftaBasi && r.Tarih.Date < haftaBasi
+                                 && r.Durum != RezervasyonDurumu.Iptal);
 
             /* ---------------------------------------------------------
                GRAFİK — dört dönem, iki sorgu
@@ -256,7 +262,8 @@ namespace RossoLoungeWeb.Controllers
             var otuzGunOnce = bugun.AddDays(-29);
 
             var gunlukHam = await _context.Rezervasyons
-                .Where(r => r.Tarih.Date >= otuzGunOnce && r.Tarih.Date <= bugun)
+                .Where(r => r.Tarih.Date >= otuzGunOnce && r.Tarih.Date <= bugun
+                            && r.Durum != RezervasyonDurumu.Iptal)
                 .GroupBy(r => r.Tarih.Date)
                 .Select(g => new { Tarih = g.Key, Sayi = g.Count(), Kisi = g.Sum(x => x.KisiSayisi) })
                 .ToListAsync();
@@ -286,6 +293,7 @@ namespace RossoLoungeWeb.Controllers
             model.Grafik.Gun30 = GunSerisi(30);
 
             var aylikHam = await _context.Rezervasyons
+                .Where(r => r.Durum != RezervasyonDurumu.Iptal)
                 .GroupBy(r => new { r.Tarih.Year, r.Tarih.Month })
                 .Select(g => new { g.Key.Year, g.Key.Month, Sayi = g.Count(), Kisi = g.Sum(x => x.KisiSayisi) })
                 .ToListAsync();
@@ -330,7 +338,8 @@ namespace RossoLoungeWeb.Controllers
                --------------------------------------------------------- */
             var yediGunSonra = bugun.AddDays(7);
             var yaklasanHam = await _context.Rezervasyons
-                .Where(r => r.Tarih.Date >= bugun && r.Tarih.Date <= yediGunSonra)
+                .Where(r => r.Tarih.Date >= bugun && r.Tarih.Date <= yediGunSonra
+                            && r.Durum != RezervasyonDurumu.Iptal)
                 .GroupBy(r => r.Tarih.Date)
                 .Select(g => new { Tarih = g.Key, Sayi = g.Count(), Kisi = g.Sum(x => x.KisiSayisi) })
                 .ToListAsync();
@@ -353,6 +362,7 @@ namespace RossoLoungeWeb.Controllers
                YOĞUN SAATLER — personel planlaması için
                --------------------------------------------------------- */
             model.YogunSaatler = (await _context.Rezervasyons
+                .Where(r => r.Durum != RezervasyonDurumu.Iptal)
                 .GroupBy(r => r.Tarih.Hour)
                 .Select(g => new { Saat = g.Key, Sayi = g.Count(), Kisi = g.Sum(x => x.KisiSayisi) })
                 .ToListAsync())
@@ -507,7 +517,7 @@ namespace RossoLoungeWeb.Controllers
 
             // Dışarıdan gelen değerler beyaz listeye çekiliyor: adres
             // çubuğuna yazılan rastgele bir değer sorguyu bozmasın.
-            var gecerliDurumlar = new[] { "yaklasan", "bugun", "bekleyen", "gecmis", "tumu" };
+            var gecerliDurumlar = new[] { "yaklasan", "bugun", "bekleyen", "gecmis", "iptal", "tumu" };
             if (!gecerliDurumlar.Contains(durum)) durum = "yaklasan";
 
             var gecerliSiralar = new[] { "tarih_artan", "tarih_azalan", "kisi_azalan", "talep_azalan" };
@@ -534,23 +544,33 @@ namespace RossoLoungeWeb.Controllers
 
             // Sekme rozetleri — kullanıcı sekmeye geçmeden kaç kayıt
             // olduğunu görsün.
+            // İptal edilen rezervasyon gerçekleşmeyecek: yaklaşan/bugün/geçmiş
+            // sekmelerinde masa işgal ediyormuş gibi görünmemeli. Kendi
+            // sekmesinde duruyor ki kayıt kaybolmasın.
             model.SayiTumu = await _context.Rezervasyons.CountAsync();
-            model.SayiYaklasan = await _context.Rezervasyons.CountAsync(r => r.Tarih.Date >= bugun);
-            model.SayiBugun = await _context.Rezervasyons.CountAsync(r => r.Tarih.Date == bugun);
-            model.SayiBekleyen = await _context.Rezervasyons.CountAsync(r => !r.OnaylandiMi);
-            model.SayiGecmis = await _context.Rezervasyons.CountAsync(r => r.Tarih.Date < bugun);
+            model.SayiYaklasan = await _context.Rezervasyons
+                .CountAsync(r => r.Tarih.Date >= bugun && r.Durum != RezervasyonDurumu.Iptal);
+            model.SayiBugun = await _context.Rezervasyons
+                .CountAsync(r => r.Tarih.Date == bugun && r.Durum != RezervasyonDurumu.Iptal);
+            model.SayiBekleyen = await _context.Rezervasyons
+                .CountAsync(r => r.Durum == RezervasyonDurumu.Bekliyor);
+            model.SayiGecmis = await _context.Rezervasyons
+                .CountAsync(r => r.Tarih.Date < bugun && r.Durum != RezervasyonDurumu.Iptal);
+            model.SayiIptal = await _context.Rezervasyons
+                .CountAsync(r => r.Durum == RezervasyonDurumu.Iptal);
 
             IQueryable<Rezervasyon> sorgu = _context.Rezervasyons;
 
             sorgu = durum switch
             {
-                "bugun" => sorgu.Where(r => r.Tarih.Date == bugun),
+                "bugun" => sorgu.Where(r => r.Tarih.Date == bugun && r.Durum != RezervasyonDurumu.Iptal),
                 // Onay bekleyenler tarihten bağımsız: geçmişte kalmış ama
                 // hiç yanıtlanmamış bir talep de yöneticinin işidir.
-                "bekleyen" => sorgu.Where(r => !r.OnaylandiMi),
-                "gecmis" => sorgu.Where(r => r.Tarih.Date < bugun),
+                "bekleyen" => sorgu.Where(r => r.Durum == RezervasyonDurumu.Bekliyor),
+                "gecmis" => sorgu.Where(r => r.Tarih.Date < bugun && r.Durum != RezervasyonDurumu.Iptal),
+                "iptal" => sorgu.Where(r => r.Durum == RezervasyonDurumu.Iptal),
                 "tumu" => sorgu,
-                _ => sorgu.Where(r => r.Tarih.Date >= bugun)
+                _ => sorgu.Where(r => r.Tarih.Date >= bugun && r.Durum != RezervasyonDurumu.Iptal)
             };
 
             if (suzgec.Ara != null)
@@ -601,11 +621,38 @@ namespace RossoLoungeWeb.Controllers
                 return ListeyeDon(donus);
             }
 
-            rez.OnaylandiMi = true;
+            rez.Durum = RezervasyonDurumu.Onaylandi;
             if (GuvenliKaydet("Rezervasyon onaylama"))
                 TempData["Mesaj"] = $"{rez.AdSoyad} adına rezervasyon onaylandı.";
             else
                 TempData["Hata"] = "Rezervasyon onaylanamadı. Lütfen tekrar deneyin.";
+
+            return ListeyeDon(donus);
+        }
+
+        /// <summary>
+        /// Talebi geri çevirir ya da onaylı bir rezervasyonu iptal eder.
+        ///
+        /// Eskiden bunun tek yolu kaydı SİLMEKTİ; silinen kayıttan geriye iz
+        /// kalmadığı için "bu isim daha önce gelmiş miydi, iptal mi etmişti"
+        /// sorusu cevapsız kalıyordu. Kayıt duruyor, sayımların dışında.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Iptal(int id, string? donus = null)
+        {
+            var rez = _context.Rezervasyons.Find(id);
+            if (rez == null)
+            {
+                TempData["Hata"] = "İptal edilecek rezervasyon bulunamadı.";
+                return ListeyeDon(donus);
+            }
+
+            rez.Durum = RezervasyonDurumu.Iptal;
+            if (GuvenliKaydet("Rezervasyon iptali"))
+                TempData["Mesaj"] = $"{rez.AdSoyad} adına rezervasyon iptal edildi.";
+            else
+                TempData["Hata"] = "Rezervasyon iptal edilemedi. Lütfen tekrar deneyin.";
 
             return ListeyeDon(donus);
         }

@@ -1101,6 +1101,15 @@ textarea.y-alan__girdi {
     color: var(--y-metin-3);
 }
 
+/* İptal HATA değil, geçersiz. Kırmızı "dikkat et" demek olurdu; iptal
+   edilmiş kayıt dikkat çekmemeli, yalnızca işaretlenmeli. */
+.y-rozet--iptal {
+    border-color: var(--y-kenar-2);
+    color: var(--y-metin-3);
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+}
+
 /* Boş durum */
 .y-bos {
     padding: var(--y-12) var(--y-6);
@@ -2352,6 +2361,17 @@ textarea.y-girdi {
 
     .y-tablo tbody tr.y-satir--gecmis .y-tablo__ad {
         color: var(--y-metin-2);
+    }
+
+/* --- İptal satır: soluk + ad üzeri çizik --- */
+.y-tablo tbody tr.y-satir--iptal td {
+    color: var(--y-metin-3);
+}
+
+    .y-tablo tbody tr.y-satir--iptal .y-tablo__ad {
+        color: var(--y-metin-2);
+        text-decoration: line-through;
+        text-decoration-color: var(--y-kenar-2);
     }
 
 /* Tablo içi satır bağları (telefon, not) satır yüksekliğini

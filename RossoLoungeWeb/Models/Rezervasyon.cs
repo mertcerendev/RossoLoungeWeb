@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using RossoLoungeWeb.Services;
 
 namespace RossoLoungeWeb.Models
@@ -38,7 +38,24 @@ namespace RossoLoungeWeb.Models
         [Display(Name = "Oluşturulma Tarihi")]
         public DateTime OlusturulmaTarihi { get; set; } = TurkiyeSaati.Simdi;
 
-        [Display(Name = "Onaylandı")]
-        public bool OnaylandiMi { get; set; } = false;
+        [Display(Name = "Durum")]
+        public RezervasyonDurumu Durum { get; set; } = RezervasyonDurumu.Bekliyor;
+    }
+
+    /// <summary>
+    /// Rezervasyonun yaşam döngüsü.
+    ///
+    /// Önce yalnızca <c>OnaylandiMi</c> vardı: bir talebi geri çevirmenin tek
+    /// yolu kaydı SİLMEKTİ. Silinen kayıt hiç yaşanmamış gibi olur — ne
+    /// misafire ne de istatistiğe iz kalır. İptal artık ayrı bir durum.
+    ///
+    /// Sayılar veritabanında saklandığı için DEĞİŞTİRİLEMEZ; yeni durum
+    /// eklenecekse sıradaki sayı verilmeli.
+    /// </summary>
+    public enum RezervasyonDurumu
+    {
+        Bekliyor = 0,
+        Onaylandi = 1,
+        Iptal = 2
     }
 }
