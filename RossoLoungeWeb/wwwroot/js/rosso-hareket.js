@@ -2176,18 +2176,27 @@
                 });
         }
 
-        /* --- Başa dön + kaydırma yüzdesi ---
-           Buton artık SÜREKLİ görünüyor; eskiden yalnızca footer'a
-           yaklaşınca beliriyordu. Karşılığında boş bir daire değil,
-           sayfada ne kadar ilerlendiğini gösteren dolan bir gösterge. */
+        /* --- Başa dön + ilerleme halkası ---
+           Buton SÜREKLİ ekranda; eskiden yalnızca footer'a yaklaşınca
+           beliriyordu. Karşılığında boş durmuyor: SVG yayı sayfanın ne
+           kadarının geçildiğini gösteriyor. */
         var dugme = document.querySelector('.basa-don');
         if (!dugme) return;
 
         dugme.hidden = false;
 
-        var dolgu = dugme.querySelector('.basa-don__dolgu');
-        var sayi = dugme.querySelector('.basa-don__sayi');
-        var sonYuzde = -1;
+        var yay = dugme.querySelector('.basa-don__yay');
+
+        /* Çevre DOM'dan ölçülüyor, elle yazılmıyor: yarıçap CSS'te ya da
+           viewBox'ta değişirse dolum kendiliğinden doğru kalsın. */
+        var cevre = 169.65;
+        if (yay && typeof yay.getTotalLength === 'function') {
+            var olculen = yay.getTotalLength();
+            if (olculen > 0) cevre = olculen;
+        }
+        if (yay) yay.style.strokeDasharray = cevre;
+
+        var sonOfset = -1;
 
         function ilerlemeyiYaz() {
             var yol = document.documentElement.scrollHeight - window.innerHeight;
@@ -2197,17 +2206,22 @@
                yeniden hesaplanıyor, önbelleğe alınmıyor. */
             var oran = yol > 0 ? Math.min(1, Math.max(0, kaydirma / yol)) : 0;
 
-            /* scaleY, height DEĞİL: yükseklik her karede yeniden düzen
-               hesaplatırdı, dönüşüm yalnızca kompozisyon katmanında kalıyor. */
-            if (dolgu) dolgu.style.transform = 'scaleY(' + oran.toFixed(4) + ')';
+            if (!yay) return;
 
-            var yuzde = Math.round(oran * 100);
-            if (yuzde !== sonYuzde) {
-                sonYuzde = yuzde;
-                if (sayi) sayi.textContent = yuzde;
-            }
+            /* Yalnızca gerçekten değiştiyse yaz. Aynı değeri tekrar
+               yazmak stil geçersizleştirmesi demek; yarım pikselin
+               altındaki fark ekranda zaten görünmüyor. */
+            var ofset = Math.round(cevre * (1 - oran) * 2) / 2;
+            if (ofset === sonOfset) return;
+
+            sonOfset = ofset;
+            yay.style.strokeDashoffset = ofset;
         }
 
+        /* Tek dinleyici + tek rAF. Kaydırma olayı kareden sık gelebiliyor;
+           rAF ile kare başına en çok bir yazıma indiriliyor.
+           Lenis zaten gsap.ticker üzerinden yerel kaydırmayı sürdüğü için
+           bu dinleyici hem Lenis'li hem Lenis'siz durumda çalışıyor. */
         var bekliyor = false;
         window.addEventListener('scroll', function () {
             if (bekliyor) return;

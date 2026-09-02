@@ -3131,11 +3131,13 @@ body:not(.panel) footer.finale {
    altında ama içeriğin üstünde duruyor.
    ============================================================= */
 /* -------------------------------------------------------------
-   BAŞA DÖN + KAYDIRMA İLERLEMESİ
+   BAŞA DÖN + İLERLEME HALKASI
 
-   Buton artık sürekli ekranda; karşılığında boş durmuyor, sayfanın
-   ne kadarının geçildiğini gösteriyor. Kare, yuvarlak değil:
-   sayfadaki tek dairesel öğe olmasın.
+   Sürekli ekranda; boş durmuyor, sayfanın ne kadarının geçildiğini
+   gösteriyor. Dolum SVG yayında (stroke-dashoffset): tek bir sayı
+   yazımı, düzen hesabı yok.
+
+   Manyetik çekim ayrıca uygulanıyor — .basa-don MANYETIK_SECICI'de.
    ------------------------------------------------------------- */
 .basa-don {
     position: fixed;
@@ -3144,96 +3146,109 @@ body:not(.panel) footer.finale {
     z-index: var(--k-nav);
     display: grid;
     place-items: center;
-    width: 54px;
-    height: 54px;
+    width: 60px;
+    height: 60px;
     padding: 0;
-    background: rgba(8, 8, 10, 0.72);
-    border: 1px solid var(--cizgi-2);
+    background: rgba(8, 8, 10, 0.5);
+    border: 0;
+    border-radius: 50%;
     color: var(--metin-2);
     cursor: pointer;
-    /* Dolgu köşelerden taşmasın */
-    overflow: hidden;
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-    transition: border-color var(--h2) var(--egri);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    transition: background var(--h2) var(--egri);
 }
 
-    .basa-don:hover,
     .basa-don:focus-visible {
-        border-color: var(--sampanya);
+        outline: 1px solid var(--sampanya);
+        outline-offset: 4px;
     }
 
-/* Aşağıdan yükselen şampanya dolgu. Yüksekliği JS scaleY ile
-   sürüyor; height kullanılsaydı her karede yeniden düzen hesabı
-   çıkardı, dönüşüm ise kompozisyon katmanında kalıyor. */
-.basa-don__dolgu {
+/* Hover'da içi dolan vurgu. ::before boyama sırasında ÇOCUKLARDAN
+   ÖNCE geliyor: halka ve ok dolgunun üstünde kalıyor.
+
+   inset 7px bilinçli: yay 27 yarıçapta (kenardan 3px içeride). Dolgu
+   ona kadar gelseydi şampanya yay şampanya zeminde kaybolurdu; arada
+   koyu bir halka boşluğu bırakılıyor. */
+.basa-don::before {
+    content: "";
     position: absolute;
-    inset: 0;
+    inset: 7px;
+    border-radius: 50%;
     background: var(--sampanya);
-    transform: scaleY(0);
-    transform-origin: bottom center;
-    will-change: transform;
-}
-
-/* difference ŞART: rakam dolgunun altında kalınca koyu zeminde açık,
-   dolgu yükselip üstünü örtünce şampanyanın üstünde koyu okunuyor.
-   Tek bir renkle iki zemin idare edilemiyordu. */
-.basa-don__ic {
-    position: relative;
-    display: grid;
-    place-items: center;
-    width: 100%;
-    height: 100%;
-    color: #fff;
-    mix-blend-mode: difference;
-}
-
-/* Rakam ve ok AYNI ızgara gözünde; biri çıkarken öteki giriyor */
-.basa-don__yuzde,
-.basa-don__ok {
-    grid-area: 1 / 1;
+    opacity: 0;
+    transform: scale(0.55);
     transition: opacity var(--h2) var(--egri), transform var(--h2) var(--egri);
 }
 
-.basa-don__yuzde {
-    display: inline-flex;
-    align-items: baseline;
-    font-family: var(--f-sans);
-    font-size: 0.8125rem;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    font-variant-numeric: tabular-nums;
+.basa-don:hover::before,
+.basa-don:focus-visible::before {
+    opacity: 1;
+    transform: scale(1);
 }
 
-.basa-don__isaret {
-    font-size: 0.625rem;
-    margin-inline-start: 0.08em;
-    opacity: 0.75;
+/* Halka ve ok aynı ızgara gözünde üst üste */
+.basa-don__halka,
+.basa-don__ic {
+    grid-area: 1 / 1;
 }
 
+/* Yay saat 12'den başlasın */
+.basa-don__halka {
+    transform: rotate(-90deg);
+}
+
+.basa-don__ray,
+.basa-don__yay {
+    fill: none;
+}
+
+.basa-don__ray {
+    stroke: var(--cizgi-2);
+    stroke-width: 1;
+}
+
+.basa-don__yay {
+    stroke: url(#basaDonAkim);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    /* JS getTotalLength() ile ölçüp üzerine yazıyor; buradaki değer
+       (2π·27) JS çalışmadan önceki tek karelik hâl için. */
+    stroke-dasharray: 169.65;
+    stroke-dashoffset: 169.65;
+}
+
+.basa-don__renk-1 {
+    stop-color: var(--bronz);
+}
+
+.basa-don__renk-2 {
+    stop-color: var(--sampanya);
+}
+
+/* Ok: hover'da yukarı sekiyor. Eğri bilerek back: düz bir çıkış
+   mekanik duruyordu, hafif aşma "sekme" hissini veriyor. */
 .basa-don__ok {
-    opacity: 0;
-    transform: translateY(9px);
-}
-
-.basa-don:hover .basa-don__yuzde,
-.basa-don:focus-visible .basa-don__yuzde {
-    opacity: 0;
-    transform: translateY(-9px);
+    transition: transform var(--h2) cubic-bezier(0.34, 1.56, 0.64, 1),
+                color var(--h2) var(--egri);
 }
 
 .basa-don:hover .basa-don__ok,
 .basa-don:focus-visible .basa-don__ok {
-    opacity: 1;
-    transform: translateY(0);
+    /* Dolgu şampanya; ok koyuya dönmezse okunmuyor */
+    color: var(--obsidyen);
+    transform: translateY(-3px);
 }
 
-/* Hareket azaltma: yer değiştirme yok, yalnızca görünürlük */
+/* Hareket azaltma: renk değişiyor, sekme yok */
 @media (prefers-reduced-motion: reduce) {
-    .basa-don__yuzde,
     .basa-don__ok {
-        transition: opacity var(--h1) linear;
-        transform: none !important;
+        transition: color var(--h1) linear;
+    }
+
+    .basa-don:hover .basa-don__ok,
+    .basa-don:focus-visible .basa-don__ok {
+        transform: none;
     }
 }
 

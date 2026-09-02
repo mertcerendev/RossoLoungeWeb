@@ -97,21 +97,35 @@
        ilerlendiğini gösteriyor (rosso-hareket.js → imzaBolumu).
        JS yoksa gizli kalır: bir <button> onsuz zaten hiçbir şey yapmaz. *@
     <button type="button" class="basa-don" aria-label="Sayfanın başına dön" hidden>
-        @* Kaydırma ilerlemesi: aşağıdan yükselen şampanya dolgu. *@
-        <span class="basa-don__dolgu" aria-hidden="true"></span>
+        @* İLERLEME HALKASI
+           İki eşmerkezli daire: sabit ray + üstünde dolan yay. Dolum
+           stroke-dashoffset ile yapılıyor; JS tek bir sayı yazıyor,
+           düzen hesabı çıkmıyor.
 
-        @* Rakam ve ok aynı ızgara gözünde duruyor; üzerine gelince yer
-           değiştiriyorlar. Katman mix-blend-mode: difference kullanıyor,
-           bu sayede hem koyu zeminde hem dolgunun üstünde okunuyor. *@
+           r=27 → çevre 2πr ≈ 169.65. Bu değeri JS getTotalLength() ile
+           ÖLÇÜYOR: yarıçap CSS'te değişirse dolum bozulmasın.
+
+           Yay 12 yönünden başlasın diye SVG -90° döndürülüyor (CSS). *@
+        <svg class="basa-don__halka" viewBox="0 0 60 60" width="60" height="60"
+             aria-hidden="true" focusable="false">
+            <defs>
+                <linearGradient id="basaDonAkim" x1="0" y1="1" x2="1" y2="0">
+                    <stop class="basa-don__renk-1" offset="0" />
+                    <stop class="basa-don__renk-2" offset="1" />
+                </linearGradient>
+            </defs>
+            <circle class="basa-don__ray" cx="30" cy="30" r="27" />
+            <circle class="basa-don__yay" cx="30" cy="30" r="27" />
+        </svg>
+
+        @* Merkezdeki ince ok. Üzerine gelince yukarı sekiyor ve
+           halkanın içi şampanyayla doluyor (CSS). *@
         <span class="basa-don__ic" aria-hidden="true">
-            <span class="basa-don__yuzde">
-                <span class="basa-don__sayi">0</span><span class="basa-don__isaret">%</span>
-            </span>
-
-            <svg class="basa-don__ok" viewBox="0 0 24 24" width="18" height="18" fill="none"
-                 stroke="currentColor" stroke-width="1.5">
-                <path d="M12 19V6" />
-                <path d="m6 12 6-6 6 6" />
+            <svg class="basa-don__ok" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                 stroke="currentColor" stroke-width="1.25"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 18.5V6" />
+                <path d="m6.75 11.25 5.25-5.25 5.25 5.25" />
             </svg>
         </span>
     </button>
