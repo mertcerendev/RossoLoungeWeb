@@ -1,4 +1,4 @@
-@model List<RossoLoungeWeb.Models.Yorum>
+﻿@model List<RossoLoungeWeb.Models.Yorum>
 @{
     ViewData["Baslik"] = "Rosso Lounge Bistro | Bandırma";
     ViewData["Aciklama"] = "Rosso Lounge Bistro — Bandırma'da modern atmosfer, taze lezzetler ve imza kokteyller. Online masa rezervasyonu yapın.";
@@ -26,6 +26,8 @@
     //   paylasim.jpg → kadrajın solunda yarım içilmiş bira bardağı
     //   ic-mekan.jpg → solunda aydınlatmalı şarap dolabı; o şerit
     //                  kesilip salon.jpg olarak kaydedildi
+    // Hakkımızda'daki aksam-masa.jpg bilerek DURUYOR: kaldırılmıştı,
+    // istek üzerine geri alındı.
     // Yerlerine mekânın KENDİ fotoğrafları geldi (img/urunler'den
     // kopyalandı, kaynak dosyalara dokunulmadı): firindan.jpg, kahve.jpg.
     var galeriKareleri = new[]
@@ -117,11 +119,8 @@
                 <div class="hakkinda__gorseller">
                     <figure class="hakkinda__cerceve hakkinda__cerceve--genis" data-parallax="-14">
                         <img class="hakkinda__foto"
-                             @* aksam-masa.jpg KALDIRILDI: ön planda şarap
-                                kadehleri ve şişeler vardı. Yerine mekânın
-                                kendi tabağı geldi. *@
-                             src="/img/site/mangal.jpg"
-                             alt="Tabakta ızgara köfte, tavuk şiş, közlenmiş biber ve patates"
+                             src="/img/site/aksam-masa.jpg"
+                             alt="Akşam ışığında hazırlanmış masa, kadehler ve tabaklar"
                              loading="eager" decoding="async" width="1800" height="1200">
                     </figure>
 
@@ -437,7 +436,7 @@
         <section id="iletisim" class="konsiyer" aria-labelledby="konsiyer-baslik">
             <div class="kap konsiyer__izgara">
 
-                <div class="konsiyer__sol">
+                <div class="konsiyer__sol" data-ritim-sahibi>
                     <p class="konsiyer__ustbaslik kn-maske">İletişim</p>
                     <h2 class="konsiyer__baslik" id="konsiyer-baslik" data-kelime-acilis>Bize <em>Ulaşın</em></h2>
                     <p class="konsiyer__alt kn-maske">Masanızı ayırtın ya da aklınıza takılanı sorun — aynı gün dönüş yapıyoruz.</p>
@@ -504,6 +503,7 @@
                                 loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
                         <figcaption class="harita__perde">
                             <span class="harita__yer">Bandırma · Marmara kıyısı</span>
+                            <span class="harita__ipucu">Kullanmak için tıklayın</span>
                         </figcaption>
                     </figure>
 

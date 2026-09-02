@@ -263,8 +263,13 @@
     function kaydirmaGirisleri() {
         if (!kinetik) return;
 
-        // Maskeli açılış
+        /* Maskeli açılış — her öğe kendi tetikleyicisiyle.
+           İstisna: kendi kademeli ritmini kuran bölümler
+           (data-ritim-sahibi). Aksi hâlde aynı clip-path üzerine iki
+           tween birden yazıyor ve tasarlanan kademe bozuluyor. */
         gsap.utils.toArray('.kn-maske').forEach(function (oge) {
+            if (oge.closest('[data-ritim-sahibi]')) return;
+
             gsap.to(oge, {
                 clipPath: 'inset(0 0 0% 0)',
                 duration: 1.3,
@@ -2163,12 +2168,14 @@
         var bolum = document.querySelector('.konsiyer');
         if (!bolum) return;
 
-        // Formlar kinetik moddan bağımsız çalışmalı
+        // Formlar ve harita kinetik moddan bağımsız çalışmalı
         Array.prototype.slice.call(bolum.querySelectorAll('.konsiyer__form')).forEach(function (form) {
             var dugme = form.querySelector('.konsiyer__gonder');
             manyetikDugme(dugme);
             gonderimDurumu(form, dugme);
         });
+
+        haritaKur(bolum.querySelector('.harita'));
 
         if (!kinetik) return;
 
@@ -2209,6 +2216,54 @@
                 scrollTrigger: { trigger: sol, start: 'top 74%' }
             });
         }
+    }
+
+    /* =========================================================
+       15a. HARİTA
+       -------------------------------------------------------------
+       KAYDIRMA KİLİDİ: gömülü harita tekerlek olaylarını yutuyor,
+       imleç üstündeyken sayfa kaydırılamıyordu. Çerçeve CSS'te
+       pointer-events almıyor; kullanıcı tıklayınca etkileşim
+       açılıyor, fare ayrıldığında / dışarı tıklandığında /
+       Escape'e basıldığında kapanıyor.
+
+       CANLILIK: grilik --harita-gri değişkeninde ve ScrollTrigger
+       ile sürülüyor — harita ekrana girerken renkleniyor, yukarı
+       çıktıkça geri griliyor. Sürülmezse CSS varsayılanı (tam gri)
+       geçerli kalır.
+       ========================================================= */
+    function haritaKur(harita) {
+        if (!harita) return;
+
+        function ac() { harita.classList.add('harita--etkin'); }
+        function kapat() { harita.classList.remove('harita--etkin'); }
+
+        harita.addEventListener('click', ac);
+        harita.addEventListener('mouseleave', kapat);
+
+        // Dokunmatikte mouseleave yok; harita dışına dokunmak kapatsın
+        document.addEventListener('pointerdown', function (olay) {
+            if (!harita.contains(olay.target)) kapat();
+        }, { passive: true });
+
+        document.addEventListener('keydown', function (olay) {
+            if (olay.key === 'Escape') kapat();
+        });
+
+        if (!kinetik) return;
+
+        gsap.timeline({
+            scrollTrigger: {
+                trigger: harita,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: 0.6
+            }
+        })
+            .fromTo(harita,
+                { '--harita-gri': 1 },
+                { '--harita-gri': 0.42, ease: 'none', duration: 1 })
+            .to(harita, { '--harita-gri': 1, ease: 'none', duration: 1 });
     }
 
     /* =========================================================
@@ -2288,6 +2343,12 @@
             /* Yorum gönderme paneli katman modunda ekran dışında
                (xPercent 100) duruyor olabilir; akıştaki normal form
                hâline döndürülüyor ki gönderim yolu kapanmasın. */
+            var harita = document.querySelector('.harita');
+            if (harita) {
+                harita.classList.remove('harita--etkin');
+                harita.style.removeProperty('--harita-gri');
+            }
+
             var paylas = document.getElementById('paylas');
             if (paylas) {
                 paylas.classList.remove('paylas--katman');

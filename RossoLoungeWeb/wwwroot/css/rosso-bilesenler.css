@@ -2798,7 +2798,18 @@ html:not(.rosso-imlec) .defter--tutuluyor .defter__sahne {
    HARİTA — monokrom
    -------------------------------------------------------------
    Gömülü harita renkli hâliyle koyu dili bozuyordu. Filtre onu
-   obsidyen paletine indiriyor; üstüne gelince biraz canlanıyor.
+   obsidyen paletine indiriyor.
+
+   CANLILIK KAYDIRMAYA BAĞLI: griliği --harita-gri değişkeni taşıyor,
+   rosso-hareket.js onu ScrollTrigger ile sürüyor — harita ekrana
+   girerken renkleniyor, yukarı çıktıkça geri griliyor. Değişken
+   sürülmezse varsayılan 1 (tam gri) kalır, yani JS yoksa da
+   sahneye uygun görünür.
+
+   KAYDIRMA KİLİDİ: gömülü harita tekerlek olaylarını yutuyor ve
+   imleç üstündeyken sayfa kaydırılamıyordu. Çerçeve varsayılan
+   olarak pointer-events almıyor; kullanıcı tıklayınca
+   .harita--etkin ile etkileşim açılıyor, fare ayrılınca kapanıyor.
    ============================================================= */
 .harita {
     position: relative;
@@ -2809,32 +2820,73 @@ html:not(.rosso-imlec) .defter--tutuluyor .defter__sahne {
     border: 1px solid var(--cizgi);
 }
 
+.harita {
+    --harita-gri: 1;
+}
+
 .harita__cerceve {
     display: block;
     width: 100%;
     height: 100%;
     border: 0;
-    filter: grayscale(1) invert(0.92) contrast(0.82) brightness(0.96);
-    transition: filter var(--h3) var(--egri);
+    /* Tekerlek olayları sayfaya geçsin diye kapalı; tıklamayla açılıyor */
+    pointer-events: none;
+    filter: grayscale(var(--harita-gri)) invert(0.92) contrast(0.82) brightness(0.96);
 }
 
-.harita:hover .harita__cerceve,
-.harita:focus-within .harita__cerceve {
-    filter: grayscale(0.7) invert(0.9) contrast(0.9) brightness(1);
+.harita--etkin .harita__cerceve {
+    pointer-events: auto;
 }
 
 .harita__perde {
     position: absolute;
     inset-inline: 0;
     inset-block-end: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--b3);
     padding: var(--b5);
     background: linear-gradient(to top, rgba(8, 8, 10, 0.9), rgba(8, 8, 10, 0));
+    /* Tıklama .harita'ya düşsün: etkinleştirmeyi o dinliyor */
     pointer-events: none;
     transition: opacity var(--h3) var(--egri);
 }
 
 .harita:hover .harita__perde {
-    opacity: 0.55;
+    opacity: 0.72;
+}
+
+.harita__ipucu {
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity var(--h2) var(--egri);
+}
+
+.harita:hover .harita__ipucu {
+    opacity: 1;
+}
+
+/* Dokunmatikte hover yok; ipucu görünür olmalı yoksa haritanın
+   dokunmayla açıldığı hiç anlaşılmaz */
+@media (hover: none) {
+    .harita__ipucu {
+        opacity: 1;
+    }
+}
+
+/* Etkinleşince ipucu görevini tamamlar */
+.harita--etkin .harita__ipucu {
+    opacity: 0;
+}
+
+.harita--etkin .harita__perde {
+    opacity: 0.35;
 }
 
 .harita__yer {
