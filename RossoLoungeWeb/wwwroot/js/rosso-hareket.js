@@ -710,7 +710,7 @@
        yok. Premium his artık imlecin kendisinde değil, imlecin
        DOKUNDUĞU öğelerde.
 
-       İki bağımsız modül, ikisi de aynı iskeleti kullanıyor:
+       Üç bağımsız modül, üçü de aynı iskeleti kullanıyor:
          · Kutu ölçüsü mouseenter'da BİR KEZ okunuyor. mousemove
            içinde getBoundingClientRect çağırmak her karede düzen
            hesabı demek — kaydırırken kutu bayatlıyor ama modüller
@@ -719,7 +719,7 @@
            sönümleniyor; ikisi de kompozisyon katmanında kalıyor.
          · mouseleave durumu sıfırlıyor — takılı kalma yok.
 
-       İkisi de kaba işaretçide (dokunmatik) ve hareket azaltmada hiç
+       Üçü de kaba işaretçide (dokunmatik) ve hareket azaltmada hiç
        kurulmuyor: dinleyici bile bağlanmıyor.
 
        MANYETİK ÇEKİM KALDIRILDI. İki ayrı yerde vardı: burada butonlar
@@ -730,9 +730,10 @@
        ========================================================= */
 
     var ISIK_SECICI = '.vitrin__kart, .form-panel';
+    var MUREKKEP_SECICI = '.btn, .nav__eylem, .paylas__gonder, .konsiyer__gonder';
     var EGILME_SECICI = '.galeri__foto, .hakkinda__foto';
 
-    /* KUTU BAYATLAMASI — iki modülün de ortak tuzağı.
+    /* KUTU BAYATLAMASI — üç modülün de ortak tuzağı.
 
        Ölçüm mouseenter'da bir kez yapılıyor; mousemove içinde
        getBoundingClientRect çağırmak her karede düzen hesabı demek.
@@ -753,6 +754,121 @@
         };
     }
 
+
+    /* --- BUTON MÜREKKEBİ ---
+       İmleç butona girince içeride sıvı bir leke akıyor. Dört leke,
+       her biri bir öncekinden DAHA GEÇ yetişiyor: imleç hareket
+       ederken arkada kuyruk oluşuyor, imleç durunca hepsi aynı
+       noktaya varıp tek damlada birleşiyor. Kaynaşmayı CSS'teki
+       gooey filtresi yapıyor, burada yalnızca konum sürülüyor.
+
+       Buton KIPIRDAMIYOR — manyetik çekim bilerek kaldırılmıştı;
+       hareket yalnızca butonun İÇİNDE kalıyor.
+
+       DOM yükü: buton başına 5 düğüm, sayfa ömrü boyunca bir kez. */
+    function murekkepEfekti() {
+        if (!inceIsaretci || azHareket || !gsapVar) return;
+
+        // Filtre yoksa lekeler ayrı ayrı daireler olarak görünürdü
+        if (!document.getElementById('rosso-murekkep')) return;
+
+        var LEKE_SAYISI = 4;
+        var DURGUNLUK = 420; // ms — bundan sonra "toparlanma" başlıyor
+
+        Array.prototype.forEach.call(document.querySelectorAll(MUREKKEP_SECICI), function (dugme) {
+            var kat = document.createElement('span');
+            kat.className = 'mrk';
+            kat.setAttribute('aria-hidden', 'true');
+
+            var suruculer = [];
+            for (var i = 0; i < LEKE_SAYISI; i++) {
+                var leke = document.createElement('span');
+                leke.className = 'mrk__leke';
+                kat.appendChild(leke);
+
+                /* Her leke biraz daha geç yetişiyor — kuyruk bundan.
+                   Yalnızca KONUM quickTo ile sürülüyor: o değer her
+                   mousemove'da değişiyor. Ölçek üç anda değişiyor
+                   (giriş / durgunluk / çıkış), oraya gsap.to yetiyor. */
+                var sure = 0.2 + i * 0.17;
+                suruculer.push({
+                    x: gsap.quickTo(leke, 'x', { duration: sure, ease: 'power3.out' }),
+                    y: gsap.quickTo(leke, 'y', { duration: sure, ease: 'power3.out' })
+                });
+            }
+
+            dugme.appendChild(kat);
+            gsap.set(kat.children, { scale: 0 });
+
+            var kutu = null;
+            var coz = null;
+            var sonX = 0, sonY = 0;
+            var durgunlukSayaci = null;
+
+            function konumla() {
+                if (!kutu) return;
+                var x = sonX - kutu.left;
+                var y = sonY - kutu.top;
+                suruculer.forEach(function (s) { s.x(x); s.y(y); });
+            }
+
+            /* Arkadaki lekeler biraz daha küçük: damlanın ucu incelsin. */
+            function boyut(deger, sure) {
+                gsap.to(kat.children, {
+                    scale: function (i) { return deger * (1 - i * 0.13); },
+                    duration: sure,
+                    ease: 'power2.out',
+                    overwrite: 'auto'
+                });
+            }
+
+            /* Fare durunca lekeler zaten aynı noktada birleşiyor;
+               üstüne hafifçe küçülüp sakinleşiyorlar. */
+            function durgunluguKur() {
+                clearTimeout(durgunlukSayaci);
+                durgunlukSayaci = setTimeout(function () { boyut(0.6, 0.9); }, DURGUNLUK);
+            }
+
+            function tazele() {
+                if (!kutu) return;
+                kutu = dugme.getBoundingClientRect();
+                konumla();
+            }
+
+            function birak() {
+                kutu = null;
+                clearTimeout(durgunlukSayaci);
+                if (coz) { coz(); coz = null; }
+                kat.classList.remove('mrk--acik');
+                boyut(0, 0.5);
+            }
+
+            dugme.addEventListener('mouseenter', function (olay) {
+                kutu = dugme.getBoundingClientRect();
+                sonX = olay.clientX;
+                sonY = olay.clientY;
+
+                // Lekeler imlecin girdiği noktadan doğsun
+                gsap.set(kat.children, { x: sonX - kutu.left, y: sonY - kutu.top });
+
+                kat.classList.add('mrk--acik');
+                boyut(1, 0.55);
+                durgunluguKur();
+                coz = tazelemeyeBagla(tazele);
+            });
+
+            dugme.addEventListener('mousemove', function (olay) {
+                if (!kutu) return;
+                sonX = olay.clientX;
+                sonY = olay.clientY;
+                konumla();
+                boyut(1, 0.35);
+                durgunluguKur();
+            }, { passive: true });
+
+            dugme.addEventListener('mouseleave', birak);
+        });
+    }
 
     /* --- YAKINLIK IŞIĞI ---
        Koyu kartın zemininde, imlecin altında süzülen bronz parıltı.
@@ -2496,7 +2612,7 @@
         if (acildi) return;
         acildi = true;
 
-        [lenisBaslat, gezinmeBagla, navIzleyici, yakinlikIsigi, egilmeEfekti, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, imzaBolumu, gorunurlukEmniyeti]
+        [lenisBaslat, gezinmeBagla, navIzleyici, murekkepEfekti, yakinlikIsigi, egilmeEfekti, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, imzaBolumu, gorunurlukEmniyeti]
             .forEach(function (modul) {
                 try { modul(); } catch (h) {
                     if (window.console) console.error('rosso:', modul.name, h);

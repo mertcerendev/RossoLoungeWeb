@@ -3381,3 +3381,92 @@ body:not(.panel) footer.finale {
     height: 100%;
     object-fit: cover;
 }
+
+/* =============================================================
+   BUTON MÜREKKEBİ
+
+   İmleç butona girince içeride sıvı bir leke akıyor; imleç
+   hareket ettikçe arkasında kuyruk bırakıyor, DURUNCA lekeler
+   tek damlada birleşip sakinleşiyor, çıkınca siliniyor.
+
+   Dört ayrı leke var ama tek bir sıvı gibi görünüyorlar: katmana
+   uygulanan gooey filtresi (feGaussianBlur + feColorMatrix)
+   birbirine değen alfaları kaynaştırıyor.
+
+   Buton KIPIRDAMIYOR — hareket yalnızca butonun İÇİNDE.
+   ============================================================= */
+.svg-tanim {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+/* z-index: -1 + isolation: isolate — boyama sırası gereği katman
+   butonun KENDİ zemininden sonra, yazısından önce boyanıyor.
+   overflow: hidden lekeleri hap biçimine kırpıyor. */
+.btn,
+.nav__eylem {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+}
+
+.paylas__gonder,
+.konsiyer__gonder {
+    isolation: isolate;
+}
+
+.mrk {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+    filter: url(#rosso-murekkep);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--h2) var(--egri), visibility 0s linear var(--h2);
+}
+
+/* Görünmezken visibility: hidden — filtre o zaman hiç hesaplanmıyor.
+
+   SAYDAMLIK KATMANDA, leke renginde DEĞİL. Sebebi: gooey filtresinin
+   feColorMatrix'i alfayı eşikleyip sertleştiriyor — yarı saydam bir
+   leke rengi filtreden neredeyse tam opak çıkıyor ve buton "silinmiş"
+   gibi görünüyordu (ekran görüntüsüyle görüldü). Lekeler tam alfayla
+   kaynaşıyor, inceltmeyi sonra katman yapıyor. */
+.mrk--acik {
+    opacity: 0.55;
+    visibility: visible;
+    transition: opacity var(--h2) var(--egri), visibility 0s;
+}
+
+.mrk__leke {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    /* Butonun yüksekliğine yakın: hareket ederken lekeler tek bir
+       şeride kaynaşıyor. Daha küçük yaptığımda yazının arkasında
+       dolaşan bir nokta gibi duruyordu, "boya" hissi vermiyordu. */
+    width: var(--leke-boy, 60px);
+    height: var(--leke-boy, 60px);
+    /* Negatif kenar boşluğu: GSAP'in yazdığı translate lekenin
+       MERKEZİNİ imlece oturtuyor */
+    margin: calc(var(--leke-boy, 60px) / -2);
+    border-radius: 50%;
+    background: var(--mrk-renk, var(--sampanya));
+    will-change: transform;
+}
+
+/* Açık zeminli butonlarda şampanya mürekkep kaybolur; bronz */
+.paylas__gonder,
+.konsiyer__gonder {
+    --mrk-renk: #4a3618;
+}
+
+/* Navbar düğmesi kısa: leke de küçülüyor */
+.nav__eylem {
+    --leke-boy: 40px;
+}
