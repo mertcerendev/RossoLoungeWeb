@@ -245,7 +245,18 @@
     position: absolute;
     inset: -8%;
     z-index: var(--k-zemin);
-    background-image: url('/img/site/hero-lounge.jpg');
+    /* hero-lounge.jpg KALDIRILDI: içki rafı ve bar tezgâhıydı.
+       Burası bar değil, restoran — açılış ekranı da salonu göstersin.
+
+       salon.jpg, ic-mekan.jpg'nin SOL ŞERİDİ KESİLMİŞ hâli: orada
+       aydınlatmalı bir şarap dolabı vardı ve kadrajın soluna
+       düşüyordu. Kesince yalnızca masalar, sandalyeler ve pirinç
+       paravan kalıyor.
+
+       (hero-lounge.jpg, bar.jpg ve ic-mekan.jpg dosyaları
+       wwwroot/img/site/ içinde duruyor ama hiçbir yerden referans
+       verilmiyor — silmek isterseniz güvenle silinebilirler.) */
+    background-image: url('/img/site/salon.jpg');
     background-size: cover;
     background-position: center;
     will-change: transform;

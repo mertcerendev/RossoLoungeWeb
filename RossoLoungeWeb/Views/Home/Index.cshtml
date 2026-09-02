@@ -20,15 +20,23 @@
     // Görseller veritabanına taşındığında YALNIZCA bu atama değişir
     // (ör. ViewBag.Galeri as List<Galeri>); aşağıdaki @foreach bloğu
     // ve tüm animasyon kancaları aynen çalışmaya devam eder.
+    //
+    // ÇIKARILANLAR — burası bar değil, restoran:
+    //   bar.jpg      → içki rafı ve bar tezgâhı
+    //   paylasim.jpg → kadrajın solunda yarım içilmiş bira bardağı
+    //   ic-mekan.jpg → solunda aydınlatmalı şarap dolabı; o şerit
+    //                  kesilip salon.jpg olarak kaydedildi
+    // Yerlerine mekânın KENDİ fotoğrafları geldi (img/urunler'den
+    // kopyalandı, kaynak dosyalara dokunulmadı): firindan.jpg, kahve.jpg.
     var galeriKareleri = new[]
     {
-        new { Gorsel = "/img/site/ic-mekan.jpg", Etiket = "Salon",       Alt = "Koyu ahşap ve pirinç detaylı iç mekân, hazırlanmış masalar", Genis = true  },
-        new { Gorsel = "/img/site/bar.jpg",      Etiket = "Bar",         Alt = "Bar tezgâhı ve arkasındaki içki rafları",                    Genis = false },
-        new { Gorsel = "/img/site/bahce.jpg",    Etiket = "Deniz Terası", Alt = "Deniz manzaralı, tenteli açık hava terası",                 Genis = true  },
-        new { Gorsel = "/img/site/sef.jpg",      Etiket = "Mutfak",      Alt = "Şefimiz servis öncesi malzemeleri hazırlarken",              Genis = false },
-        new { Gorsel = "/img/site/sunum.jpg",    Etiket = "Sunum",       Alt = "Tepeden çekilmiş, tabakta sunulan ana yemekler",             Genis = false },
-        new { Gorsel = "/img/site/paylasim.jpg", Etiket = "Paylaşmak",   Alt = "Masada paylaşılan tabaklar ve arkadaş sofrası",              Genis = true  },
-        new { Gorsel = "/img/site/sofra.jpg",    Etiket = "Akşam Sofrası", Alt = "Mum ışığında kurulmuş akşam sofrası",                      Genis = false }
+        new { Gorsel = "/img/site/salon.jpg",    Etiket = "Salon",         Alt = "Pirinç paravanlı salon, hazırlanmış masalar",                 Genis = true  },
+        new { Gorsel = "/img/site/firindan.jpg", Etiket = "Fırından",      Alt = "Koyu mermer tabakta, parmesanla servis edilen fırın makarnası", Genis = false },
+        new { Gorsel = "/img/site/bahce.jpg",    Etiket = "Deniz Terası",  Alt = "Deniz manzaralı, tenteli açık hava terası",                   Genis = true  },
+        new { Gorsel = "/img/site/sef.jpg",      Etiket = "Mutfak",        Alt = "Şefimiz servis öncesi malzemeleri hazırlarken",               Genis = false },
+        new { Gorsel = "/img/site/sunum.jpg",    Etiket = "Sunum",         Alt = "Tepeden çekilmiş, tabakta sunulan ana yemekler",              Genis = false },
+        new { Gorsel = "/img/site/kahve.jpg",    Etiket = "Kahve",         Alt = "Altın yaldızlı fincanda Türk kahvesi ve porselen demlik",     Genis = false },
+        new { Gorsel = "/img/site/sofra.jpg",    Etiket = "Akşam Sofrası", Alt = "Mermer masada paylaşılan tabaklar; makarna, pizza ve salata", Genis = true  }
     };
 }
 
@@ -109,8 +117,11 @@
                 <div class="hakkinda__gorseller">
                     <figure class="hakkinda__cerceve hakkinda__cerceve--genis" data-parallax="-14">
                         <img class="hakkinda__foto"
-                             src="/img/site/aksam-masa.jpg"
-                             alt="Akşam ışığında hazırlanmış masa, kadehler ve tabaklar"
+                             @* aksam-masa.jpg KALDIRILDI: ön planda şarap
+                                kadehleri ve şişeler vardı. Yerine mekânın
+                                kendi tabağı geldi. *@
+                             src="/img/site/mangal.jpg"
+                             alt="Tabakta ızgara köfte, tavuk şiş, közlenmiş biber ve patates"
                              loading="eager" decoding="async" width="1800" height="1200">
                     </figure>
 
