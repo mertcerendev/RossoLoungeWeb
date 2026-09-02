@@ -710,7 +710,7 @@
        yok. Premium his artık imlecin kendisinde değil, imlecin
        DOKUNDUĞU öğelerde.
 
-       Üç bağımsız modül, üçü de aynı iskeleti kullanıyor:
+       İki bağımsız modül, ikisi de aynı iskeleti kullanıyor:
          · Kutu ölçüsü mouseenter'da BİR KEZ okunuyor. mousemove
            içinde getBoundingClientRect çağırmak her karede düzen
            hesabı demek — kaydırırken kutu bayatlıyor ama modüller
@@ -719,15 +719,20 @@
            sönümleniyor; ikisi de kompozisyon katmanında kalıyor.
          · mouseleave durumu sıfırlıyor — takılı kalma yok.
 
-       Üçü de kaba işaretçide (dokunmatik) ve hareket azaltmada hiç
+       İkisi de kaba işaretçide (dokunmatik) ve hareket azaltmada hiç
        kurulmuyor: dinleyici bile bağlanmıyor.
+
+       MANYETİK ÇEKİM KALDIRILDI. İki ayrı yerde vardı: burada butonlar
+       ve menü bağlantıları için, bir de form gönder butonlarında
+       (manyetikDugme). Tıklanabilir her şeyin imlece esnemesi gereksiz
+       ve yorucuydu — tek bir öğede istenirse geri gelir, ama "hepsine
+       uygula" doğru değildi.
        ========================================================= */
 
-    var MANYETIK_SECICI = '.btn, .nav__link, .nav__eylem, .nav__marka, .basa-don';
     var ISIK_SECICI = '.vitrin__kart, .form-panel';
     var EGILME_SECICI = '.galeri__foto, .hakkinda__foto';
 
-    /* KUTU BAYATLAMASI — üç modülün de ortak tuzağı.
+    /* KUTU BAYATLAMASI — iki modülün de ortak tuzağı.
 
        Ölçüm mouseenter'da bir kez yapılıyor; mousemove içinde
        getBoundingClientRect çağırmak her karede düzen hesabı demek.
@@ -748,108 +753,6 @@
         };
     }
 
-    /* --- MANYETİK ÖĞELER ---
-       Öğe, imlecin merkeze göre sapmasının bir oranı kadar kayıyor;
-       fare çıkınca yaylanarak yerine oturuyor (elastic).
-
-       Sapma SINIRLANIYOR: "Rezervasyon" gibi geniş bir düğmede oran
-       tek başına bırakılsa öğe kutusundan taşacak kadar sürükleniyor. */
-    function manyetikOgeler() {
-        if (!inceIsaretci || azHareket || !gsapVar) return;
-
-        var GUC = 0.3;
-        var EN_COK = 9; // piksel
-        var PAY = 4;    // dinlenme kutusunun dışına küçük tolerans
-
-        Array.prototype.forEach.call(document.querySelectorAll(MANYETIK_SECICI), function (oge) {
-            /* Tek quickTo çifti: takip ve dönüş aynı tween üzerinden.
-               İkinci bir gsap.to() açmak quickTo'nun tween'ini ezip
-               fonksiyonu sessizce ölü bırakıyor. */
-            var xe = gsap.quickTo(oge, 'x', { duration: 0.6, ease: 'elastic.out(1, 0.8)' });
-            var ye = gsap.quickTo(oge, 'y', { duration: 0.6, ease: 'elastic.out(1, 0.8)' });
-
-            var kutu = null;
-            var coz = null;
-            var sonX = 0, sonY = 0;
-
-            /* Öğe o an kaymış olabilir; kaymayı geri çıkarıp DİNLENME
-               kutusunu buluyoruz. Çıkış kontrolü bu kutuya bakıyor. */
-            function dinlenmeKutusu() {
-                var k = oge.getBoundingClientRect();
-                var dx = gsap.getProperty(oge, 'x') || 0;
-                var dy = gsap.getProperty(oge, 'y') || 0;
-
-                return {
-                    left: k.left - dx, right: k.right - dx,
-                    top: k.top - dy, bottom: k.bottom - dy,
-                    width: k.width, height: k.height
-                };
-            }
-
-            function uygula() {
-                if (!kutu) return;
-                xe(gsap.utils.clamp(-EN_COK, EN_COK, (sonX - (kutu.left + kutu.width / 2)) * GUC));
-                ye(gsap.utils.clamp(-EN_COK, EN_COK, (sonY - (kutu.top + kutu.height / 2)) * GUC));
-            }
-
-            /* DİNLEYİCİ ÖĞEDE DEĞİL BELGEDE, çıkış da dinlenme kutusuna
-               göre. Sebebi ölçümle bulundu:
-
-                 öğe imlece doğru kayıyor → karşı kenarı imlecin altından
-                 çekiliyor → tarayıcı mouseleave yolluyor → öğe yerine
-                 dönüyor → imleç yine içeride kalıyor → mouseenter...
-
-               Kenarlarda titreyen bir döngü. Dinlenme kutusu kaymadığı
-               için bu döngü hiç kurulmuyor. */
-            function surukle(olay) {
-                if (!kutu) return;
-
-                sonX = olay.clientX;
-                sonY = olay.clientY;
-
-                if (sonX < kutu.left - PAY || sonX > kutu.right + PAY ||
-                    sonY < kutu.top - PAY || sonY > kutu.bottom + PAY) {
-                    birak();
-                    return;
-                }
-
-                uygula();
-            }
-
-            function tazele() {
-                if (!kutu) return;
-                kutu = dinlenmeKutusu();
-
-                // Kaydırma öğeyi imlecin altından çıkardıysa bırak
-                if (sonX < kutu.left - PAY || sonX > kutu.right + PAY ||
-                    sonY < kutu.top - PAY || sonY > kutu.bottom + PAY) {
-                    birak();
-                    return;
-                }
-
-                uygula();
-            }
-
-            function birak() {
-                kutu = null;
-                document.removeEventListener('mousemove', surukle);
-                if (coz) { coz(); coz = null; }
-                xe(0);
-                ye(0);
-            }
-
-            oge.addEventListener('mouseenter', function (olay) {
-                if (kutu) return;
-
-                sonX = olay.clientX;
-                sonY = olay.clientY;
-                kutu = dinlenmeKutusu();
-
-                document.addEventListener('mousemove', surukle, { passive: true });
-                coz = tazelemeyeBagla(tazele);
-            });
-        });
-    }
 
     /* --- YAKINLIK IŞIĞI ---
        Koyu kartın zemininde, imlecin altında süzülen bronz parıltı.
@@ -2074,23 +1977,6 @@
             yaz();
         }
 
-        manyetikDugme(form.querySelector('.paylas__gonder'));
-    }
-
-    /* ---------- Manyetik gönder butonu ---------- */
-    function manyetikDugme(dugme) {
-        if (!dugme || !inceIsaretci || azHareket || !gsapVar) return;
-
-        var xAyar = gsap.quickTo(dugme, 'x', { duration: 0.45, ease: 'power3.out' });
-        var yAyar = gsap.quickTo(dugme, 'y', { duration: 0.45, ease: 'power3.out' });
-
-        dugme.addEventListener('mousemove', function (olay) {
-            var r = dugme.getBoundingClientRect();
-            xAyar((olay.clientX - (r.left + r.width / 2)) * 0.28);
-            yAyar((olay.clientY - (r.top + r.height / 2)) * 0.34);
-        }, { passive: true });
-
-        dugme.addEventListener('mouseleave', function () { xAyar(0); yAyar(0); });
     }
 
     /* ---------- Gönderim durumu ----------
@@ -2385,7 +2271,7 @@
        - Başlık kelime kelime maskeden yükseliyor (SplitText)
        - Bilgi satırları kaydırmada sırayla, aşağıdan yukarı
          maskelenerek açılıyor (.kn-maske → clip-path)
-       - İki formun gönder butonu manyetik + "İletiliyor" durumlu
+       - İki formun gönder butonunda "İletiliyor" durumu
 
        .kn-maske gizlemesi yalnızca html.rosso-kinetik altında
        geçerli ve gorunurlukEmniyeti onu zaten temizliyor; GSAP
@@ -2398,7 +2284,6 @@
         // Formlar ve harita kinetik moddan bağımsız çalışmalı
         Array.prototype.slice.call(bolum.querySelectorAll('.konsiyer__form')).forEach(function (form) {
             var dugme = form.querySelector('.konsiyer__gonder');
-            manyetikDugme(dugme);
             gonderimDurumu(form, dugme);
         });
 
@@ -2611,7 +2496,7 @@
         if (acildi) return;
         acildi = true;
 
-        [lenisBaslat, gezinmeBagla, navIzleyici, manyetikOgeler, yakinlikIsigi, egilmeEfekti, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, imzaBolumu, gorunurlukEmniyeti]
+        [lenisBaslat, gezinmeBagla, navIzleyici, yakinlikIsigi, egilmeEfekti, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, imzaBolumu, gorunurlukEmniyeti]
             .forEach(function (modul) {
                 try { modul(); } catch (h) {
                     if (window.console) console.error('rosso:', modul.name, h);

@@ -2428,7 +2428,7 @@
 }
 
 /* =============================================================
-   GÖNDER — manyetik buton + iletim durumu
+   GÖNDER — iletim durumu
    ============================================================= */
 .paylas__gonder,
 .konsiyer__gonder {
@@ -3137,7 +3137,6 @@ body:not(.panel) footer.finale {
    gösteriyor. Dolum SVG yayında (stroke-dashoffset): tek bir sayı
    yazımı, düzen hesabı yok.
 
-   Manyetik çekim ayrıca uygulanıyor — .basa-don MANYETIK_SECICI'de.
    ------------------------------------------------------------- */
 .basa-don {
     position: fixed;
