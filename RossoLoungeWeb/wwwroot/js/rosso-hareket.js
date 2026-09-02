@@ -865,96 +865,215 @@
         });
     }
 
+    /* =========================================================
+       11. KARTA — tam menü sayfası
+       -------------------------------------------------------------
+       İki işi var:
+
+       a) CANLI ARAMA — tuşa basıldığı an DOM'da süzme. Havuz bir kez
+          kuruluyor (data-ara), her vuruşta yeniden okunmuyor. Türkçe
+          sadeleştirme var: "sarap" yazınca "Şarap" da geliyor.
+          Arama başlayınca kategori "Tümü"ye dönüyor — aksi hâlde
+          kategori ∩ arama boş çıkıp "arama bozuk" hissi veriyor.
+
+       b) KATEGORİ GEÇİŞİ — GSAP ile blur + yukarı kayma, kademeli.
+          Arama ANİMASYONSUZ (anlık olması gerekiyor), animasyon
+          yalnızca kategori tıklamasına ayrıldı.
+
+       Blur pahalı bir filtre: yalnızca o an EKRANDA olan kalemlere
+       uygulanıyor. Alttakiler doğrudan açık geliyor, kullanıcı oraya
+       vardığında farkı görmüyor.
+       ========================================================= */
     function menuSergisi() {
-        var bolum = document.querySelector('.menu');
+        var bolum = document.querySelector('.menu--karta');
         if (!bolum) return;
 
-        var liste = bolum.querySelector('#menu-liste');
+        var akis = bolum.querySelector('.menu__akis');
         var kalemler = Array.prototype.slice.call(bolum.querySelectorAll('.menu__kalem'));
+        var odalar = Array.prototype.slice.call(bolum.querySelectorAll('.menu__oda'));
         var sekmeler = Array.prototype.slice.call(bolum.querySelectorAll('.menu__sekme'));
+        var alan = bolum.querySelector('.menu__ara-alan');
+        var sayac = bolum.querySelector('.menu__sayac-adet');
         var bosMesaj = bolum.querySelector('.menu__bos');
-        if (!liste || !kalemler.length) return;
+        if (!akis || !kalemler.length) return;
+
+        /* Türkçe sadeleştirme. toLocaleLowerCase('tr') "İ"yi "i"ye,
+           "I"yı "ı"ya çeviriyor; ardından ı→i ile ikisi de aynı
+           noktada buluşuyor. Böylece "Italyan" da "İtalyan" da bulunuyor. */
+        function sadelestir(metin) {
+            return (metin || '').toLocaleLowerCase('tr')
+                .replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g')
+                .replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c')
+                .replace(/â/g, 'a').replace(/î/g, 'i').replace(/û/g, 'u')
+                .replace(/\s+/g, ' ').trim();
+        }
+
+        var havuz = kalemler.map(function (kalem) {
+            return {
+                oge: kalem,
+                kat: kalem.getAttribute('data-kategori'),
+                metin: sadelestir(kalem.getAttribute('data-ara'))
+            };
+        });
 
         /* ---------- Giriş animasyonu ---------- */
+        var girisler = [];
+
         if (kinetik) {
-            gsap.to(bolum.querySelectorAll('.menu__bas > *'), {
-                autoAlpha: 1, y: 0, duration: 0.9, ease: 'expo.out', stagger: 0.08,
-                scrollTrigger: { trigger: bolum, start: 'top 78%' }
-            });
+            girisler.push(gsap.fromTo(bolum.querySelectorAll('.menu__bas > *'),
+                { autoAlpha: 0, y: 26 },
+                { autoAlpha: 1, y: 0, duration: 0.9, ease: 'expo.out', stagger: 0.08 }));
 
-            gsap.to(kalemler, {
-                autoAlpha: 1, duration: 0.7, ease: 'power2.out', stagger: 0.04,
-                scrollTrigger: { trigger: liste, start: 'top 85%' }
-            });
-        }
+            girisler.push(gsap.fromTo(bolum.querySelector('.menu__ray-ic'),
+                { autoAlpha: 0, y: 18 },
+                { autoAlpha: 1, y: 0, duration: 0.9, ease: 'expo.out', delay: 0.22 }));
 
-        /* ---------- Kategori filtresi ---------- */
-        function filtrele(deger) {
-            var flipVar = kinetik && typeof window.Flip !== 'undefined';
-            var durum = flipVar ? Flip.getState(kalemler) : null;
+            odalar.forEach(function (oda) {
+                var sira = [oda.querySelector('.menu__oda-bas')].concat(
+                    Array.prototype.slice.call(oda.querySelectorAll('.menu__kalem')));
 
-            var gorunen = 0;
-            kalemler.forEach(function (kalem) {
-                var uygun = deger === 'tumu' || kalem.dataset.kategori === deger;
-                kalem.hidden = !uygun;
-                if (uygun) gorunen++;
-            });
-
-            liste.classList.toggle('menu__liste--filtreli', deger !== 'tumu');
-            if (bosMesaj) bosMesaj.hidden = gorunen > 0;
-
-            if (!flipVar) return;
-
-            Flip.from(durum, {
-                duration: 0.62,
-                ease: 'power2.inOut',
-                absolute: true,
-                // Ayrılanlar bulanıklaşarak çıkar
-                onLeave: function (ogeler) {
-                    gsap.to(ogeler, { autoAlpha: 0, filter: 'blur(8px)', duration: 0.32, ease: 'power2.in' });
-                },
-                // Girenler yukarıdan, bulanıklıktan netleşerek yerleşir
-                onEnter: function (ogeler) {
-                    gsap.fromTo(ogeler,
-                        { autoAlpha: 0, y: -26, filter: 'blur(10px)' },
-                        { autoAlpha: 1, y: 0, filter: 'blur(0px)', duration: 0.55, ease: 'expo.out', stagger: 0.035 });
-                }
+                girisler.push(gsap.fromTo(sira,
+                    { autoAlpha: 0, y: 22 },
+                    {
+                        autoAlpha: 1, y: 0, duration: 0.75, ease: 'power2.out',
+                        stagger: { amount: Math.min(0.45, sira.length * 0.04) },
+                        scrollTrigger: { trigger: oda, start: 'top 88%' }
+                    }));
             });
         }
 
-        sekmeler.forEach(function (sekme) {
-            sekme.addEventListener('click', function () {
-                if (sekme.classList.contains('menu__sekme--aktif')) return;
+        /* Süzme başlayınca kaydırmaya bağlı açılışın işi biter: gizli
+           kalmış kalemler süzgeçten geçip görünür olabilir, o yüzden
+           tetikleyiciler sökülüp hepsi açık duruma çekiliyor. */
+        var acildi = false;
 
-                sekmeler.forEach(function (s) {
-                    var aktif = s === sekme;
-                    s.classList.toggle('menu__sekme--aktif', aktif);
-                    s.setAttribute('aria-selected', aktif ? 'true' : 'false');
-                    s.tabIndex = aktif ? 0 : -1;
+        function perdeyiKaldir() {
+            if (acildi) return;
+            acildi = true;
+
+            girisler.forEach(function (tw) {
+                if (tw.scrollTrigger) tw.scrollTrigger.kill();
+                tw.kill();
+            });
+            girisler.length = 0;
+
+            gsap.set(bolum.querySelectorAll(
+                '.menu__bas > *, .menu__ray-ic, .menu__oda-bas, .menu__kalem'),
+                { autoAlpha: 1, y: 0 });
+        }
+
+        /* ---------- Süzme ---------- */
+        var aktifKat = 'tumu';
+        var sorgu = '';
+
+        function suz(animasyonlu) {
+            perdeyiKaldir();
+
+            var gorunen = [];
+            havuz.forEach(function (k) {
+                var uygun = (aktifKat === 'tumu' || k.kat === aktifKat) &&
+                            (!sorgu || k.metin.indexOf(sorgu) !== -1);
+                k.oge.hidden = !uygun;
+                if (uygun) gorunen.push(k.oge);
+            });
+
+            // Tek ürünü kalmayan oda başlığıyla birlikte kapanıyor
+            odalar.forEach(function (oda) {
+                oda.hidden = !oda.querySelector('.menu__kalem:not([hidden])');
+            });
+
+            if (sayac) sayac.textContent = gorunen.length;
+            if (bosMesaj) bosMesaj.hidden = gorunen.length > 0;
+
+            if (animasyonlu && kinetik && gorunen.length) {
+                gsap.set(gorunen, { autoAlpha: 1, y: 0, clearProps: 'filter' });
+
+                var ekranda = gorunen.filter(function (oge) {
+                    var kutu = oge.getBoundingClientRect();
+                    return kutu.bottom > 0 && kutu.top < window.innerHeight;
                 });
 
-                filtrele(sekme.dataset.filtre);
+                if (ekranda.length) {
+                    gsap.fromTo(ekranda,
+                        { autoAlpha: 0, y: 26, filter: 'blur(10px)' },
+                        {
+                            autoAlpha: 1, y: 0, filter: 'blur(0px)',
+                            duration: 0.7, ease: 'expo.out', overwrite: true,
+                            stagger: { amount: Math.min(0.45, ekranda.length * 0.03) },
+                            clearProps: 'filter'
+                        });
+                }
+            }
+
+            // Sayfa boyu değişti: yapışkan ray ve başa-dön eşiği bayatlamasın
+            if (gsapVar && window.ScrollTrigger) ScrollTrigger.refresh();
+        }
+
+        /* ---------- Kategori rayı ---------- */
+        sekmeler.forEach(function (sekme) {
+            sekme.addEventListener('click', function () {
+                var deger = sekme.getAttribute('data-filtre');
+                if (deger === aktifKat && !sorgu) return;
+
+                aktifKat = deger;
+
+                /* Kategori seçimi aramayı temizliyor: ikisi birden açıkken
+                   "kategoriye tıkladım ama hiçbir şey gelmedi" durumu doğuyor. */
+                if (alan && alan.value) {
+                    alan.value = '';
+                    sorgu = '';
+                }
+
+                sekmeleriIsaretle();
+                suz(true);
+                akisaDon();
             });
         });
 
-        // Ok tuşlarıyla sekmeler arası gezinme (WAI-ARIA tab deseni)
-        var sekmeKabi = bolum.querySelector('.menu__filtre-ic');
-        if (sekmeKabi) {
-            sekmeKabi.addEventListener('keydown', function (olay) {
-                var su = sekmeler.indexOf(document.activeElement);
-                if (su < 0) return;
-                var hedef = null;
-                if (olay.key === 'ArrowRight') hedef = sekmeler[(su + 1) % sekmeler.length];
-                else if (olay.key === 'ArrowLeft') hedef = sekmeler[(su - 1 + sekmeler.length) % sekmeler.length];
-                else if (olay.key === 'Home') hedef = sekmeler[0];
-                else if (olay.key === 'End') hedef = sekmeler[sekmeler.length - 1];
-                if (!hedef) return;
-                olay.preventDefault();
-                hedef.focus();
-                hedef.click();
+        function sekmeleriIsaretle() {
+            sekmeler.forEach(function (s) {
+                var etkin = s.getAttribute('data-filtre') === aktifKat;
+                s.classList.toggle('menu__sekme--aktif', etkin);
+                s.setAttribute('aria-pressed', etkin ? 'true' : 'false');
             });
         }
 
+        /* Süzme sonrası liste kısalıyor; kullanıcı listenin altındaysa
+           boş alana bakakalıyor. Yalnızca akış ekranın ÜSTÜNDE kaldıysa
+           hizaya çekiliyor — görünürken kaydırma yapılmıyor. */
+        function akisaDon() {
+            if (akis.getBoundingClientRect().top >= -40) return;
+            if (window.rossoKaydir) window.rossoKaydir(bolum.querySelector('.menu__duzen'));
+        }
+
+        /* ---------- Canlı arama ---------- */
+        if (alan) {
+            var zamanlayici = null;
+
+            alan.addEventListener('input', function () {
+                clearTimeout(zamanlayici);
+                zamanlayici = setTimeout(function () {
+                    var yeni = sadelestir(alan.value);
+                    if (yeni === sorgu) return;
+                    sorgu = yeni;
+
+                    // Arama tüm menüde geçerli; kategori kısıtı kalkıyor
+                    if (sorgu && aktifKat !== 'tumu') {
+                        aktifKat = 'tumu';
+                        sekmeleriIsaretle();
+                    }
+
+                    suz(false);
+                }, 120);
+            });
+
+            alan.addEventListener('keydown', function (olay) {
+                if (olay.key !== 'Escape' || !alan.value) return;
+                alan.value = '';
+                sorgu = '';
+                suz(false);
+            });
+        }
     }
 
     /* =========================================================
@@ -1945,7 +2064,7 @@
                 ' .hero__baslik, .hero__ustbaslik, .hero__alt, .hero__eylemler,' +
                 ' .hero__eylemler > *, .hero__durum,' +
                 ' .nav__marka, .nav__menu > li, .nav__eylem,' +
-                ' .menu__kalem, .menu__bas > *,' +
+                ' .menu__kalem, .menu__bas > *, .menu__ray-ic, .menu__oda-bas,' +
                 ' .vitrin__kart, .vitrin__bas > *, .vitrin__eylem,' +
                 ' .defter__yaprak, .defter__satir, .defter__isaret, .defter__imza,' +
                 ' .paylas__panel, .paylas__zemin, .paylas__ustbaslik, .paylas__baslik,' +
