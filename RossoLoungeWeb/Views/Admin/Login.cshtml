@@ -1,24 +1,21 @@
-@*
+﻿@*
     YÖNETİCİ GİRİŞİ
     ===============================================================
     Panelin tek kayıtsız (anonim) ekranı. Kendi kabuğunu taşıyor —
     kenar çubuğu ve üst bar burada anlamsız olduğu için
     _AdminLayout kullanılmıyor.
 
-    ⚠️ KİMLİK DOĞRULAMA — MEVCUT DURUM
-    Bu proje ASP.NET Core Identity KULLANMIYOR. Kimlik doğrulama
-    `Yonetici` tablosu + BCrypt + oturum (session) üzerinden
-    yürüyor; hedef `AdminController.LoginYap(string KullaniciAdi,
-    string Sifre)`.
+    KİMLİK DOĞRULAMA: ASP.NET Core Identity.
+    Hedef `AdminController.LoginYap(GirisModeli)`; alanlar kullanıcı
+    adı / şifre / beni hatırla. Yönetici e-posta ile değil kullanıcı
+    adıyla giriyor, ama form her ikisini de kabul ediyor (controller
+    önce kullanıcı adı, bulamazsa e-posta arıyor).
 
-    Identity'ye geçilirse burada değişecek TEK yer aşağıdaki form:
-      action → /Identity/Account/Login
-      name'ler → Input.Email, Input.Password, Input.RememberMe
-    Görsel yapının (kart, yüzen etiket, doğrulama özeti) hiçbiri
-    değişmez. Kayıt (Register) ekranı bilinçli olarak YOK: panelde
-    kendi kendine hesap açılması bir güvenlik açığı olur, yönetici
-    hesapları Ayarlar ekranından açılır.
+    Kayıt (Register) ekranı bilinçli olarak YOK: panelde kendi
+    kendine hesap açılması güvenlik açığıdır; yönetici hesapları
+    Ayarlar ekranından açılır.
 *@
+@model RossoLoungeWeb.Models.GirisModeli
 @{
     Layout = null;
     ViewData["Baslik"] = "Yönetici Girişi";
@@ -65,8 +62,8 @@
 
                 <div class="y-alan">
                     <input class="y-alan__girdi" type="text" id="kullaniciAdi" name="KullaniciAdi"
-                           placeholder=" " autocomplete="username" maxlength="50"
-                           required autofocus>
+                           value="@Model?.KullaniciAdi" placeholder=" " autocomplete="username"
+                           maxlength="50" required autofocus>
                     <label class="y-alan__etiket" for="kullaniciAdi">Kullanıcı adı</label>
                 </div>
 
@@ -80,6 +77,11 @@
                         <i class="fas fa-eye" aria-hidden="true"></i>
                     </button>
                 </div>
+
+                <label class="y-onay">
+                    <input type="checkbox" name="BeniHatirla" value="true">
+                    Beni hatırla
+                </label>
 
                 <button type="submit" class="y-dugme y-dugme--birincil y-dugme--tam">
                     Oturum Aç

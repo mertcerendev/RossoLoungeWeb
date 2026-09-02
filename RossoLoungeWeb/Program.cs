@@ -1,8 +1,10 @@
 ﻿using System.Globalization;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using RossoLoungeWeb.Binders;
 using RossoLoungeWeb.Data;
+using RossoLoungeWeb.Services;
 
 // Kültürü sabitle. Form verileri (tarih, fiyat) sunucunun bölge ayarına göre
 // yorumlanır; sabitlemezsek aynı kod yerelde ve sunucuda farklı davranır.
@@ -19,14 +21,6 @@ builder.Services.AddControllersWithViews(secenekler =>
     secenekler.ModelBinderProviders.Insert(0, new OndalikModelBinderProvider());
 });
 
-// Session
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options =>
-{
-    options.IdleTimeout = TimeSpan.FromHours(2);
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-});
 
 // DataProtection anahtarlarını diske yaz. Paylaşımlı hostingde varsayılan konum
 // uygulama havuzu geri döndüğünde kaybolur; bu da oturumların düşmesine yol açar.
@@ -39,6 +33,60 @@ builder.Services.AddDataProtection()
 // Veritabanı
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+/* -------------------------------------------------------------
+   KİMLİK DOĞRULAMA — ASP.NET Core Identity
+
+   Önceden elle yazılmış bir oturum (session) kontrolü vardı:
+   giriş bilgisi Session["User"]'a yazılıyor, her panel isteğinde
+   bir action filtresi bunu kontrol ediyordu. Identity'ye geçildi;
+   böylece kilitlenme (lockout), güvenlik damgası, şifre sıfırlama
+   jetonları ve standart [Authorize] altyapısı hazır geliyor.
+
+   Rol tabloları da kuruluyor: bugün tek bir yönetici var ve
+   [Authorize] yetiyor, ama ileride "mutfak" / "garson" gibi
+   sınırlı hesaplar açmak istenirse şema hazır olsun.
+   ------------------------------------------------------------- */
+builder.Services.AddIdentity<IdentityUser, IdentityRole>(secenekler =>
+{
+    // Şifre kuralları. Panel hesabı tek kişilik ama zayıf şifre
+    // burada tüm siteyi açar; varsayılanların çoğu korunuyor.
+    secenekler.Password.RequiredLength = 8;
+    secenekler.Password.RequireNonAlphanumeric = false;
+    secenekler.Password.RequireUppercase = true;
+    secenekler.Password.RequireLowercase = true;
+    secenekler.Password.RequireDigit = true;
+
+    // KABA KUVVET KORUMASI — daha önce hiç yoktu (DEVAM.md'de açık madde).
+    // 5 hatalı denemeden sonra hesap 15 dakika kilitlenir.
+    secenekler.Lockout.MaxFailedAccessAttempts = 5;
+    secenekler.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    secenekler.Lockout.AllowedForNewUsers = true;
+
+    secenekler.User.RequireUniqueEmail = false; // tek hesap; e-posta zorunlu benzersizlik gereksiz
+})
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddErrorDescriber<TurkceKimlikHatalari>()   // hata metinleri Türkçe
+    .AddDefaultTokenProviders();
+
+// Eski BCrypt özetleri geçerli kalsın diye (bkz. sınıfın açıklaması).
+builder.Services.AddScoped<IPasswordHasher<IdentityUser>, BcryptGecisliSifreleyici>();
+
+builder.Services.ConfigureApplicationCookie(secenekler =>
+{
+    secenekler.Cookie.Name = "RossoPanel";
+    secenekler.Cookie.HttpOnly = true;
+    secenekler.Cookie.SameSite = SameSiteMode.Lax;
+    secenekler.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+
+    // Eski oturum süresiyle aynı: 2 saat, hareket ettikçe uzuyor.
+    secenekler.ExpireTimeSpan = TimeSpan.FromHours(2);
+    secenekler.SlidingExpiration = true;
+
+    secenekler.LoginPath = "/Admin/Login";
+    secenekler.LogoutPath = "/Admin/CikisYap";
+    secenekler.AccessDeniedPath = "/Admin/Login";
+});
 
 var app = builder.Build();
 
@@ -73,8 +121,8 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseRouting();
 
-app.UseSession();
-
+// Sıra önemli: kimlik önce çözülür, yetki sonra denetlenir.
+app.UseAuthentication();
 app.UseAuthorization();
 
 /* -------------------------------------------------------------
@@ -119,5 +167,30 @@ foreach (var bolum in new[] { "hakkimizda", "galeri", "yorumlar", "iletisim", "r
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+/* -------------------------------------------------------------
+   KİMLİK GEÇİŞİ
+   Eski Yoneticiler tablosundaki hesapları Identity'ye taşır.
+   İdempotent: taşınmış hesabı tekrar oluşturmaz, bu yüzden her
+   açılışta güvenle çalışır ve canlıya çıkarken elle bir adım
+   atlanmış olmaz.
+   ------------------------------------------------------------- */
+using (var kapsam = app.Services.CreateScope())
+{
+    var kayit = kapsam.ServiceProvider
+        .GetRequiredService<ILoggerFactory>()
+        .CreateLogger("KimlikGecisi");
+
+    try
+    {
+        await KimlikGecisi.TasiAsync(kapsam.ServiceProvider, kayit);
+    }
+    catch (Exception hata)
+    {
+        // Geçiş başarısız olsa bile site ayakta kalmalı: ziyaretçi
+        // tarafı kimlik doğrulamaya bağlı değil.
+        kayit.LogError(hata, "Kimlik geçişi sırasında beklenmeyen hata.");
+    }
+}
 
 app.Run();

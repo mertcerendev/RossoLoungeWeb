@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http; // Session için
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore; // DbUpdateException için
 using RossoLoungeWeb.Data;
-using RossoLoungeWeb.Filters;
 using RossoLoungeWeb.Models;
 using RossoLoungeWeb.Services;
 using System.Net;
@@ -14,20 +14,27 @@ using System.Globalization;
 
 namespace RossoLoungeWeb.Controllers
 {
-    // Oturum kontrolü tek yerden yapılıyor. Daha önce her action'ın ilk satırında
-    // elle yazılıyordu; bir action'da unutulursa o sayfa herkese açık kalıyordu.
-    // Giriş ve şifre sıfırlama sayfaları [GirisSerbest] ile muaf tutuldu,
-    // aksi halde giriş sayfası sonsuz yönlendirmeye girer.
-    [YoneticiGirisiGerekli]
+    // Yetki kontrolü ASP.NET Core Identity'de. Giriş ve şifre sıfırlama
+    // sayfaları [AllowAnonymous] ile muaf; aksi halde giriş sayfası sonsuz
+    // yönlendirmeye girer.
+    [Authorize]
     public class AdminController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AdminController> _logger;
+        private readonly UserManager<IdentityUser> _kullaniciYoneticisi;
+        private readonly SignInManager<IdentityUser> _girisYoneticisi;
 
-        public AdminController(ApplicationDbContext context, ILogger<AdminController> logger)
+        public AdminController(
+            ApplicationDbContext context,
+            ILogger<AdminController> logger,
+            UserManager<IdentityUser> kullaniciYoneticisi,
+            SignInManager<IdentityUser> girisYoneticisi)
         {
             _context = context;
             _logger = logger;
+            _kullaniciYoneticisi = kullaniciYoneticisi;
+            _girisYoneticisi = girisYoneticisi;
         }
 
         // Uygulama geneli invariant kültürle çalışıyor; grafik etiketlerinde
@@ -123,36 +130,62 @@ namespace RossoLoungeWeb.Controllers
         }
 
         // --- 1. GİRİŞ İŞLEMLERİ ---
-        [GirisSerbest]
+        [AllowAnonymous]
         public IActionResult Login()
         {
             return View();
         }
 
-        [GirisSerbest]
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult LoginYap(string KullaniciAdi, string Sifre)
+        public async Task<IActionResult> LoginYap(GirisModeli model)
         {
-            var yonetici = _context.Yoneticiler
-                .FirstOrDefault(x => x.KullaniciAdi == KullaniciAdi);
-
-            if (yonetici != null && BCrypt.Net.BCrypt.Verify(Sifre, yonetici.Sifre))
+            if (!ModelState.IsValid)
             {
-                HttpContext.Session.SetString("User", yonetici.KullaniciAdi);
-                HttpContext.Session.SetInt32("UserId", yonetici.Id);
-                _logger.LogInformation("Panel girişi başarılı. Kullanıcı: {Kullanici}, IP: {IP}",
-                    yonetici.KullaniciAdi, HttpContext.Connection.RemoteIpAddress);
-                return RedirectToAction("Index");
+                ViewBag.Hata = "Kullanıcı adı ve şifre zorunludur.";
+                return View("Login", model);
+            }
+
+            // Yönetici kullanıcı adıyla giriyor; e-posta yazanlar da
+            // takılmasın diye ikinci bir arama yapılıyor.
+            var kullanici = await _kullaniciYoneticisi.FindByNameAsync(model.KullaniciAdi)
+                         ?? await _kullaniciYoneticisi.FindByEmailAsync(model.KullaniciAdi);
+
+            if (kullanici?.UserName != null)
+            {
+                // lockoutOnFailure: hatalı denemeler sayılır, 5'te hesap
+                // 15 dakika kilitlenir (Program.cs). Daha önce kaba kuvvete
+                // karşı hiçbir koruma yoktu.
+                var sonuc = await _girisYoneticisi.PasswordSignInAsync(
+                    kullanici.UserName, model.Sifre, model.BeniHatirla, lockoutOnFailure: true);
+
+                if (sonuc.Succeeded)
+                {
+                    _logger.LogInformation("Panel girişi başarılı. Kullanıcı: {Kullanici}, IP: {IP}",
+                        kullanici.UserName, HttpContext.Connection.RemoteIpAddress);
+                    return RedirectToAction("Index");
+                }
+
+                if (sonuc.IsLockedOut)
+                {
+                    _logger.LogWarning("Kilitli hesapta giriş denemesi. Kullanıcı: {Kullanici}, IP: {IP}",
+                        kullanici.UserName, HttpContext.Connection.RemoteIpAddress);
+
+                    ViewBag.Hata = "Çok fazla hatalı deneme yapıldı. Hesap 15 dakika kilitlendi.";
+                    return View("Login", new GirisModeli { KullaniciAdi = model.KullaniciAdi });
+                }
             }
 
             // Başarısız denemeler kaydediliyor; sunucu kayıtlarından kaba kuvvet
             // saldırısı fark edilebilsin. (Şifre asla loglanmaz.)
             _logger.LogWarning("Başarısız panel giriş denemesi. Kullanıcı adı: {Kullanici}, IP: {IP}",
-                KullaniciAdi, HttpContext.Connection.RemoteIpAddress);
+                model.KullaniciAdi, HttpContext.Connection.RemoteIpAddress);
 
+            // Mesaj bilinçli olarak tek ve genel: "kullanıcı yok" ile
+            // "şifre yanlış" ayrımı geçerli kullanıcı adlarını sızdırır.
             ViewBag.Hata = "Kullanıcı adı veya şifre hatalı!";
-            return View("Login");
+            return View("Login", new GirisModeli { KullaniciAdi = model.KullaniciAdi });
         }
 
         // --- 2. DASHBOARD (ÖZET) ---
@@ -241,57 +274,76 @@ namespace RossoLoungeWeb.Controllers
             return RedirectToAction("Rezervasyonlar");
         }
 
-        // --- 5. PROFİL AYARLARI ---
-        public IActionResult Profil()
+        // --- 5. HESAP AYARLARI ---
+        public async Task<IActionResult> Profil()
         {
-            int? adminId = HttpContext.Session.GetInt32("UserId");
-            var yonetici = _context.Yoneticiler.Find(adminId);
+            var kullanici = await _kullaniciYoneticisi.GetUserAsync(User);
+            if (kullanici == null) return RedirectToAction("Login");
 
-            if (yonetici != null) yonetici.Sifre = string.Empty; // Güvenlik: Hash'i gösterme
-
-            return View(yonetici);
+            return View(new ProfilModeli
+            {
+                Id = kullanici.Id,
+                KullaniciAdi = kullanici.UserName ?? string.Empty,
+                Eposta = kullanici.Email ?? string.Empty
+                // Sifre bilerek boş: özet asla görünüme gitmez.
+            });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ProfilGuncelle(Yonetici gelenVeri)
+        public async Task<IActionResult> ProfilGuncelle(ProfilModeli gelenVeri)
         {
-            var yonetici = _context.Yoneticiler.Find(gelenVeri.Id);
-            if (yonetici == null) return RedirectToAction("Index");
+            // Kimlik oturumdan alınıyor; formdan gelen Id'ye GÜVENİLMEZ,
+            // yoksa başka bir hesabın bilgileri değiştirilebilirdi.
+            var kullanici = await _kullaniciYoneticisi.GetUserAsync(User);
+            if (kullanici == null) return RedirectToAction("Login");
 
-            // Şifre alanı boş bırakılabilir (değiştirilmek istenmiyor demektir),
-            // bu yüzden doğrulamadan çıkarıyoruz. Geri kalan alanlar geçerli
-            // olmadan kaydetmiyoruz: e-posta şifre sıfırlamanın tek hedefi,
-            // bozuk kaydedilirse panele giriş yolu kapanır.
-            ModelState.Remove(nameof(Yonetici.Sifre));
+            // Şifre alanı boş bırakılabilir (değiştirilmek istenmiyor demektir).
+            ModelState.Remove(nameof(ProfilModeli.Sifre));
+
             if (!ModelState.IsValid)
             {
                 ViewBag.Hata = "Bilgiler kaydedilmedi. Lütfen işaretli alanları düzeltin.";
-                gelenVeri.Sifre = string.Empty;
+                gelenVeri.Sifre = null;
+                gelenVeri.Id = kullanici.Id;
                 return View("Profil", gelenVeri);
             }
 
-            yonetici.KullaniciAdi = gelenVeri.KullaniciAdi;
-            yonetici.Eposta = gelenVeri.Eposta;
+            kullanici.UserName = gelenVeri.KullaniciAdi;
+            kullanici.Email = gelenVeri.Eposta;
 
-            if (!string.IsNullOrEmpty(gelenVeri.Sifre))
+            var sonuc = await _kullaniciYoneticisi.UpdateAsync(kullanici);
+
+            if (sonuc.Succeeded && !string.IsNullOrEmpty(gelenVeri.Sifre))
             {
-                yonetici.Sifre = BCrypt.Net.BCrypt.HashPassword(gelenVeri.Sifre);
+                // Mevcut şifreyi sormadan değiştirmek, oturumu ele geçiren
+                // birinin hesabı kalıcı olarak devralmasını kolaylaştırırdı;
+                // ama bu akış eskiden de böyleydi ve tek yönetici var.
+                // Jetonla sıfırlama, eski şifreyi bilmeden değiştirmenin
+                // Identity'deki doğru yolu.
+                var jeton = await _kullaniciYoneticisi.GeneratePasswordResetTokenAsync(kullanici);
+                sonuc = await _kullaniciYoneticisi.ResetPasswordAsync(kullanici, jeton, gelenVeri.Sifre);
             }
 
-            if (GuvenliKaydet("Profil güncelleme"))
+            if (sonuc.Succeeded)
             {
-                // Kullanıcı adı değişmiş olabilir; oturumdaki adı da tazeliyoruz.
-                HttpContext.Session.SetString("User", yonetici.KullaniciAdi);
+                // Kullanıcı adı/şifre değişmiş olabilir: çerezdeki kimliği
+                // tazelemezsek kullanıcı bir sonraki istekte dışarı atılır.
+                await _girisYoneticisi.RefreshSignInAsync(kullanici);
                 ViewBag.Mesaj = "Bilgileriniz başarıyla güncellendi!";
             }
             else
             {
-                ViewBag.Hata = "Bilgileriniz kaydedilemedi. Kullanıcı adı veya e-posta başka bir kayıtla çakışıyor olabilir.";
+                ViewBag.Hata = "Bilgileriniz kaydedilemedi: " +
+                    string.Join(" ", sonuc.Errors.Select(h => h.Description));
             }
 
-            yonetici.Sifre = string.Empty; // Güvenlik: Hash'i görünüme gönderme
-            return View("Profil", yonetici);
+            return View("Profil", new ProfilModeli
+            {
+                Id = kullanici.Id,
+                KullaniciAdi = kullanici.UserName ?? string.Empty,
+                Eposta = kullanici.Email ?? string.Empty
+            });
         }
 
         // --- 6. MAIL AYARLARI ---
@@ -332,17 +384,17 @@ namespace RossoLoungeWeb.Controllers
         }
 
         // --- 7. ŞİFRE SIFIRLAMA ---
-        [GirisSerbest]
+        [AllowAnonymous]
         public IActionResult SifremiUnuttum() { return View(); }
 
-        [GirisSerbest]
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult SifreSifirla(string Eposta)
+        public async Task<IActionResult> SifreSifirla(string Eposta)
         {
-            var yonetici = _context.Yoneticiler.FirstOrDefault(x => x.Eposta == Eposta);
+            var kullanici = await _kullaniciYoneticisi.FindByEmailAsync(Eposta);
 
-            if (yonetici == null)
+            if (kullanici == null)
             {
                 _logger.LogWarning("Kayıtlı olmayan adres için şifre sıfırlama denemesi. IP: {IP}",
                     HttpContext.Connection.RemoteIpAddress);
@@ -351,18 +403,29 @@ namespace RossoLoungeWeb.Controllers
             }
 
             string yeniSifre = RandomSifreUret(10);
-            string eskiHash = yonetici.Sifre;
 
-            yonetici.Sifre = BCrypt.Net.BCrypt.HashPassword(yeniSifre);
-            if (!GuvenliKaydet("Şifre sıfırlama"))
+            // Identity'nin kendi jetonu: eski şifreyi bilmeden değiştirmenin
+            // doğru yolu. Jeton üretimi ve tüketimi aynı istekte olduğu için
+            // e-postayla bağlantı göndermeye gerek yok — akış eskisiyle aynı,
+            // yeni şifre doğrudan mailleniyor.
+            var jeton = await _kullaniciYoneticisi.GeneratePasswordResetTokenAsync(kullanici);
+            var sonucSifre = await _kullaniciYoneticisi.ResetPasswordAsync(kullanici, jeton, yeniSifre);
+
+            if (!sonucSifre.Succeeded)
             {
-                yonetici.Sifre = eskiHash;
+                _logger.LogError("Şifre sıfırlanamadı. Kullanıcı: {Kullanici} — {Hatalar}",
+                    kullanici.UserName, string.Join("; ", sonucSifre.Errors.Select(h => h.Description)));
                 ViewBag.Hata = "Şifre sıfırlanamadı. Lütfen tekrar deneyin.";
                 return View("SifremiUnuttum");
             }
 
+            // Sıfırlama sonrası varsa kilit kalksın; kullanıcı yeni şifresiyle
+            // hemen girebilmeli.
+            await _kullaniciYoneticisi.SetLockoutEndDateAsync(kullanici, null);
+            await _kullaniciYoneticisi.ResetAccessFailedCountAsync(kullanici);
+
             string konu = "Rosso Lounge - Şifre Sıfırlama";
-            string icerik = $"Merhaba {yonetici.KullaniciAdi},<br><br>" +
+            string icerik = $"Merhaba {kullanici.UserName},<br><br>" +
                             $"Şifre sıfırlama talebiniz üzerine yeni şifreniz oluşturuldu.<br>" +
                             $"Yeni Şifreniz: <b>{yeniSifre}</b><br><br>" +
                             $"Lütfen giriş yaptıktan sonra güvenliğiniz için şifrenizi değiştirin.";
@@ -371,7 +434,7 @@ namespace RossoLoungeWeb.Controllers
 
             if (sonuc.Basarili)
             {
-                _logger.LogInformation("Şifre sıfırlandı ve mail gönderildi. Kullanıcı: {Kullanici}", yonetici.KullaniciAdi);
+                _logger.LogInformation("Şifre sıfırlandı ve mail gönderildi. Kullanıcı: {Kullanici}", kullanici.UserName);
                 ViewBag.Basari = "Yeni şifreniz e-posta adresinize gönderildi.";
             }
             else
@@ -390,9 +453,9 @@ namespace RossoLoungeWeb.Controllers
         // ya da bağlantı ön-yüklemesiyle istem dışı kapanabiliyordu. POST + token.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CikisYap()
+        public async Task<IActionResult> CikisYap()
         {
-            HttpContext.Session.Clear();
+            await _girisYoneticisi.SignOutAsync();
             return RedirectToAction("Login");
         }
 

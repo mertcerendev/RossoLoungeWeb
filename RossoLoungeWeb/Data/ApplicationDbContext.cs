@@ -1,9 +1,22 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using RossoLoungeWeb.Models;
 
 namespace RossoLoungeWeb.Data
 {
-    public class ApplicationDbContext : DbContext
+    /// <summary>
+    /// Kimlik doğrulama ASP.NET Core Identity'ye taşındı; bu yüzden context
+    /// artık <see cref="IdentityDbContext{TUser}"/> türetiyor (AspNetUsers,
+    /// AspNetRoles… tabloları buradan geliyor).
+    ///
+    /// Eski <c>Yoneticiler</c> tablosu KASITLI olarak duruyor: geçiş sırasında
+    /// mevcut yöneticinin kullanıcı adı/e-posta/BCrypt özeti oradan okunup
+    /// Identity'ye taşınıyor (bkz. Data/KimlikGecisi.cs). Şema değişiklikleri
+    /// yalnızca eklemeli olabildiği için tablo düşürülmedi; geçiş canlıda
+    /// doğrulandıktan sonra ayrı bir migration ile kaldırılabilir.
+    /// </summary>
+    public class ApplicationDbContext : IdentityDbContext<IdentityUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {

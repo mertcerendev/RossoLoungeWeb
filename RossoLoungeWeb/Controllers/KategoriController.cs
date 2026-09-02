@@ -1,13 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore; // DbUpdateException için
 using RossoLoungeWeb.Data;
-using RossoLoungeWeb.Filters;
+using Microsoft.AspNetCore.Authorization;
 using RossoLoungeWeb.Models;
 
 namespace RossoLoungeWeb.Controllers
 {
     // Oturum kontrolü artık tek yerden (filtre ile) yapılıyor.
-    [YoneticiGirisiGerekli]
+    [Authorize]
     public class KategoriController : Controller
     {
         private readonly ApplicationDbContext _context;

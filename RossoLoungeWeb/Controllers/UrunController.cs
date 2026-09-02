@@ -2,14 +2,14 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using RossoLoungeWeb.Data;
-using RossoLoungeWeb.Filters;
+using Microsoft.AspNetCore.Authorization;
 using RossoLoungeWeb.Models;
 using System.Globalization;
 
 namespace RossoLoungeWeb.Controllers
 {
     // Oturum kontrolü artık tek yerden (filtre ile) yapılıyor.
-    [YoneticiGirisiGerekli]
+    [Authorize]
     public class UrunController : Controller
     {
         private readonly ApplicationDbContext _context;
