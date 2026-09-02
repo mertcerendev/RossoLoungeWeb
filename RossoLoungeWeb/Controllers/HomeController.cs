@@ -165,13 +165,13 @@ namespace RossoLoungeWeb.Controllers
                     TempData["Hata"] = "Rezervasyonunuz şu anda kaydedilemedi. Lütfen biraz sonra tekrar deneyin veya bizi telefonla arayın.";
                 }
 
-                // D. Ana sayfaya geri dön
-                return RedirectToAction("Index");
+                // D. Formun bulunduğu yere geri dön
+                return RedirectToAction("Index", "Home", null, "rezervasyon");
             }
 
             // Hata varsa kullanıcı sessizce yönlendirilmesin, sebebi görsün
             TempData["Hata"] = "Rezervasyon alınamadı. Lütfen ad, telefon, tarih ve kişi sayısı alanlarını kontrol edin.";
-            return RedirectToAction("Index");
+            return RedirectToAction("Index", "Home", null, "rezervasyon");
         }
 
         // 3. İLETİŞİM MESAJI KAYDETME
@@ -196,7 +196,7 @@ namespace RossoLoungeWeb.Controllers
                 TempData["Hata"] = "Lütfen ad soyad, e-posta ve mesaj alanlarını doldurun.";
             }
 
-            return RedirectToAction("Index", "Home", null, "contact");
+            return RedirectToAction("Index", "Home", null, "iletisim");
         }
 
         // 4. E-BÜLTEN KAYDI (alt bilgideki tek alanlı form)
@@ -270,7 +270,11 @@ namespace RossoLoungeWeb.Controllers
                 TempData["Hata"] = "Lütfen tüm alanları doldurun ve puan verin.";
             }
 
-            return RedirectToAction("Index", "Home", new { fragment = "reviews" }); // Yorumlar kısmına dön
+            /* DİKKAT: burada 3 argümanlı aşırı yükleme kullanılıyordu
+               (new { fragment = "reviews" }); o imza fragment'i ROTA DEĞERİ
+               sayıyor ve adres /?fragment=reviews çıkıyordu. Fragment'in
+               kendi parametresi 4. sırada. */
+            return RedirectToAction("Index", "Home", null, "yorumlar");
         }
 
     }

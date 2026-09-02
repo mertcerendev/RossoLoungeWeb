@@ -14,6 +14,15 @@
    yolun aynı olduğunu görüp sayfayı yeniden yüklemeden Lenis ile
    kaydırıyor. Böylece bu partial hiçbir koşul taşımıyor.
 
+   BU DOSYA ADRESLERİN TEK KAYNAĞI. Kaydırdıkça adres çubuğunu
+   güncelleyen kod (navIzleyici → adresiEsle) hedefi buradaki
+   href'ten okuyor; JS'te ikinci bir bölüm→adres tablosu YOK.
+   Bir bölümün adresi değişecekse yalnızca burası düzenlenir.
+
+   Bölüm kimlikleri Türkçe: #hakkimizda, #menu, #galeri, #yorumlar,
+   #iletisim. Önce yarısı İngilizceydi (#about, #gallery) ve adres
+   çubuğunda karışık bir liste çıkıyordu.
+
    "Menü" bağlantısı ana sayfadaki seçki bölümüne (#menu) iniyor;
    tam menüye oradaki "Tüm Menüyü Gör" düğmesiyle geçiliyor.
 
@@ -27,11 +36,11 @@
         <nav aria-label="Ana menü">
             <ul class="nav__menu">
                 <li><a href="/" class="nav__link@(Aktif(anaSayfada))" data-bolum="home">Ana Sayfa</a></li>
-                <li><a href="/#about" class="nav__link" data-bolum="about">Hakkımızda</a></li>
+                <li><a href="/#hakkimizda" class="nav__link" data-bolum="hakkimizda">Hakkımızda</a></li>
                 <li><a href="/#menu" class="nav__link@(Aktif(string.Equals(eylem, "Menu", StringComparison.OrdinalIgnoreCase)))" data-bolum="menu">Menü</a></li>
-                <li><a href="/#gallery" class="nav__link" data-bolum="gallery">Galeri</a></li>
-                <li><a href="/#reviews" class="nav__link" data-bolum="reviews">Yorumlar</a></li>
-                <li><a href="/#contact" class="nav__link" data-bolum="contact">İletişim</a></li>
+                <li><a href="/#galeri" class="nav__link" data-bolum="galeri">Galeri</a></li>
+                <li><a href="/#yorumlar" class="nav__link" data-bolum="yorumlar">Yorumlar</a></li>
+                <li><a href="/#iletisim" class="nav__link" data-bolum="iletisim">İletişim</a></li>
                 <li class="nav__mobil"><a href="/#rezervasyon" class="nav__eylem">Rezervasyon</a></li>
             </ul>
         </nav>

@@ -92,7 +92,7 @@
                 </p>
             </div>
 
-            <a href="#about" class="hero__kaydir" aria-label="Aşağı kaydır"></a>
+            <a href="#hakkimizda" class="hero__kaydir" aria-label="Aşağı kaydır"></a>
         </section>
 
         @* ============================================================
@@ -102,7 +102,7 @@
            @await Html.PartialAsync("_Hakkinda") ile çağrılabilir.
            Dışarıdan veri almıyor, bağımsız bir partial.
            ============================================================ *@
-        <section id="about" class="hakkinda">
+        <section id="hakkimizda" class="hakkinda">
             <div class="kap hakkinda__izgara">
 
                 @* --- Asimetrik görsel kompozisyon: iki çerçeve hafifçe binişik --- *@
@@ -258,7 +258,7 @@
            pin). JS/GSAP yoksa .galeri--pinli sınıfı hiç eklenmez ve ray
            doğal bir yatay kaydırıcı olarak kalır — içerik her koşulda erişilir.
            ========================================================= *@
-        <section id="gallery" class="galeri" aria-labelledby="galeri-baslik">
+        <section id="galeri" class="galeri" aria-labelledby="galeri-baslik">
             <div class="galeri__sahne">
                 <div class="galeri__ray">
                     <header class="galeri__giris">
@@ -307,7 +307,7 @@
            JS devralmazsa (.defter--sahnede yoksa) yapraklar alt alta
            okunur bir liste olarak kalır; sürükleme/ilerleme gizlenir.
            ========================================================= *@
-        <section id="reviews" class="defter" aria-labelledby="defter-baslik">
+        <section id="yorumlar" class="defter" aria-labelledby="defter-baslik">
             <div class="kap">
                 <header class="defter__bas">
                     <p class="defter__ustbaslik">Misafirlerimiz</p>
@@ -423,7 +423,7 @@
            Sunucu tarafı değişmedi — action, name'ler, token, id'ler
            (#reservation-form, #datePicker, #phoneInput) aynı.
            ========================================================= *@
-        <section id="contact" class="konsiyer" aria-labelledby="konsiyer-baslik">
+        <section id="iletisim" class="konsiyer" aria-labelledby="konsiyer-baslik">
             <div class="kap konsiyer__izgara">
 
                 <div class="konsiyer__sol">

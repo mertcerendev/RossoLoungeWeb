@@ -87,8 +87,8 @@ app.UseAuthorization();
                               {controller}/{action} kalıbından çıktığı
                               için artık 404 olurdu; yer imleri ve
                               dizine girmiş bağlantılar kırılmasın.
-   - /rezervasyon → /#rezervasyon
-   - /iletisim    → /#contact
+   - /hakkimizda, /galeri, /yorumlar, /iletisim, /rezervasyon
+                              → ana sayfadaki karşılığı (/#hakkimizda …)
                               Bunlar AYRI SAYFA DEĞİL, ana sayfanın
                               bölümleri. Kendi adreslerinde ayrıca
                               render edilselerdi aynı içerik iki adreste
@@ -106,8 +106,15 @@ static Task KaliciYonlendir(HttpContext baglam, string hedef)
 
 app.MapGet("/Home/Index", baglam => KaliciYonlendir(baglam, "/"));
 app.MapGet("/Home/Menu", baglam => KaliciYonlendir(baglam, "/menu"));
-app.MapGet("/rezervasyon", baglam => KaliciYonlendir(baglam, "/#rezervasyon"));
-app.MapGet("/iletisim", baglam => KaliciYonlendir(baglam, "/#contact"));
+
+// Ana sayfa bölümlerinin kısa adresleri. Bölüm kimlikleri Türkçe
+// (#hakkimizda, #galeri, #yorumlar, #iletisim) — adres çubuğunda
+// yarısı İngilizce yarısı Türkçe bir liste durmasın diye.
+foreach (var bolum in new[] { "hakkimizda", "galeri", "yorumlar", "iletisim", "rezervasyon" })
+{
+    var hedef = "/#" + bolum;
+    app.MapGet("/" + bolum, baglam => KaliciYonlendir(baglam, hedef));
+}
 
 app.MapControllerRoute(
     name: "default",

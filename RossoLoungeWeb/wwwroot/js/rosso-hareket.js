@@ -342,6 +342,54 @@
             linkler.forEach(function (bag) {
                 bag.classList.toggle('nav__link--aktif', bag === etkin);
             });
+            adresiEsle(etkin);
+        }
+
+        /* ADRES ÇUBUĞU BÖLÜMLE EŞLEŞİR
+
+           Kural tek cümle: adres, o an BAKTIĞIN bölümü gösterir.
+           Hero'dayken "/", aşağıda "/#hakkimizda", "/#galeri"...
+
+           Önceden adres yalnızca BAŞKA sayfadan çıpayla gelindiğinde
+           değişiyordu; ana sayfada tıklamalar preventDefault edildiği
+           için hiç yazılmıyordu. Sonuç: /menu'den "Galeri"ye geçince
+           adres /#galeri oluyor, sonra sayfa içinde nereye gidilirse
+           gidilsin /#galeri'de KALIYORDU.
+
+           Adres, bağlantının KENDİ href'inden okunuyor — tek kaynak
+           _Nav.cshtml. JS'te ayrı bir id→adres tablosu tutulsaydı
+           ikisi zamanla ayrışırdı.
+
+           GECİKMELİ: uzun bir yumuşak kaydırmada aradaki her bölüm
+           sırayla referans çizgisini kesiyor ve adres tek tıklamada
+           beş kez değişiyordu. Kaydırma durulunca tek yazma yapılıyor.
+
+           replaceState, pushState DEĞİL: her bölüm geçmişe bir adım
+           eklemez; geri tuşu bölümleri değil, siteyi geri alır. */
+        var adresSayaci = null;
+
+        function suankiAdres() {
+            return window.location.pathname + window.location.search + window.location.hash;
+        }
+
+        function adresiEsle(bag) {
+            if (!bag || !window.history || !history.replaceState) return;
+
+            clearTimeout(adresSayaci);
+            adresSayaci = setTimeout(function () {
+                var href = bag.getAttribute('href') || '';
+                var kesit = href.indexOf('#');
+
+                /* Yalnızca çıpa kısmı alınıyor; yol ve sorgu dizesi
+                   olduğu gibi korunuyor. "Ana Sayfa"nın href'inde çıpa
+                   yok, o yüzden adres sade "/" hâline dönüyor. */
+                var yeni = window.location.pathname + window.location.search +
+                           (kesit >= 0 ? href.slice(kesit) : '');
+
+                if (yeni === suankiAdres()) return;
+
+                try { history.replaceState(null, '', yeni); } catch (h) { /* yoksay */ }
+            }, 180);
         }
 
         var gorunen = [];
