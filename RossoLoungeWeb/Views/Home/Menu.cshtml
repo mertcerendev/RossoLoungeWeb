@@ -13,8 +13,11 @@
 
     Kurallar:
       - Ürünlerde GÖRSEL YOK. Fotoğraf yalnızca üzerine gelince
-        özel imleçte açılıyor (data-cursor-image). Sayfaya bu
-        sayede kat kat daha fazla ürün sığıyor.
+        SOL RAYIN altında açılıyor (data-gorsel). Sayfaya bu sayede
+        kat kat daha fazla ürün sığıyor.
+        Not: önceden fotoğraf özel imlecin içinde açılıyordu; imleç
+        söküldüğünde önizleme rayın boş sütununa taşındı — fareyi
+        değil ÖĞEYİ takip ediyor.
       - Kalemler arasında çizgi, kutu, gölge yok. Ayrım yalnızca
         boşluk ve tipografi ile kuruluyor.
       - data-ara: canlı aramanın havuzu. JS her tuşta DOM okumasın
@@ -110,7 +113,7 @@
                                         <article class="menu__kalem@(urun.FiyatBuyuk.HasValue ? " menu__kalem--cift" : "")"
                                                  data-kategori="kat-@kategori.Id"
                                                  data-ara="@urun.Ad @urun.Aciklama @kategori.Ad"
-                                                 data-cursor-image="@UrunGorseli.Yolu(urun.ResimUrl, yerTutucu)">
+                                                 data-gorsel="@UrunGorseli.Yolu(urun.ResimUrl, yerTutucu)">
                                             <h3 class="menu__ad">@urun.Ad</h3>
 
                                             @* Fiyat kutusu ızgarada İKİ SATIRA yayılıyor (bkz. CSS):
@@ -147,6 +150,15 @@
 
                         <p class="menu__bos" hidden>Aramanla eşleşen bir tabak yok.</p>
                     </div>
+
+                    @* Tabak önizlemesi — sol rayın altındaki boş sütuna
+                       oturuyor. Fareyi TAKİP ETMİYOR: konumu üzerine
+                       gelinen satırdan değil, rayın kutusundan alıyor;
+                       böylece hiçbir metnin üstünü örtmüyor.
+                       JS yoksa hidden kalır. *@
+                    <figure class="menu__onizleme" aria-hidden="true" hidden>
+                        <img class="menu__onizleme-foto" alt="" decoding="async">
+                    </figure>
                 </div>
             }
             else

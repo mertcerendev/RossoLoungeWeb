@@ -89,7 +89,6 @@
     --k-icerik: 1;
     --k-nav: 900;
     --k-menu: 950;
-    --k-imlec: 10000; /* tam ekran goruntuleyici (--k-loader) dahil her seyin ustunde */
     --k-loader: 9999;
 
     --dokunma: 44px;
@@ -414,133 +413,6 @@ html:not(.rosso-kinetik) .sahne-perde__panel {
 }
 
 /* =============================================================
-   ÖZEL İMLEÇ — "KADRAJ"
-
-   Matbaadaki kırpma işaretleri: dört köşe ayracı bir kadraj kuruyor,
-   ortada dizgi imlecini andıran ince dikey tik duruyor. Hiçbir
-   parçada eğri yok.
-
-   İki hız: tik imlecin tam noktasında (kısa süreli quickTo), kadraj
-   gecikmeli (uzun süreli) — ağırlık ve sıvı akış hissi buradan.
-
-   Yalnızca gerçek fare olan cihazlarda. Dokunmatikte ve hareket
-   azaltmada tamamen devre dışı, native imleç korunur.
-   ============================================================= */
-.imlec {
-    position: fixed;
-    inset-block-start: 0;
-    inset-inline-start: 0;
-    z-index: var(--k-imlec);
-    display: none;
-    pointer-events: none;
-    will-change: transform;
-    /* Zıtlık uyumu: koyu zeminde açık, açık görselin üstünde negatif.
-       Görsel ve etiket durumlarında kapatılıyor (rosso-bilesenler.css):
-       orada karışım fotoğrafı negatife çevirir, maliyeti de artar. */
-    mix-blend-mode: difference;
-}
-
-/* Dizgi tiki — imlecin GERÇEK noktası. İnce dikey çizgi, tipografik
-   metin imlecinin karşılığı. Kadraj gecikirken bu tam yerinde durur. */
-.imlec__tik {
-    position: absolute;
-    width: 1px;
-    height: 15px;
-    /* margin YOK: merkezleme GSAP'in yPercent/xPercent -50'siyle
-       yapılıyor. Eski imleçten kalan -7.5px margin ikinci bir
-       kaydırma yaratıyordu; tik kadrajın 7px yukarısında duruyordu. */
-    background: var(--sampanya);
-    transition: opacity var(--h1) var(--egri), height var(--h2) var(--egri);
-}
-
-/* Kadraj — köşe ayraçlarını, yazıyı ve görseli taşır.
-   GSAP yalnızca bunun x/y'sini sürüyor; xPercent/yPercent -50 ile
-   kendi merkezine oturuyor (margin yerine, çünkü genişlik durumdan
-   duruma değişiyor ve margin'i her seferinde güncellemek gerekirdi). */
-.imlec__kadraj {
-    position: absolute;
-    width: 34px;
-    height: 34px;
-    transition: width var(--h2) var(--egri), height var(--h2) var(--egri),
-                background var(--h2) var(--egri);
-}
-
-/* Köşe ayracı: iki kenarlı bir kare parçası. Yarıçap YOK. */
-.imlec__kose {
-    position: absolute;
-    width: 9px;
-    height: 9px;
-    border: 0 solid var(--metin);
-    transition: width var(--h2) var(--egri), height var(--h2) var(--egri),
-                border-color var(--h2) var(--egri), opacity var(--h1) var(--egri);
-}
-
-.imlec__kose--su {
-    inset-block-start: 0;
-    inset-inline-start: 0;
-    border-block-start-width: 1px;
-    border-inline-start-width: 1px;
-}
-
-.imlec__kose--sagu {
-    inset-block-start: 0;
-    inset-inline-end: 0;
-    border-block-start-width: 1px;
-    border-inline-end-width: 1px;
-}
-
-.imlec__kose--sa {
-    inset-block-end: 0;
-    inset-inline-start: 0;
-    border-block-end-width: 1px;
-    border-inline-start-width: 1px;
-}
-
-.imlec__kose--saga {
-    inset-block-end: 0;
-    inset-inline-end: 0;
-    border-block-end-width: 1px;
-    border-inline-end-width: 1px;
-}
-
-/* Etkileşimli öğede kadraj o öğenin kutusuna oturuyor — ölçüyü JS
-   yazıyor. Köşe kolları uzuyor, ayraçlar şampanyaya dönüyor. */
-.imlec--yakin .imlec__kose {
-    width: 14px;
-    height: 14px;
-    border-color: var(--sampanya);
-}
-
-.imlec--yakin .imlec__tik {
-    height: 9px;
-}
-
-@media (hover: hover) and (pointer: fine) {
-    html.rosso-imlec .imlec {
-        display: block;
-    }
-
-    /* Native imleci yalnızca özel imleç gerçekten aktifken gizle.
-       ÖNEMLİ: eskiden yalnız html/a/button listeleniyordu; cursor MİRAS
-       yoluyla iniyordu ve kendi cursor'ı olan her öğe (.btn { pointer },
-       tarayıcının yerleşik stilleri) onu eziyordu — özel imlecin altında
-       yerleşik imleç de görünüyordu. Evrensel seçici bunu kökten çözer. */
-    html.rosso-imlec,
-    html.rosso-imlec *,
-    html.rosso-imlec *::before,
-    html.rosso-imlec *::after {
-        cursor: none;
-    }
-
-    /* Metin alanlarında yerleşik kiriş imleci kalsın: nereye yazdığını
-       görmek özel imleçten daha önemli. */
-    html.rosso-imlec input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]),
-    html.rosso-imlec textarea {
-        cursor: auto;
-    }
-}
-
-/* =============================================================
    HAREKET AZALTMA
    ============================================================= */
 @media (prefers-reduced-motion: reduce) {
@@ -553,13 +425,7 @@ html:not(.rosso-kinetik) .sahne-perde__panel {
     }
 
     .sahne-perde,
-    .sahne-perde__panel,
-    .imlec {
+    .sahne-perde__panel {
         display: none !important;
-    }
-
-    html.rosso-imlec,
-    html.rosso-imlec * {
-        cursor: auto;
     }
 }

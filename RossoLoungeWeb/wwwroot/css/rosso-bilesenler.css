@@ -1631,56 +1631,6 @@
 }
 
 /* =============================================================
-   İMLEÇ — ETİKETLİ DURUM  (data-cursor-text)
-
-   Kadraj bir levhaya dönüşüyor, yazı içinde diziliyor. Köşe
-   ayraçları kalıyor: levha da kırpma işaretleriyle çerçeveli.
-   Bu kurallar rosso-tema.css'teki .imlec--yakin'den SONRA geldiği
-   için (aynı özgüllük) kazanır.
-   ============================================================= */
-.imlec__kadraj {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.imlec__yazi {
-    /* Köşeler mutlak konumlu; konumsuz kardeş onların ALTINDA boyanırdı */
-    position: relative;
-    opacity: 0;
-    color: var(--obsidyen);
-    font-family: var(--f-sans);
-    font-size: 0.6875rem;
-    font-weight: 500;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    transform: translateY(4px);
-    transition: opacity var(--h2) var(--egri), transform var(--h2) var(--egri);
-}
-
-.imlec--etiketli .imlec__kadraj {
-    width: 132px;
-    height: 46px;
-    background: var(--sampanya);
-}
-
-.imlec--etiketli .imlec__kose {
-    width: 8px;
-    height: 8px;
-    border-color: var(--obsidyen);
-}
-
-.imlec--etiketli .imlec__tik {
-    opacity: 0;
-}
-
-.imlec--etiketli .imlec__yazi {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* =============================================================
    TAM EKRAN GÖRÜNTÜLEYİCİ
    -------------------------------------------------------------
    .tamekran__cerceve, tıklanan karenin çerçevesinin üstüne Flip.fit
@@ -1789,27 +1739,6 @@
 
 .tamekran__ok--sonraki {
     inset-inline-end: clamp(0.75rem, 2.5vw, 2rem);
-}
-
-/* Tam ekran açıkken imleç sergi durumunda takılı kalmasın */
-.tamekran-acik .imlec--etiketli .imlec__kadraj {
-    width: 34px;
-    height: 34px;
-    background: transparent;
-}
-
-.tamekran-acik .imlec--etiketli .imlec__kose {
-    width: 9px;
-    height: 9px;
-    border-color: var(--sampanya);
-}
-
-.tamekran-acik .imlec--etiketli .imlec__tik {
-    opacity: 1;
-}
-
-.tamekran-acik .imlec--etiketli .imlec__yazi {
-    opacity: 0;
 }
 
 /* =============================================================
@@ -2029,8 +1958,8 @@
 }
 
 /* --- Kenar bölgeleri (İleri / Geri) ---
-   Masaüstünde görünmezler: iş sıvı imlecin etiketinde. Dokunmatikte
-   ve klavye odağında etiket görünür olur. */
+   Tam yükseklikte, görünmez tıklama alanları. Görünen tek şey
+   aşağıdaki dikey etiket. */
 .defter__yon {
     position: absolute;
     inset-block: 0;
@@ -2192,16 +2121,18 @@
     }
 }
 
-/* Sürüklerken metin seçilmesin; özel imleç yoksa tutma imleci görünsün */
+/* Sürüklerken metin seçilmesin. Tutma imleci artık KOŞULSUZ:
+   özel imleç söküldü, ziyaretçinin kendi imleci her zaman görünür
+   ve sürüklenebilirliği anlatan tek işaret o. */
 .defter--tutuluyor .defter__sahne {
     user-select: none;
 }
 
-html:not(.rosso-imlec) .defter--sahnede .defter__sahne {
+.defter--sahnede .defter__sahne {
     cursor: grab;
 }
 
-html:not(.rosso-imlec) .defter--tutuluyor .defter__sahne {
+.defter--tutuluyor .defter__sahne {
     cursor: grabbing;
 }
 
@@ -3203,8 +3134,8 @@ body:not(.panel) footer.finale {
    BAŞA DÖN + KAYDIRMA İLERLEMESİ
 
    Buton artık sürekli ekranda; karşılığında boş durmuyor, sayfanın
-   ne kadarının geçildiğini gösteriyor. Kare — imlecin kadraj diliyle
-   aynı: sayfada başka yuvarlak gösterge yok.
+   ne kadarının geçildiğini gösteriyor. Kare, yuvarlak değil:
+   sayfadaki tek dairesel öğe olmasın.
    ------------------------------------------------------------- */
 .basa-don {
     position: fixed;
@@ -3319,57 +3250,6 @@ body:not(.panel) footer.finale {
 }
 
 /* =============================================================
-   İMLEÇ — GÖRSEL AÇIĞA ÇIKARMA  (data-cursor-image)
-
-   Halka dikdörtgen bir maskeye dönüşür ve fotoğraf aşağıdan
-   yukarı açılır. Kurallar rosso-tema.css'teki .imlec--yakin ile
-   aynı özgüllükte, sonra geldikleri için kazanırlar.
-
-   Karışım modu burada KAPATILIR: difference fotoğrafı negatife
-   çevirirdi, ayrıca büyük bir yüzeyi her karede zemine karıştırmak
-   küçük noktaya göre belirgin şekilde pahalı.
-   ============================================================= */
-.imlec--gorselli,
-.imlec--etiketli {
-    mix-blend-mode: normal;
-}
-
-.imlec__gorsel {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0;
-    clip-path: inset(100% 0 0 0);
-    transition: clip-path var(--h3) var(--egri), opacity var(--h1) var(--egri);
-}
-
-.imlec--gorselli .imlec__kadraj {
-    width: 248px;
-    height: 310px;
-    background: var(--antrasit-3);
-}
-
-/* Köşe ayraçları fotoğrafın DIŞINA taşıyor: kırpma işaretleri
-   fotoğrafı çerçeveliyor, üstüne binmiyor. */
-.imlec--gorselli .imlec__kose {
-    width: 16px;
-    height: 16px;
-    border-color: var(--sampanya);
-    margin: -7px;
-}
-
-.imlec--gorselli .imlec__gorsel {
-    opacity: 1;
-    clip-path: inset(0 0 0 0);
-}
-
-.imlec--gorselli .imlec__tik {
-    opacity: 0;
-}
-
-/* =============================================================
    HERO + NAVBAR — kinetik başlangıç durumu
 
    Bunlar eksikti: perde yırtılıp sayfayı açtığında hero ve navbar
@@ -3395,4 +3275,95 @@ body:not(.panel) footer.finale {
 .rosso-kinetik .nav__menu > li,
 .rosso-kinetik .nav__eylem {
     opacity: 0;
+}
+
+/* =============================================================
+   ETKİLEŞİM KATMANI   (rosso-hareket.js → 7. bölüm)
+
+   Özel imleç söküldü: ziyaretçinin kendi işletim sistemi imleci her
+   yerde görünür, projede hiçbir yerde cursor: none yok. Premium his
+   artık imlecin DOKUNDUĞU öğelerde. Görsel taraf burada; JS yalnızca
+   sayı sürüyor (CSS değişkeni ya da GSAP dönüşümü).
+   ============================================================= */
+
+/* --- Yakınlık ışığı ---
+   z-index: -1 + isolation: isolate ŞART ve bilinçli. Boyama sırası
+   gereği negatif z-index'li sözde öğe, kabın KENDİ zemininden SONRA
+   ama içeriğinden ÖNCE boyanıyor. Aksi hâlde .form-panel'in antrasit
+   zemini parıltıyı yutardı; z-index verilmeseydi de parıltı form
+   alanlarının üstünü örtüp kontrastı düşürürdü. */
+.vitrin__kart,
+.form-panel {
+    position: relative;
+    isolation: isolate;
+}
+
+    .vitrin__kart::after,
+    .form-panel::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity var(--h2) var(--egri);
+        background: radial-gradient(circle 260px at var(--isik-x, 50%) var(--isik-y, 50%),
+                    rgba(154, 123, 79, 0.32),
+                    rgba(154, 123, 79, 0.09) 42%,
+                    transparent 70%);
+    }
+
+.isik--acik::after {
+    opacity: 1;
+}
+
+/* --- 3B eğilme ---
+   Perspektif ÇERÇEVEDE, dönme fotoğrafta: çerçevenin kutusu
+   kıpırdamıyor. Galeri karesine tıklanınca tam ekran görüntüleyici
+   o çerçevenin getBoundingClientRect'inden büyüyor; eğik bir kutu
+   açılışı kaydırırdı.
+
+   Fotoğraflar zaten çerçeveden taşkın (%124 genişlik / %128 yükseklik,
+   parallax payı). 4 derecelik dönme bu yüzden hiçbir kenarda boşluk
+   açmıyor. */
+.galeri__cerceve,
+.hakkinda__cerceve {
+    perspective: 900px;
+}
+
+/* --- Menü sayfası: tabak önizlemesi ---
+   Sol rayın altındaki boş sütuna oturuyor. position: fixed, ama
+   fareyi TAKİP ETMİYOR — konumu JS rayın kutusundan okuyor. */
+.menu__onizleme {
+    position: fixed;
+    z-index: var(--k-nav);
+    height: 17rem;
+    margin: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--antrasit-3);
+    border: 1px solid var(--cizgi-2);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity var(--h2) var(--egri), transform var(--h2) var(--egri);
+}
+
+.menu__onizleme--acik {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Önizleme açıkken ray içeriği çekiliyor: sütun devrediliyor.
+   Yarı örtülmüş bir kategori listesi kaza gibi duruyordu.
+   Opaklığı JS satır içi yazıyor (giriş animasyonu da satır içi
+   yazdığı için sınıf kuralı eziliyordu); burada yalnızca geçiş. */
+.menu__ray-ic {
+    transition: opacity var(--h2) var(--egri);
+}
+
+.menu__onizleme-foto {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }

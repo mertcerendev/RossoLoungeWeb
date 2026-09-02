@@ -54,10 +54,6 @@
     // Galeri pin'i: ticker olurse emniyet katmani buradan soker
     var galeriPin = null;
 
-    /* Sıvı imlecin halkasına uygulanan manyetik kayma. Yorum defterinin
-       kenar bölgeleri buraya yazıyor, imleç döngüsü okuyor. */
-    var imlecCekim = { x: 0, y: 0 };
-
     function lenisBaslat() {
         if (!lenisVar || azHareket) return;
 
@@ -706,161 +702,179 @@
         });
     }
 
-    var ETKILESIM_SECICI = 'a, button, input, textarea, select, [role="button"]';
-    var IMLEC_SECICI = '[data-cursor-image], [data-cursor-text], ' + ETKILESIM_SECICI;
+    /* =========================================================
+       7. ETKİLEŞİM KATMANI
 
-    function imlecBaslat() {
+       ÖZEL İMLEÇ SÖKÜLDÜ. Ziyaretçinin kendi işletim sistemi imleci
+       her yerde görünür kalıyor; projede hiçbir yerde cursor: none
+       yok. Premium his artık imlecin kendisinde değil, imlecin
+       DOKUNDUĞU öğelerde.
+
+       Üç bağımsız modül, üçü de aynı iskeleti kullanıyor:
+         · Kutu ölçüsü mouseenter'da BİR KEZ okunuyor. mousemove
+           içinde getBoundingClientRect çağırmak her karede düzen
+           hesabı demek — kaydırırken kutu bayatlıyor ama modüller
+           yalnızca öğenin ÜSTÜNDEYKEN çalıştığı için fark edilmiyor.
+         · Değer ya bir CSS değişkenine yazılıyor ya gsap.quickTo ile
+           sönümleniyor; ikisi de kompozisyon katmanında kalıyor.
+         · mouseleave durumu sıfırlıyor — takılı kalma yok.
+
+       Üçü de kaba işaretçide (dokunmatik) ve hareket azaltmada hiç
+       kurulmuyor: dinleyici bile bağlanmıyor.
+       ========================================================= */
+
+    var MANYETIK_SECICI = '.btn, .nav__link, .nav__eylem, .nav__marka, .basa-don, .menu__sekme';
+    var ISIK_SECICI = '.vitrin__kart, .form-panel';
+    var EGILME_SECICI = '.galeri__foto, .hakkinda__foto';
+
+    /* --- 7a. MANYETİK ÖĞELER ---
+       Öğe, imlecin merkeze göre sapmasının bir oranı kadar kayıyor;
+       fare çıkınca yaylanarak yerine oturuyor (elastic).
+
+       Sapma SINIRLANIYOR: "Rezervasyon" gibi geniş bir düğmede oran
+       tek başına bırakılsa öğe kutusundan taşacak kadar sürükleniyor. */
+    function manyetikOgeler() {
         if (!inceIsaretci || azHareket || !gsapVar) return;
 
-        var imlec = document.querySelector('.imlec');
-        if (!imlec) return;
+        var GUC = 0.3;
+        var EN_COK = 9; // piksel
 
-        kok.classList.add('rosso-imlec');
+        var PAY = 4; // dinlenme kutusunun dışına küçük tolerans
 
-        var kadraj = imlec.querySelector('.imlec__kadraj');
-        var tik = imlec.querySelector('.imlec__tik');
-        var yazi = imlec.querySelector('.imlec__yazi');
-        var gorsel = imlec.querySelector('.imlec__gorsel');
-        if (!kadraj || !tik) return;
+        Array.prototype.forEach.call(document.querySelectorAll(MANYETIK_SECICI), function (oge) {
+            /* Tek quickTo çifti: takip ve dönüş aynı tween üzerinden.
+               İkinci bir gsap.to() açmak quickTo'nun tween'ini ezip
+               fonksiyonu sessizce ölü bırakıyor. */
+            var xe = gsap.quickTo(oge, 'x', { duration: 0.6, ease: 'elastic.out(1, 0.8)' });
+            var ye = gsap.quickTo(oge, 'y', { duration: 0.6, ease: 'elastic.out(1, 0.8)' });
+            var kutu = null;
 
-        /* Her ikisi de kendi merkezine oturuyor. margin yerine
-           xPercent/yPercent: kadrajın genişliği duruma göre değişiyor,
-           margin kullanılsaydı her ölçü değişiminde onu da güncellemek
-           gerekirdi. GSAP yüzde kanalını x/y'den ayrı tutup topluyor. */
-        gsap.set([kadraj, tik], { xPercent: -50, yPercent: -50 });
+            /* DİNLEYİCİ ÖĞEDE DEĞİL BELGEDE, çıkış da öğenin DİNLENME
+               kutusuna göre hesaplanıyor. Sebebi ölçümle bulundu:
 
-        /* İki hız: tik imlecin gerçek noktasında, kadraj gecikmeli.
-           Ağırlık ve sıvı akış hissi bu farktan geliyor. */
-        var tx = gsap.quickTo(tik, 'x', { duration: 0.10, ease: 'power3.out' });
-        var ty = gsap.quickTo(tik, 'y', { duration: 0.10, ease: 'power3.out' });
-        var kx = gsap.quickTo(kadraj, 'x', { duration: 0.55, ease: 'power3.out' });
-        var ky = gsap.quickTo(kadraj, 'y', { duration: 0.55, ease: 'power3.out' });
+                 öğe imlece doğru kayıyor → karşı kenarı imlecin altından
+                 çekiliyor → tarayıcı mouseleave yolluyor → öğe yerine
+                 dönüyor → imleç yine içeride kalıyor → mouseenter...
 
-        var sonHedef = null;
-        var manyetik = null;
-        var manyetikKutu = null;
-        var sonX = 0, sonY = 0;
+               Kenarlarda titreyen bir döngü. Dinlenme kutusu kaymadığı
+               için bu döngü hiç kurulmuyor. */
+            function surukle(olay) {
+                if (!kutu) return;
 
-        /* Kadrajı hedefin kutusuna oturt: kırpma işaretleri öğeyi
-           vizör gibi çerçeveler. Ölçü CSS geçişiyle yumuşuyor. */
-        function kadrajaOturt(kutu) {
-            kadraj.style.width = Math.round(kutu.width + 18) + 'px';
-            kadraj.style.height = Math.round(kutu.height + 18) + 'px';
-        }
+                if (olay.clientX < kutu.left - PAY || olay.clientX > kutu.right + PAY ||
+                    olay.clientY < kutu.top - PAY || olay.clientY > kutu.bottom + PAY) {
+                    birak();
+                    return;
+                }
 
-        function kadrajOlcusunuBirak() {
-            kadraj.style.width = '';
-            kadraj.style.height = '';
-        }
-
-        function kutuyuTazele() {
-            if (!manyetik) return;
-            manyetikKutu = manyetik.getBoundingClientRect();
-            kadrajaOturt(manyetikKutu);
-        }
-
-        function durumSifirla() {
-            imlec.classList.remove('imlec--yakin', 'imlec--etiketli', 'imlec--gorselli');
-            manyetik = null;
-            manyetikKutu = null;
-            kadrajOlcusunuBirak();
-        }
-
-        function durumUygula(hedef) {
-            // Aynı hedefin çocukları arasında gezinirken iş yapma
-            if (hedef === sonHedef) return;
-            sonHedef = hedef;
-            durumSifirla();
-            if (!hedef) return;
-
-            var kaynak = gorsel && hedef.getAttribute('data-cursor-image');
-            if (kaynak) {
-                // Aynı görsel tekrar atanırsa tarayıcı yeniden çözmesin
-                if (gorsel.getAttribute('src') !== kaynak) gorsel.setAttribute('src', kaynak);
-                imlec.classList.add('imlec--gorselli');
-                return;
+                xe(gsap.utils.clamp(-EN_COK, EN_COK, (olay.clientX - (kutu.left + kutu.width / 2)) * GUC));
+                ye(gsap.utils.clamp(-EN_COK, EN_COK, (olay.clientY - (kutu.top + kutu.height / 2)) * GUC));
             }
 
-            var metin = yazi && hedef.getAttribute('data-cursor-text');
-            if (metin) {
-                yazi.textContent = metin;
-                imlec.classList.add('imlec--etiketli');
-                return;
+            function birak() {
+                kutu = null;
+                document.removeEventListener('mousemove', surukle);
+                xe(0);
+                ye(0);
             }
 
-            imlec.classList.add('imlec--yakin');
-            manyetik = hedef;
-            manyetikKutu = hedef.getBoundingClientRect();
+            oge.addEventListener('mouseenter', function () {
+                if (kutu) return;
 
-            /* Çok büyük alanları çerçevelemek anlamsız (tam ekran
-               düğmeler, uzun bağlantı blokları); orada kadraj kendi
-               ölçüsünde kalıp yalnızca hedefe doğru kayıyor. */
-            if (manyetikKutu.width > 420 || manyetikKutu.height > 260) {
-                manyetikKutu = null;
-                return;
-            }
-            kadrajaOturt(manyetikKutu);
-        }
+                var k = oge.getBoundingClientRect();
 
-        window.addEventListener('mousemove', function (olay) {
-            sonX = olay.clientX;
-            sonY = olay.clientY;
+                /* Önceki yaylanma daha bitmemişse ölçülen kutu KAYIK
+                   olur; o anki kaymayı geri çıkarıp dinlenme kutusunu
+                   buluyoruz. */
+                var dx = gsap.getProperty(oge, 'x') || 0;
+                var dy = gsap.getProperty(oge, 'y') || 0;
 
-            tx(sonX); ty(sonY);
+                kutu = {
+                    left: k.left - dx, right: k.right - dx,
+                    top: k.top - dy, bottom: k.bottom - dy,
+                    width: k.width, height: k.height
+                };
 
-            /* Kadraj hedefe OTURUYOR: kutunun merkezine gidiyor, imlecin
-               kendisine değil. Vizör hissi buradan. Hedef yoksa imleci
-               takip ediyor; imlecCekim'i yorum defteri besliyor. */
-            if (manyetikKutu) {
-                kx(manyetikKutu.left + manyetikKutu.width / 2);
-                ky(manyetikKutu.top + manyetikKutu.height / 2);
-            } else {
-                kx(sonX + imlecCekim.x);
-                ky(sonY + imlecCekim.y);
-            }
-        }, { passive: true });
-
-        // TEK delege dinleyici — öğe başına bağlama yok
-        document.addEventListener('mouseover', function (olay) {
-            var oge = olay.target;
-            if (!oge || oge.nodeType !== 1) return;
-            durumUygula(oge.closest(IMLEC_SECICI));
-        }, { passive: true });
-
-        // Pencereden çıkınca durum takılı kalmasın
-        document.addEventListener('mouseleave', function () {
-            sonHedef = null;
-            durumSifirla();
+                document.addEventListener('mousemove', surukle, { passive: true });
+            });
         });
+    }
 
-        /* TAKILI KALMA ONARIMI
-           Menü filtresi, off-canvas panel veya tam ekran görüntüleyici,
-           imlecin üzerinde durduğu öğeyi gizleyebiliyor. Öğe gizlenince
-           mouseout TETİKLENMİYOR, imleç de o durumda donuyor.
-           Tıklamadan hemen sonra imlecin ALTINDA gerçekten ne olduğuna
-           bakıp durumu yeniden kuruyoruz — tıklama başına tek ölçüm. */
-        document.addEventListener('click', function () {
-            setTimeout(function () {
-                var altta = document.elementFromPoint(sonX, sonY);
-                /* undefined, null DEĞİL: durumUygula ilk satırda
-                   hedef === sonHedef diye erken dönüyor ve altta hiçbir
-                   şey yokken (elementFromPoint null) sıfırlama atlanıyordu. */
-                sonHedef = undefined;
-                durumUygula(altta && altta.closest ? altta.closest(IMLEC_SECICI) : null);
-            }, 80);
+    /* --- 7b. YAKINLIK IŞIĞI ---
+       Koyu kartın zemininde, imlecin altında süzülen bronz parıltı.
+       JS yalnızca iki sayıyı CSS değişkenine yazıyor; parıltıyı
+       tamamen CSS çiziyor (radial-gradient). Böylece burada hiç
+       stil hesabı yok, tek iş iki custom property yazımı. */
+    function yakinlikIsigi() {
+        if (!inceIsaretci || azHareket) return;
+
+        Array.prototype.forEach.call(document.querySelectorAll(ISIK_SECICI), function (kart) {
+            var kutu = null;
+
+            kart.addEventListener('mouseenter', function () {
+                kutu = kart.getBoundingClientRect();
+                kart.classList.add('isik--acik');
+            });
+
+            kart.addEventListener('mousemove', function (olay) {
+                if (!kutu) return;
+                kart.style.setProperty('--isik-x', (olay.clientX - kutu.left) + 'px');
+                kart.style.setProperty('--isik-y', (olay.clientY - kutu.top) + 'px');
+            }, { passive: true });
+
+            kart.addEventListener('mouseleave', function () {
+                kutu = null;
+                kart.classList.remove('isik--acik');
+            });
         });
+    }
 
-        // Hedef DOM'dan tamamen çıkarsa (isConnected bedava, layout okumaz)
-        window.addEventListener('mousemove', function () {
-            if (sonHedef && !sonHedef.isConnected) {
-                sonHedef = null;
-                durumSifirla();
-            }
-        }, { passive: true });
+    /* --- 7c. KİNETİK 3B EĞİLME ---
+       Eğilen şey ÇERÇEVE DEĞİL FOTOĞRAF. Çerçevenin kutusu bilerek
+       sabit kalıyor: galeri karesine tıklanınca tam ekran
+       görüntüleyici o çerçevenin getBoundingClientRect'inden
+       büyüyor — eğik bir kutu açılışı kaydırırdı.
 
-        // Ölçülen kutu kaydırma/boyut değişiminde bayatlar
-        window.addEventListener('scroll', kutuyuTazele, { passive: true });
-        window.addEventListener('resize', kutuyuTazele);
+       Perspektif çerçevede (CSS); burada yalnızca iki açı sürülüyor.
+       0.7sn'lik power3.out olmadan hareket mekanik oluyor: fare
+       durduktan sonra da bir an akmaya devam etmesi gerekiyor. */
+    function egilmeEfekti() {
+        if (!inceIsaretci || azHareket || !gsapVar) return;
+
+        var EN_COK_ACI = 4; // derece
+
+        Array.prototype.forEach.call(document.querySelectorAll(EGILME_SECICI), function (foto) {
+            /* Fotoğrafın x/yPercent kanalını ScrollTrigger parallaxı
+               sürüyor. Dönme AYRI bir kanal, GSAP ikisini birleştirip
+               tek matrise yazıyor — çakışma yok. */
+            var yatay = gsap.quickTo(foto, 'rotationY', { duration: 0.7, ease: 'power3.out' });
+            var dikey = gsap.quickTo(foto, 'rotationX', { duration: 0.7, ease: 'power3.out' });
+
+            // Fotoğraf çerçeveden taştığı için ölçü ÇERÇEVEDEN alınıyor
+            var cerceve = foto.parentElement;
+            var kutu = null;
+
+            cerceve.addEventListener('mouseenter', function () {
+                kutu = cerceve.getBoundingClientRect();
+            });
+
+            cerceve.addEventListener('mousemove', function (olay) {
+                if (!kutu || !kutu.width || !kutu.height) return;
+
+                // -0.5 … +0.5
+                var ox = (olay.clientX - kutu.left) / kutu.width - 0.5;
+                var oy = (olay.clientY - kutu.top) / kutu.height - 0.5;
+
+                yatay(ox * EN_COK_ACI * 2);
+                dikey(-oy * EN_COK_ACI * 2);
+            }, { passive: true });
+
+            cerceve.addEventListener('mouseleave', function () {
+                kutu = null;
+                yatay(0);
+                dikey(0);
+            });
+        });
     }
 
     /* =========================================================
@@ -1010,7 +1024,7 @@
        11. MENÜ SERGİSİ
        - Kategori filtresi: GSAP Flip ile pürüzsüz yer değiştirme,
          girenlerde blur + yukarıdan kayma
-       - Görsel önizleme: satırlardaki data-cursor-image ile global imleç
+       - Görsel önizleme: satırlardaki data-gorsel, sol rayın altında
        ========================================================= */
     /* Ana sayfadaki vitrin (seçilmiş birkaç tabak) */
     function vitrinBolumu() {
@@ -1240,6 +1254,73 @@
                 alan.value = '';
                 sorgu = '';
                 suz(false);
+            });
+        }
+
+        onizlemeBagla();
+
+        /* ---------- Tabak önizlemesi ----------
+           Fotoğraf eskiden özel imlecin içinde açılıyordu. İmleç
+           söküldü; önizleme SOL RAYIN altındaki boş sütuna taşındı.
+
+           Fareyi değil ÖĞEYİ takip ediyor: konum, üzerine gelinen
+           satırdan değil rayın kutusundan okunuyor. Böylece hiçbir
+           metnin üstünü örtmüyor ve mousemove başına iş yok — hover
+           başına tek ölçüm.
+
+           Yalnızca ray gerçekten sütunken (>1024px) kuruluyor; dar
+           ekranda ray yatay şeride dönüyor ve altında yer kalmıyor. */
+        function onizlemeBagla() {
+            if (!inceIsaretci || azHareket) return;
+            if (!window.matchMedia('(min-width: 1025px)').matches) return;
+
+            var kap = bolum.querySelector('.menu__onizleme');
+            var ray = bolum.querySelector('.menu__ray');
+            if (!kap || !ray) return;
+
+            var foto = kap.querySelector('.menu__onizleme-foto');
+            var rayIc = ray.querySelector('.menu__ray-ic');
+            if (!foto) return;
+
+            kap.hidden = false;
+
+            /* Önizleme rayın SÜTUNUNU DEVRALIYOR: rayın tepesine hizalanıp
+               ray içeriği sönüyor (.menu--onizlemeli). Önce rayın ALTINA
+               konuyordu ama ray ekranı neredeyse dolduruyor; önizleme
+               yukarı kırpılıp kategorilerin yarısını örtüyor, kaza gibi
+               duruyordu. Şimdi sütunun tamamı bilinçli olarak değişiyor. */
+            function yerlestir() {
+                var r = ray.getBoundingClientRect();
+                var yuk = kap.offsetHeight || 272;
+
+                kap.style.width = Math.round(r.width) + 'px';
+                kap.style.left = Math.round(r.left) + 'px';
+                kap.style.top = Math.round(
+                    Math.min(r.top, window.innerHeight - yuk - 16)
+                ) + 'px';
+            }
+
+            kalemler.forEach(function (kalem) {
+                var kaynak = kalem.getAttribute('data-gorsel');
+                if (!kaynak) return;
+
+                kalem.addEventListener('mouseenter', function () {
+                    // Aynı görsel tekrar atanırsa tarayıcı yeniden çözmesin
+                    if (foto.getAttribute('src') !== kaynak) foto.setAttribute('src', kaynak);
+                    yerlestir();
+                    kap.classList.add('menu__onizleme--acik');
+
+                    /* Ray içeriği SATIR İÇİ opaklıkla söndürülüyor, sınıfla
+                       değil: giriş animasyonu .menu__ray-ic'e inline
+                       opacity:1 bırakıyor ve sınıf kuralını eziyordu
+                       (ölçüldü — sınıf ekleniyor ama opaklık 1 kalıyordu). */
+                    if (rayIc) rayIc.style.opacity = '0.14';
+                });
+
+                kalem.addEventListener('mouseleave', function () {
+                    kap.classList.remove('menu__onizleme--acik');
+                    if (rayIc) rayIc.style.opacity = '1';
+                });
             });
         }
     }
@@ -1840,20 +1921,10 @@
 
             dugme.addEventListener('click', function () { git(uc[2]); });
 
-            if (!inceIsaretci || azHareket) return;
-
-            // Metin imlecini artık global imleç nitelikten okuyor
-            dugme.setAttribute('data-cursor-text', uc[1]);
-
-            // Manyetik çekim: halka bölgenin eksenine doğru kayar,
-            // nokta imlecin gerçek yerinde kalır → "çekiliyor" hissi
-            dugme.addEventListener('mousemove', function (olay) {
-                var r = dugme.getBoundingClientRect();
-                imlecCekim.x = ((r.left + r.width / 2) - olay.clientX) * 0.38;
-            }, { passive: true });
-
-            // Bölgeden çıkınca çekim sıfırlanmalı, yoksa halka kayık kalır
-            dugme.addEventListener('mouseleave', function () { imlecCekim.x = 0; });
+            /* Eskiden burada özel imlece "Geri/İleri" etiketi yazılıyor
+               ve halka bölgeye doğru çekiliyordu. İmleç söküldü; kenarın
+               tıklanabilir olduğunu artık dikey etiketin kendisi
+               söylüyor (CSS: .defter__yon-yazi). */
         });
     }
 
@@ -2434,7 +2505,7 @@
         if (acildi) return;
         acildi = true;
 
-        [lenisBaslat, gezinmeBagla, navIzleyici, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, imzaBolumu, gorunurlukEmniyeti]
+        [lenisBaslat, gezinmeBagla, navIzleyici, manyetikOgeler, yakinlikIsigi, egilmeEfekti, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, imzaBolumu, gorunurlukEmniyeti]
             .forEach(function (modul) {
                 try { modul(); } catch (h) {
                     if (window.console) console.error('rosso:', modul.name, h);
