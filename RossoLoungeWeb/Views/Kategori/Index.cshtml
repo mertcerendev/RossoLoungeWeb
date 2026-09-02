@@ -1,122 +1,113 @@
-﻿@model List<RossoLoungeWeb.Models.Kategori>
+@model List<RossoLoungeWeb.Models.Kategori>
+@*
+    KATEGORİLER
+    ===============================================================
+    Uçlar değişmedi: POST /Kategori/SiraGuncelle (sürükle-bırak),
+    POST /Kategori/Sil/{id}, /Kategori/Ekle, /Kategori/Duzenle/{id}.
+
+    SIRALAMA KORUNDU: tutamak + SortableJS + klavye (ok tuşları).
+    Sunucu yalnızca gönderilen kayıtların mevcut sıra numaralarını
+    kendi aralarında yeniden dağıtır.
+*@
 @{
-    Layout = null;
-    ViewBag.AktifMenu = "kategoriler";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Baslik"] = "Kategoriler";
+    ViewData["AltBaslik"] = "Menü kategorilerini yönetin ve sıralayın";
+    ViewData["Aktif"] = "kategoriler";
+    ViewData["AramaHedefi"] = "kategori-tablosu";
+    ViewData["AramaYerTutucu"] = "Kategori adında ara";
+
     var urunSayilari = ViewBag.UrunSayilari as Dictionary<int, int> ?? new Dictionary<int, int>();
 }
 
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kategori Yönetimi | Rosso Lounge</title>
-    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true">
-    <link rel="stylesheet" href="~/css/panel.css" asp-append-version="true">
-</head>
-<body class="panel">
-    <a href="#icerik" class="icerige-atla">İçeriğe atla</a>
+@section Eylemler {
+    <span class="y-rozet y-rozet--sonuk">
+        Toplam <span data-tablo-sayac>@Model.Count</span>
+    </span>
+    <a class="y-dugme y-dugme--birincil" href="/Kategori/Ekle">
+        <i class="fas fa-plus" aria-hidden="true"></i> Yeni Kategori
+    </a>
+}
 
-    @await Html.PartialAsync("~/Views/Admin/_YanMenu.cshtml")
+@if (Model.Count == 0)
+{
+    <div class="y-bos">
+        <i class="y-bos__im fas fa-layer-group" aria-hidden="true"></i>
+        <h2 class="y-bos__baslik">Henüz kategori yok</h2>
+        <p class="y-bos__alt">Menüye ürün ekleyebilmek için önce en az bir kategori oluşturun.</p>
+        <p class="y-bos__eylem">
+            <a class="y-dugme y-dugme--birincil" href="/Kategori/Ekle">İlk kategoriyi ekle</a>
+        </p>
+    </div>
+}
+else
+{
+    <p class="y-sira-durum" role="status" aria-live="polite"></p>
+    <div hidden>@Html.AntiForgeryToken()</div>
 
-    <main class="content" id="icerik">
-        @await Html.PartialAsync("~/Views/Admin/_Bildirim.cshtml")
+    <div class="y-tablo-sarmal">
+        <table class="y-tablo" id="kategori-tablosu">
+            <caption class="y-gizli">Menü kategorileri. Sıralama tutamakla sürüklenerek ya da ok tuşlarıyla değiştirilir.</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Sıra</th>
+                    <th scope="col">Kategori</th>
+                    <th scope="col">Ürün</th>
+                    <th scope="col" class="y-tablo__eylem"><span class="y-gizli">İşlemler</span></th>
+                </tr>
+            </thead>
+            <tbody class="y-siralanabilir" data-sira-url="/Kategori/SiraGuncelle">
+                @foreach (var item in Model)
+                {
+                    urunSayilari.TryGetValue(item.Id, out int adet);
 
-        <div class="custom-card">
-            <div class="card-header-custom">
-                <div>
-                    <h2 class="m-0">Kategoriler</h2>
-                    <p class="rs-soluk small m-0">Menü kategorilerinizi buradan yönetin.</p>
-                </div>
-                <a href="/Kategori/Ekle" class="rs-btn rs-btn-birincil rs-btn-sm">
-                    <i class="fas fa-plus" aria-hidden="true"></i> Yeni Ekle
-                </a>
-            </div>
-
-            @if (Model.Count == 0)
-            {
-                <div class="rs-bos-durum">
-                    <i class="fas fa-list" aria-hidden="true"></i>
-                    <h3>Henüz kategori eklenmemiş</h3>
-                    <p>Menüye ürün ekleyebilmek için önce en az bir kategori oluşturmalısınız.</p>
-                    <a href="/Kategori/Ekle" class="rs-btn rs-btn-birincil rs-btn-sm">İlk Kategoriyi Ekle</a>
-                </div>
-            }
-            else
-            {
-                <div class="sira-durum" role="status" aria-live="polite"></div>
-                <div hidden>@Html.AntiForgeryToken()</div>
-                <div class="table-responsive">
-                    <table class="table table-custom m-0">
-                        <caption class="gorsel-gizli">Menü kategorileri listesi</caption>
-                        <thead>
-                            <tr>
-                                <th scope="col">Sıra</th>
-                                <th scope="col">Kategori Adı</th>
-                                <th scope="col">Ürün</th>
-                                <th scope="col" class="text-end" style="min-width: 120px;">İşlemler</th>
-                            </tr>
-                        </thead>
-                        <tbody class="siralanabilir" data-sira-url="/Kategori/SiraGuncelle">
-                            @foreach (var item in Model)
+                    <tr data-id="@item.Id">
+                        <td>
+                            <div class="y-sira">
+                                <button type="button" class="y-sira__tut"
+                                        aria-label="@item.Ad sırasını değiştir. Sürükleyin veya yukarı/aşağı ok tuşlarını kullanın."
+                                        title="Sürükleyerek sırala">
+                                    <i class="fas fa-grip-vertical" aria-hidden="true"></i>
+                                </button>
+                                <span class="y-sira__no y-sayi">@item.SiraNo</span>
+                            </div>
+                        </td>
+                        <td class="y-tablo__ad">@item.Ad</td>
+                        <td>
+                            @if (adet > 0)
                             {
-                                urunSayilari.TryGetValue(item.Id, out int adet);
-
-                                <tr data-id="@item.Id">
-                                    <td>
-                                        <div class="sira-hucre">
-                                            <button type="button" class="sira-tut"
-                                                    aria-label="@item.Ad sırasını değiştir. Sürükleyin veya yukarı/aşağı ok tuşlarını kullanın."
-                                                    title="Sürükleyerek sırala">
-                                                <i class="fas fa-grip-vertical" aria-hidden="true"></i>
-                                            </button>
-                                            <div class="badge-rank marka">@item.SiraNo</div>
-                                        </div>
-                                    </td>
-                                    <td class="fw-semibold">@item.Ad</td>
-                                    <td>
-                                        @if (adet > 0)
-                                        {
-                                            <a href="/Urun/Index?kategoriId=@item.Id" class="badge-category text-decoration-none">@adet ürün</a>
-                                        }
-                                        else
-                                        {
-                                            <span class="rs-soluk small">Boş</span>
-                                        }
-                                    </td>
-                                    <td class="text-end">
-                                        <div class="d-flex gap-2 justify-content-end">
-                                            <a href="/Kategori/Duzenle/@item.Id" class="btn-action btn-edit"
-                                               aria-label="@item.Ad kategorisini düzenle" title="Düzenle">
-                                                <i class="fas fa-pen" aria-hidden="true"></i>
-                                            </a>
-                                            <form action="/Kategori/Sil/@item.Id" method="post"
-                                                  onsubmit="return confirm('Bu kategoriyi silmek istediğinize emin misiniz?');">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn-action btn-delete"
-                                                        aria-label="@item.Ad kategorisini sil"
-                                                        title="@(adet > 0 ? $"İçinde {adet} ürün var — önce ürünleri taşıyın" : "Sil")">
-                                                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <a class="y-rozet" href="/Urun/Index?kategoriId=@item.Id">@adet ürün</a>
                             }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
-    </main>
+                            else
+                            {
+                                <span class="y-tablo__ikincil">Boş</span>
+                            }
+                        </td>
+                        <td class="y-tablo__eylem">
+                            <div class="y-eylemler">
+                                <a class="y-hayalet" href="/Kategori/Duzenle/@item.Id"
+                                   title="Düzenle" aria-label="@item.Ad kategorisini düzenle">
+                                    <i class="fas fa-pen" aria-hidden="true"></i>
+                                </a>
+
+                                <form method="post" action="/Kategori/Sil/@item.Id"
+                                      onsubmit="return confirm('Bu kategoriyi silmek istediğinize emin misiniz?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="y-hayalet y-hayalet--tehlike"
+                                            aria-label="@item.Ad kategorisini sil"
+                                            title="@(adet > 0 ? $"İçinde {adet} ürün var — önce ürünleri taşıyın" : "Sil")">
+                                        <i class="fas fa-trash-can" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@section Kutuphaneler {
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-    <script src="~/js/ortak.js" asp-append-version="true"></script>
-    <script src="~/js/panel.js" asp-append-version="true"></script>
-</body>
-</html>
+}

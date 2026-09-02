@@ -81,6 +81,10 @@
 
     @* ortak.js: POST formlarında çift gönderim kilidi. Panelde de
        geçerli — iki kez tıklanan "Sil" iki istek demek. *@
+    @* Sayfaya özel kütüphaneler yonetim.js'ten ÖNCE: yonetim.js
+       çalışırken window.Sortable gibi globalleri hazır bulmalı. *@
+    @await RenderSectionAsync("Kutuphaneler", required: false)
+
     <script src="~/js/ortak.js" asp-append-version="true"></script>
     <script src="~/js/yonetim.js" asp-append-version="true"></script>
 

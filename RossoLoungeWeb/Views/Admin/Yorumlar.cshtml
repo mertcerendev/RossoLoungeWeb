@@ -1,149 +1,127 @@
 @model List<RossoLoungeWeb.Models.Yorum>
+@*
+    YORUMLAR
+    ===============================================================
+    Uçlar değişmedi: POST /Admin/YorumOnayla/{id}, /Admin/YorumSil/{id}.
+
+    "Tamamını oku" eskiden Bootstrap modalıyla açılıyordu; yeni panel
+    Bootstrap yüklemiyor. Yerine native <dialog> var (yonetim.js) —
+    odak yönetimi ve Escape'i tarayıcı üstleniyor.
+*@
 @{
-    Layout = null;
-    ViewBag.AktifMenu = "yorumlar";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Baslik"] = "Yorumlar";
+    ViewData["AltBaslik"] = "Onayladıklarınız sitede yayınlanır";
+    ViewData["Aktif"] = "yorumlar";
+    ViewData["AramaHedefi"] = "yorum-tablosu";
+    ViewData["AramaYerTutucu"] = "Ad veya yorum metninde ara";
+
+    var bekleyen = Model.Count(x => !x.OnaylandiMi);
+    ViewData["BekleyenYorum"] = (int?)bekleyen;
 }
 
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yorum Yönetimi | Rosso Lounge</title>
-    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true">
-    <link rel="stylesheet" href="~/css/panel.css" asp-append-version="true">
-</head>
-<body class="panel">
-    <a href="#icerik" class="icerige-atla">İçeriğe atla</a>
+@section Eylemler {
+    <span class="y-rozet y-rozet--sonuk">
+        Toplam <span data-tablo-sayac>@Model.Count</span>
+    </span>
+    @if (bekleyen > 0)
+    {
+        <span class="y-rozet y-rozet--uyari">@bekleyen onay bekliyor</span>
+    }
+}
 
-    @await Html.PartialAsync("~/Views/Admin/_YanMenu.cshtml")
-
-    <main class="content" id="icerik">
-        @await Html.PartialAsync("~/Views/Admin/_Bildirim.cshtml")
-
-        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
-            <h2 class="m-0">Müşteri Yorumları</h2>
-            <span class="rs-rozet rs-rozet-bilgi">Toplam: @Model.Count</span>
-        </div>
-
-        <div class="custom-card">
-            @if (Model.Count == 0)
-            {
-                <div class="rs-bos-durum">
-                    <i class="fas fa-comments" aria-hidden="true"></i>
-                    <h3>Henüz yorum yok</h3>
-                    <p>Ziyaretçilerin siteden bıraktığı yorumlar burada listelenir; onayladıklarınız sitede yayınlanır.</p>
-                </div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-custom m-0">
-                        <caption class="gorsel-gizli">Müşteri yorumları listesi</caption>
-                        <thead>
-                            <tr>
-                                <th scope="col">Müşteri</th>
-                                <th scope="col" style="min-width: 220px;">Mesaj Özeti</th>
-                                <th scope="col">Puan</th>
-                                <th scope="col">Tarih</th>
-                                <th scope="col">Durum</th>
-                                <th scope="col" style="min-width: 140px;">İşlem</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in Model)
-                            {
-                                <tr class="@(item.OnaylandiMi ? "" : "unread")">
-                                    <td class="fw-bold">@item.AdSoyad</td>
-                                    <td>
-                                        <small>@(item.Mesaj.Length > 60 ? item.Mesaj.Substring(0, 60) + "..." : item.Mesaj)</small>
-                                    </td>
-                                    <td>
-                                        <span class="gorsel-gizli">5 üzerinden @item.Puan puan</span>
-                                        <span class="text-warning small" aria-hidden="true">
-                                            @for (int i = 0; i < item.Puan; i++)
-                                            {
-                                                <i class="fas fa-star"></i>
-                                            }
-                                        </span>
-                                    </td>
-                                    <td>@item.Tarih.ToString("dd.MM.yyyy")</td>
-                                    <td>
-                                        @if (item.OnaylandiMi)
-                                        {
-                                            <span class="rs-rozet rs-rozet-basari">Yayında</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="rs-rozet rs-rozet-uyari">Onay Bekliyor</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <div class="d-flex gap-2">
-                                            <button type="button" class="btn-action btn-edit yorum-oku"
-                                                    data-ad="@item.AdSoyad" data-mesaj="@item.Mesaj"
-                                                    aria-label="@item.AdSoyad adlı ziyaretçinin yorumunun tamamını oku"
-                                                    title="Tamamını Oku">
-                                                <i class="fas fa-eye" aria-hidden="true"></i>
-                                            </button>
-
-                                            @if (!item.OnaylandiMi)
-                                            {
-                                                <form action="/Admin/YorumOnayla/@item.Id" method="post">
-                                                    @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn-action bg-success text-white"
-                                                            aria-label="@item.AdSoyad adlı ziyaretçinin yorumunu yayınla"
-                                                            title="Yayınla">
-                                                        <i class="fas fa-check" aria-hidden="true"></i>
-                                                    </button>
-                                                </form>
-                                            }
-
-                                            <form action="/Admin/YorumSil/@item.Id" method="post"
-                                                  onsubmit="return confirm('Bu yorumu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn-action btn-delete"
-                                                        aria-label="@item.AdSoyad adlı ziyaretçinin yorumunu sil"
-                                                        title="Sil">
-                                                    <i class="fas fa-trash" aria-hidden="true"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
-    </main>
-
-    <div class="modal fade" id="readModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title" id="modalTitle">Yorum Detayı</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
-                </div>
-                <div class="modal-body">
-                    <p id="modalMessage" class="mesaj-govde m-0"></p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="rs-btn rs-btn-hayalet rs-btn-sm" data-bs-dismiss="modal">Kapat</button>
-                </div>
-            </div>
-        </div>
+@if (Model.Count == 0)
+{
+    <div class="y-bos">
+        <i class="y-bos__im fas fa-star-half-stroke" aria-hidden="true"></i>
+        <h2 class="y-bos__baslik">Henüz yorum yok</h2>
+        <p class="y-bos__alt">Ziyaretçilerin siteden bıraktığı yorumlar burada listelenir.</p>
     </div>
+}
+else
+{
+    <div class="y-tablo-sarmal">
+        <table class="y-tablo" id="yorum-tablosu">
+            <caption class="y-gizli">Müşteri yorumları</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Misafir</th>
+                    <th scope="col">Yorum</th>
+                    <th scope="col">Puan</th>
+                    <th scope="col">Tarih</th>
+                    <th scope="col">Durum</th>
+                    <th scope="col" class="y-tablo__eylem"><span class="y-gizli">İşlemler</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr class="@(item.OnaylandiMi ? null : "y-satir--dikkat")">
+                        <td class="y-tablo__ad">@item.AdSoyad</td>
+                        <td class="y-tablo__not">
+                            @(item.Mesaj.Length > 70 ? item.Mesaj.Substring(0, 70) + "…" : item.Mesaj)
+                        </td>
+                        <td>
+                            <span class="y-gizli">5 üzerinden @item.Puan puan</span>
+                            @* Ziyaretçi tarafındaki ince çizik diline sadık:
+                               panelde de yıldız yok, dolu/boş çizikler var. *@
+                            <span class="y-puan" aria-hidden="true">
+                                @for (int p = 1; p <= 5; p++)
+                                {
+                                    <span class="y-puan__cizik@(p <= item.Puan ? " y-puan__cizik--dolu" : "")"></span>
+                                }
+                            </span>
+                        </td>
+                        <td class="y-sayi">@item.Tarih.ToString("dd.MM.yyyy")</td>
+                        <td>
+                            @if (item.OnaylandiMi)
+                            {
+                                <span class="y-rozet y-rozet--basari">Yayında</span>
+                            }
+                            else
+                            {
+                                <span class="y-rozet y-rozet--uyari">Bekliyor</span>
+                            }
+                        </td>
+                        <td class="y-tablo__eylem">
+                            <div class="y-eylemler">
+                                <button type="button" class="y-hayalet"
+                                        data-metin-goster
+                                        data-baslik="@item.AdSoyad"
+                                        data-govde="@item.Mesaj"
+                                        title="Tamamını oku"
+                                        aria-label="@item.AdSoyad adlı ziyaretçinin yorumunun tamamını oku">
+                                    <i class="fas fa-eye" aria-hidden="true"></i>
+                                </button>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/ortak.js" asp-append-version="true"></script>
-    <script src="~/js/panel.js" asp-append-version="true"></script>
-</body>
-</html>
+                                @if (!item.OnaylandiMi)
+                                {
+                                    <form method="post" action="/Admin/YorumOnayla/@item.Id">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="y-hayalet"
+                                                title="Yayınla"
+                                                aria-label="@item.AdSoyad adlı ziyaretçinin yorumunu yayınla">
+                                            <i class="fas fa-check" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                }
+
+                                <form method="post" action="/Admin/YorumSil/@item.Id"
+                                      onsubmit="return confirm('Bu yorumu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="y-hayalet y-hayalet--tehlike"
+                                            title="Sil"
+                                            aria-label="@item.AdSoyad adlı ziyaretçinin yorumunu sil">
+                                        <i class="fas fa-trash-can" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@await Html.PartialAsync("_YonetimMetinKutusu")

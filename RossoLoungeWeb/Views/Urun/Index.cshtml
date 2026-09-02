@@ -1,162 +1,162 @@
-﻿@model List<RossoLoungeWeb.Models.Urun>
+@model List<RossoLoungeWeb.Models.Urun>
+@*
+    ÜRÜNLER
+    ===============================================================
+    Uçlar değişmedi: GET /Urun/Index?kategoriId= (filtre),
+    POST /Urun/SiraGuncelle, POST /Urun/Sil/{id}.
+
+    SIRALAMA KORUNDU. Sunucu yalnızca gönderilen kayıtların sıra
+    numaralarını kendi aralarında dağıttığı için, kategori filtresi
+    açıkken sıralamak listede görünmeyen ürünleri etkilemez.
+*@
 @{
-    Layout = null;
-    ViewBag.AktifMenu = "urunler";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Baslik"] = "Ürünler";
+    ViewData["AltBaslik"] = "Menü kalemlerini yönetin ve sıralayın";
+    ViewData["Aktif"] = "urunler";
+    ViewData["AramaHedefi"] = "urun-tablosu";
+    ViewData["AramaYerTutucu"] = "Ürün adı veya açıklamada ara";
 }
 
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ürün Yönetimi | Rosso Lounge</title>
-    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true">
-    <link rel="stylesheet" href="~/css/panel.css" asp-append-version="true">
-</head>
-<body class="panel">
-    <a href="#icerik" class="icerige-atla">İçeriğe atla</a>
+@section Eylemler {
+    <span class="y-rozet y-rozet--sonuk">
+        Toplam <span data-tablo-sayac>@Model.Count</span>
+    </span>
+    <a class="y-dugme y-dugme--birincil" href="/Urun/Ekle">
+        <i class="fas fa-plus" aria-hidden="true"></i> Yeni Ürün
+    </a>
+}
 
-    @await Html.PartialAsync("~/Views/Admin/_YanMenu.cshtml")
-
-    <main class="content" id="icerik">
-        @await Html.PartialAsync("~/Views/Admin/_Bildirim.cshtml")
-
-        @* Kategori filtresi — method="get", antiforgery token GEREKMEZ *@
-        <form method="get" action="/Urun/Index" class="custom-card p-3 mb-4 d-flex flex-wrap align-items-end gap-3">
-            <div class="rs-alan mb-0">
-                <label class="rs-etiket" for="kategoriFiltre">
-                    <i class="fas fa-filter" aria-hidden="true"></i> Kategoriye göre filtrele
-                </label>
-                <select name="kategoriId" id="kategoriFiltre" class="rs-girdi" onchange="this.form.submit()">
-                    <option value="">Tümü</option>
-                    @if (ViewBag.Kategoriler != null)
+@* Kategori filtresi — method="get", antiforgery token GEREKMEZ *@
+<form class="y-suzgec" method="get" action="/Urun/Index">
+    <div class="y-suzgec__alan">
+        <label class="y-suzgec__etiket" for="kategoriFiltre">Kategori</label>
+        <select class="y-secim" name="kategoriId" id="kategoriFiltre" onchange="this.form.submit()">
+            <option value="">Tümü</option>
+            @if (ViewBag.Kategoriler != null)
+            {
+                foreach (var k in (SelectList)ViewBag.Kategoriler)
+                {
+                    if (ViewBag.SeciliKategoriId != null && k.Value == ViewBag.SeciliKategoriId.ToString())
                     {
-                        foreach (var k in (SelectList)ViewBag.Kategoriler)
-                        {
-                            if (ViewBag.SeciliKategoriId != null && k.Value == ViewBag.SeciliKategoriId.ToString())
+                        <option value="@k.Value" selected>@k.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@k.Value">@k.Text</option>
+                    }
+                }
+            }
+        </select>
+    </div>
+
+    <noscript>
+        <button type="submit" class="y-dugme">Filtrele</button>
+    </noscript>
+
+    @if (ViewBag.SeciliKategoriId != null)
+    {
+        <a class="y-dugme" href="/Urun/Index">Filtreyi temizle</a>
+    }
+</form>
+
+@if (Model.Count == 0)
+{
+    <div class="y-bos">
+        <i class="y-bos__im fas fa-utensils" aria-hidden="true"></i>
+        <h2 class="y-bos__baslik">Ürün bulunamadı</h2>
+        <p class="y-bos__alt">Seçtiğiniz filtreye uyan ürün yok ya da menüye henüz ürün eklenmemiş.</p>
+        <p class="y-bos__eylem">
+            <a class="y-dugme y-dugme--birincil" href="/Urun/Ekle">Yeni ürün ekle</a>
+        </p>
+    </div>
+}
+else
+{
+    <p class="y-sira-durum" role="status" aria-live="polite"></p>
+    <div hidden>@Html.AntiForgeryToken()</div>
+
+    <div class="y-tablo-sarmal">
+        <table class="y-tablo" id="urun-tablosu">
+            <caption class="y-gizli">Menüdeki ürünler. Sıralama tutamakla sürüklenerek ya da ok tuşlarıyla değiştirilir.</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Sıra</th>
+                    <th scope="col"><span class="y-gizli">Görsel</span></th>
+                    <th scope="col">Ürün</th>
+                    <th scope="col">Kategori</th>
+                    <th scope="col">Fiyat</th>
+                    <th scope="col" class="y-tablo__eylem"><span class="y-gizli">İşlemler</span></th>
+                </tr>
+            </thead>
+            <tbody class="y-siralanabilir" data-sira-url="/Urun/SiraGuncelle">
+                @foreach (var item in Model)
+                {
+                    <tr data-id="@item.Id">
+                        <td>
+                            <div class="y-sira">
+                                <button type="button" class="y-sira__tut"
+                                        aria-label="@item.Ad sırasını değiştir. Sürükleyin veya yukarı/aşağı ok tuşlarını kullanın."
+                                        title="Sürükleyerek sırala">
+                                    <i class="fas fa-grip-vertical" aria-hidden="true"></i>
+                                </button>
+                                <span class="y-sira__no y-sayi">@item.SiraNo</span>
+                            </div>
+                        </td>
+                        <td>
+                            @if (string.IsNullOrEmpty(item.ResimUrl))
                             {
-                                <option value="@k.Value" selected>@k.Text</option>
+                                <span class="y-gorsel y-gorsel--bos" title="Görsel yok">
+                                    <i class="fas fa-image" aria-hidden="true"></i>
+                                    <span class="y-gizli">@item.Ad için görsel yok</span>
+                                </span>
                             }
                             else
                             {
-                                <option value="@k.Value">@k.Text</option>
+                                <img class="y-gorsel" src="@item.ResimUrl" alt="@item.Ad ürün görseli" loading="lazy">
                             }
-                        }
-                    }
-                </select>
-            </div>
-            <noscript>
-                <button type="submit" class="rs-btn rs-btn-ikincil rs-btn-sm">Filtrele</button>
-            </noscript>
-            @if (ViewBag.SeciliKategoriId != null)
-            {
-                <a href="/Urun/Index" class="rs-btn rs-btn-hayalet rs-btn-sm">Filtreyi Temizle</a>
-            }
-        </form>
-
-        <div class="custom-card">
-            <div class="card-header-custom">
-                <div>
-                    <h2 class="m-0">Menü Ürünleri</h2>
-                    <p class="rs-soluk small m-0">Toplam @Model.Count ürün listeleniyor.</p>
-                </div>
-                <a href="/Urun/Ekle" class="rs-btn rs-btn-birincil rs-btn-sm">
-                    <i class="fas fa-plus" aria-hidden="true"></i> Yeni Ürün
-                </a>
-            </div>
-
-            @if (Model.Count == 0)
-            {
-                <div class="rs-bos-durum">
-                    <i class="fas fa-utensils" aria-hidden="true"></i>
-                    <h3>Ürün bulunamadı</h3>
-                    <p>Seçtiğiniz filtreye uyan ürün yok ya da menüye henüz ürün eklenmemiş.</p>
-                    <a href="/Urun/Ekle" class="rs-btn rs-btn-ikincil rs-btn-sm">Yeni Ürün Ekle</a>
-                </div>
-            }
-            else
-            {
-                <div class="sira-durum" role="status" aria-live="polite"></div>
-                <div hidden>@Html.AntiForgeryToken()</div>
-                <div class="table-responsive">
-                    <table class="table table-custom m-0">
-                        <caption class="gorsel-gizli">Menüdeki ürünlerin listesi</caption>
-                        <thead>
-                            <tr>
-                                <th scope="col" class="text-center">Sıra</th>
-                                <th scope="col">Resim</th>
-                                <th scope="col" style="min-width: 180px;">Ürün Adı</th>
-                                <th scope="col">Kategori</th>
-                                <th scope="col">Fiyat</th>
-                                <th scope="col" class="text-end" style="min-width: 120px;">İşlem</th>
-                            </tr>
-                        </thead>
-                        <tbody class="siralanabilir" data-sira-url="/Urun/SiraGuncelle">
-                            @foreach (var item in Model)
+                        </td>
+                        <td>
+                            <span class="y-tablo__ad">@item.Ad</span>
+                            @if (!string.IsNullOrEmpty(item.Aciklama))
                             {
-                                <tr data-id="@item.Id">
-                                    <td class="text-center">
-                                        <div class="sira-hucre">
-                                            <button type="button" class="sira-tut"
-                                                    aria-label="@item.Ad sırasını değiştir. Sürükleyin veya yukarı/aşağı ok tuşlarını kullanın."
-                                                    title="Sürükleyerek sırala">
-                                                <i class="fas fa-grip-vertical" aria-hidden="true"></i>
-                                            </button>
-                                            <div class="badge-rank">@item.SiraNo</div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="product-img-box">
-                                            <img src="@(string.IsNullOrEmpty(item.ResimUrl) ? "https://placehold.co/120" : item.ResimUrl)"
-                                                 class="product-img" alt="@item.Ad ürün görseli" loading="lazy">
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="fw-bold">@item.Ad</div>
-                                        <div class="rs-soluk small">
-                                            @(item.Aciklama != null && item.Aciklama.Length > 40 ? item.Aciklama.Substring(0, 40) + "..." : item.Aciklama)
-                                        </div>
-                                    </td>
-                                    <td><span class="badge-category">@item.Kategori?.Ad</span></td>
-                                    <td>
-                                        <span class="price-tag">@item.Fiyat.ToString("N2") ₺</span>
-                                        @if (item.FiyatBuyuk != null)
-                                        {
-                                            <small class="d-block rs-soluk">Büyük: @item.FiyatBuyuk.Value.ToString("N2") ₺</small>
-                                        }
-                                    </td>
-                                    <td class="text-end">
-                                        <div class="d-flex gap-2 justify-content-end">
-                                            <a href="/Urun/Duzenle/@item.Id" class="btn-action btn-edit"
-                                               aria-label="@item.Ad ürününü düzenle" title="Düzenle">
-                                                <i class="fas fa-pen" aria-hidden="true"></i>
-                                            </a>
-                                            <form action="/Urun/Sil/@item.Id" method="post"
-                                                  onsubmit="return confirm('Bu ürünü silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn-action btn-delete"
-                                                        aria-label="@item.Ad ürününü sil" title="Sil">
-                                                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <span class="y-tablo__ikincil">
+                                    @(item.Aciklama.Length > 48 ? item.Aciklama.Substring(0, 48) + "…" : item.Aciklama)
+                                </span>
                             }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
-    </main>
+                        </td>
+                        <td><span class="y-rozet y-rozet--sonuk">@item.Kategori?.Ad</span></td>
+                        <td>
+                            <span class="y-fiyat y-sayi">@item.Fiyat.ToString("N2") ₺</span>
+                            @if (item.FiyatBuyuk != null)
+                            {
+                                <span class="y-tablo__ikincil y-sayi">Büyük: @item.FiyatBuyuk.Value.ToString("N2") ₺</span>
+                            }
+                        </td>
+                        <td class="y-tablo__eylem">
+                            <div class="y-eylemler">
+                                <a class="y-hayalet" href="/Urun/Duzenle/@item.Id"
+                                   title="Düzenle" aria-label="@item.Ad ürününü düzenle">
+                                    <i class="fas fa-pen" aria-hidden="true"></i>
+                                </a>
+
+                                <form method="post" action="/Urun/Sil/@item.Id"
+                                      onsubmit="return confirm('Bu ürünü silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="y-hayalet y-hayalet--tehlike"
+                                            title="Sil" aria-label="@item.Ad ürününü sil">
+                                        <i class="fas fa-trash-can" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@section Kutuphaneler {
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-    <script src="~/js/ortak.js" asp-append-version="true"></script>
-    <script src="~/js/panel.js" asp-append-version="true"></script>
-</body>
-</html>
+}

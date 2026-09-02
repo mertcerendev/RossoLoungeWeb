@@ -1,100 +1,105 @@
 @model List<RossoLoungeWeb.Models.Iletisim>
+@*
+    MESAJLAR (gelen kutusu)
+    ===============================================================
+    Uçlar değişmedi: /Admin/MesajOku/{id} (okuma), POST
+    /Admin/MesajSil/{id}. Okunmamışlar satır vurgusuyla ayrılıyor.
+*@
 @{
-    Layout = null;
-    ViewBag.AktifMenu = "mesajlar";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Baslik"] = "Mesajlar";
+    ViewData["AltBaslik"] = "İletişim formundan gelenler";
+    ViewData["Aktif"] = "mesajlar";
+    ViewData["AramaHedefi"] = "mesaj-tablosu";
+    ViewData["AramaYerTutucu"] = "Ad, e-posta veya mesajda ara";
+
+    var okunmamis = Model.Count(x => !x.OkunduMu);
+    ViewData["OkunmamisMesaj"] = (int?)okunmamis;
+    ViewData["Bildirim"] = (int?)okunmamis;
 }
 
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gelen Kutusu | Rosso Lounge</title>
-    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true">
-    <link rel="stylesheet" href="~/css/panel.css" asp-append-version="true">
-</head>
-<body class="panel">
-    <a href="#icerik" class="icerige-atla">İçeriğe atla</a>
+@section Eylemler {
+    <span class="y-rozet y-rozet--sonuk">
+        Toplam <span data-tablo-sayac>@Model.Count</span>
+    </span>
+    @if (okunmamis > 0)
+    {
+        <span class="y-rozet y-rozet--uyari">@okunmamis okunmadı</span>
+    }
+}
 
-    @await Html.PartialAsync("~/Views/Admin/_YanMenu.cshtml")
-
-    <main class="content" id="icerik">
-        @await Html.PartialAsync("~/Views/Admin/_Bildirim.cshtml")
-
-        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
-            <h2 class="m-0">Gelen Mesajlar</h2>
-            <span class="rs-rozet rs-rozet-bilgi">Toplam: @Model.Count</span>
-        </div>
-
-        <div class="custom-card">
-            @if (Model.Count == 0)
-            {
-                <div class="rs-bos-durum">
-                    <i class="fas fa-inbox" aria-hidden="true"></i>
-                    <h3>Henüz mesaj yok</h3>
-                    <p>Site üzerindeki iletişim formundan gönderilen mesajlar burada listelenir.</p>
-                </div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-custom m-0 align-middle">
-                        <caption class="gorsel-gizli">İletişim formundan gelen mesajlar</caption>
-                        <thead>
-                            <tr>
-                                <th scope="col">Kimden</th>
-                                <th scope="col" style="min-width: 220px;">Mesaj Özeti</th>
-                                <th scope="col">Tarih</th>
-                                <th scope="col" style="min-width: 130px;">İşlem</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in Model)
+@if (Model.Count == 0)
+{
+    <div class="y-bos">
+        <i class="y-bos__im fas fa-inbox" aria-hidden="true"></i>
+        <h2 class="y-bos__baslik">Gelen kutusu boş</h2>
+        <p class="y-bos__alt">Sitedeki iletişim formundan gönderilen mesajlar burada listelenir.</p>
+    </div>
+}
+else
+{
+    <div class="y-tablo-sarmal">
+        <table class="y-tablo" id="mesaj-tablosu">
+            <caption class="y-gizli">İletişim formundan gelen mesajlar</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Kimden</th>
+                    <th scope="col">Mesaj</th>
+                    <th scope="col">Tarih</th>
+                    <th scope="col">Durum</th>
+                    <th scope="col" class="y-tablo__eylem"><span class="y-gizli">İşlemler</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr class="@(item.OkunduMu ? null : "y-satir--dikkat")">
+                        <td>
+                            <span class="y-tablo__ad">@item.AdSoyad</span>
+                            <span class="y-tablo__ikincil">@item.Email</span>
+                        </td>
+                        <td class="y-tablo__not">
+                            @(item.Mesaj.Length > 70 ? item.Mesaj.Substring(0, 70) + "…" : item.Mesaj)
+                        </td>
+                        <td class="y-sayi">@item.Tarih.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>
+                            @if (item.OkunduMu)
                             {
-                                <tr class="@(item.OkunduMu ? "" : "unread")">
-                                    <td>
-                                        @item.AdSoyad
-                                        <small class="d-block rs-soluk">@item.Email</small>
-                                        @if (!item.OkunduMu)
-                                        {
-                                            <span class="rs-rozet rs-rozet-uyari mt-1">Okunmadı</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <small>@(item.Mesaj.Length > 60 ? item.Mesaj.Substring(0, 60) + "..." : item.Mesaj)</small>
-                                    </td>
-                                    <td>@item.Tarih.ToString("dd.MM.yyyy HH:mm")</td>
-                                    <td>
-                                        <div class="d-flex gap-2">
-                                            <a href="/Admin/MesajOku/@item.Id" class="btn-action btn-edit"
-                                               aria-label="@item.AdSoyad kişisinden gelen mesajı oku" title="Oku">
-                                                <i class="fas fa-envelope-open-text" aria-hidden="true"></i>
-                                            </a>
-                                            <form action="/Admin/MesajSil/@item.Id" method="post"
-                                                  onsubmit="return confirm('Bu mesajı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn-action btn-delete"
-                                                        aria-label="@item.AdSoyad kişisinden gelen mesajı sil" title="Sil">
-                                                    <i class="fas fa-trash" aria-hidden="true"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <span class="y-rozet y-rozet--sonuk">Okundu</span>
                             }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
-    </main>
-    <script src="~/js/ortak.js" asp-append-version="true"></script>
-    <script src="~/js/panel.js" asp-append-version="true"></script>
-</body>
-</html>
+                            else
+                            {
+                                <span class="y-rozet y-rozet--uyari">Yeni</span>
+                            }
+                        </td>
+                        <td class="y-tablo__eylem">
+                            <div class="y-eylemler">
+                                <a class="y-hayalet" href="/Admin/MesajOku/@item.Id"
+                                   title="Oku"
+                                   aria-label="@item.AdSoyad kişisinden gelen mesajı oku">
+                                    <i class="fas fa-envelope-open-text" aria-hidden="true"></i>
+                                </a>
+
+                                <a class="y-hayalet" href="mailto:@item.Email"
+                                   title="E-posta ile yanıtla"
+                                   aria-label="@item.AdSoyad kişisine e-posta ile yanıt yaz">
+                                    <i class="fas fa-reply" aria-hidden="true"></i>
+                                </a>
+
+                                <form method="post" action="/Admin/MesajSil/@item.Id"
+                                      onsubmit="return confirm('Bu mesajı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="y-hayalet y-hayalet--tehlike"
+                                            title="Sil"
+                                            aria-label="@item.AdSoyad kişisinden gelen mesajı sil">
+                                        <i class="fas fa-trash-can" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
