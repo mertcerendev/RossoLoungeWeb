@@ -1395,7 +1395,8 @@
         }
 
         var suSira = 0;
-        var acanKare = null;
+        var acanKare = null;    // ekranda GÖSTERİLEN kare (ileri/geri ile değişir)
+        var acilisKare = null;  // katmanı AÇAN kare (odak buraya döner)
         var acik = false;
 
         var arayuz = [ayak, kapatDugme, oncekiDugme, sonrakiDugme].filter(Boolean);
@@ -1429,6 +1430,7 @@
         function ac(sira) {
             icerikYaz(sira);
             acanKare = kareler[suSira];
+            acilisKare = acanKare;
             acik = true;
 
             kat.hidden = false;
@@ -1488,18 +1490,45 @@
                 }
                 foto.removeAttribute('src');
                 kaydirmaKilidi(false);
-                if (acanKare) acanKare.focus();
+
+                /* ODAK, KATMANI AÇAN KAREYE döner — o an gösterilene değil.
+                   İkisi ileri/geri gezilince ayrışıyor ve gösterilen kare
+                   sahnenin çok sağında, ekran dışında kalabiliyor.
+
+                   preventScroll ŞART: odak, ekran dışı bir kareyi görünür
+                   kılmak için EN YAKIN KAYDIRILABİLİR KUTUYU kaydırıyor.
+                   Pinli galeride o kutu .galeri__sahne ve ölçüldü:
+                   scrollLeft 0 → 2027. Ray'ın GSAP dönüşümü hâlâ -900
+                   olduğu hâlde sahne 2027 kaymış oluyor; akış kendiliğinden
+                   ileri gidiyor, dikey kaydırma devam ederken ray tükeniyor
+                   ve sonlar boş kalıyor. Kullanıcının bildirdiği hata bu. */
+                var odakHedefi = acilisKare || acanKare;
+                if (odakHedefi) odakHedefi.focus({ preventScroll: true });
             }
+
+            if (!canlandirMi()) { bitir(); return; }
 
             var kaynakCerceve = acanKare ? karedekiCerceve(acanKare) : null;
             var k = kaynakCerceve ? kaynakCerceve.getBoundingClientRect() : null;
 
-            if (!canlandirMi() || !k || !k.width) { bitir(); return; }
-
-            var h = cerceve.getBoundingClientRect();
+            /* Kare ekran dışındaysa oraya doğru küçültmek fotoğrafı
+               kadrajın dışına uçuruyor: 01'i açıp 07'ye gelip kapatınca
+               07 sahnenin çok sağında. O durumda yerinde soluyor. */
+            var kareEkranda = k && k.width > 0 &&
+                              k.right > 8 && k.left < window.innerWidth - 8;
 
             gsap.to(arayuz, { opacity: 0, duration: 0.2, ease: 'power2.in' });
             gsap.to(zemin, { opacity: 0, duration: 0.45, ease: 'power2.in', delay: 0.15 });
+
+            if (!kareEkranda) {
+                gsap.to(cerceve, {
+                    opacity: 0, scale: 0.94, duration: 0.45, ease: 'power2.in',
+                    onComplete: bitir
+                });
+                return;
+            }
+
+            var h = cerceve.getBoundingClientRect();
 
             gsap.set(cerceve, { position: 'fixed', margin: 0, left: h.left, top: h.top, width: h.width, height: h.height });
             gsap.to(cerceve, {

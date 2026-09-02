@@ -1439,7 +1439,14 @@
     height: 100vh;
     padding-block: 0;
     /* Ray ekranın dışına taşar; pin sırasında kırpılması şart */
-    overflow: hidden;
+    /* clip, hidden DEĞİL. hidden görünürde kaydırmayı kapatır ama
+       kutu PROGRAMLI olarak hâlâ kaydırılabilir kalır: tam ekran
+       görüntüleyici kapanırken odak, ekran dışı bir kareyi görünür
+       kılmak için sahneyi 2027px yana kaydırıyordu (ölçüldü).
+       clip kaydırma kutusu OLUŞTURMAZ, o yol tamamen kapanır.
+       JS tarafında ayrıca focus({preventScroll:true}) var —
+       clip'i tanımayan eski tarayıcılarda o koruyor. */
+    overflow: clip;
 }
 
 .galeri--pinli .galeri__ray {
