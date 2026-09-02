@@ -2052,25 +2052,62 @@
     inset-inline-end: 0;
 }
 
+/* KENAR İŞARETLERİ
+
+   Sorun: kenar bölgeleri masaüstünde TAMAMEN görünmezdi (opacity 0).
+   İmleç oraya gidince sıvı imleç "Geri/İleri" etiketine dönüşüyordu —
+   ama oraya gitmeyi bilmek gerekiyordu ve kimse bilemez.
+
+   Çözüm: etiketler artık her zaman duruyor, yalnızca çok sessiz.
+   Dikey ve harf aralıklı; sayfadaki diğer üst başlıklarla
+   ("SÜRÜKLEYİN", "MİSAFİRLERİMİZ") aynı tipografik ses — ikon değil,
+   çünkü bu sayfanın dili tipografi.
+
+   Üç kademe: durağan 0.32 → imleç sergiye girince 0.72 → kendi
+   üstünde şampanya. */
 .defter__yon-yazi {
-    color: var(--metin-3);
-    font-family: var(--f-serif);
-    font-size: var(--t-lg);
-    font-style: italic;
-    opacity: 0;
+    writing-mode: vertical-rl;
+    color: var(--titanyum-sonuk);
+    font-family: var(--f-sans);
+    font-size: 0.625rem;
+    font-weight: 500;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    opacity: 0.32;
     transition: opacity var(--h2) var(--egri), color var(--h2) var(--egri);
 }
 
+/* Sol etiket aşağıdan yukarı okunuyor; iki kenar birbirinin aynası */
+.defter__yon--geri .defter__yon-yazi {
+    transform: rotate(180deg);
+}
+
+/* İmleç sergiye girer girmez belirginleşiyor: kenarların tıklanabilir
+   olduğu, oraya varmadan ÖNCE anlaşılıyor. */
+.defter__sergi:hover .defter__yon-yazi,
+.defter__sergi:focus-within .defter__yon-yazi {
+    opacity: 0.72;
+}
+
+/* Kendi üstünde tam güç — sıra bilinçli: yukarıdaki kuralla aynı
+   özgüllükte, sonra geldiği için kazanıyor. */
+.defter__yon:hover .defter__yon-yazi,
 .defter__yon:focus-visible .defter__yon-yazi {
-    color: var(--metin);
+    color: var(--sampanya);
     opacity: 1;
 }
 
 /* İmleci olmayan cihazda etiket görünsün — yoksa geçişin yolu kalmaz */
 @media (hover: none) {
     .defter__yon-yazi {
-        opacity: 1;
+        opacity: 0.8;
     }
+}
+
+/* Kinetik başlangıç: kenarlardan içeri süzülüyorlar. Tek seferlik
+   giriş, gözün onları fark etmesi için (bkz. yorumDefteri). */
+.rosso-kinetik .defter__yon {
+    opacity: 0;
 }
 
 /* --- Ayak: sayaç + sinematik ilerleme çizgisi --- */

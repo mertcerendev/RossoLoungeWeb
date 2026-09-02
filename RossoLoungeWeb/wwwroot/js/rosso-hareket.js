@@ -1625,6 +1625,25 @@
         });
         durumYaz(0);
 
+        /* KENAR İŞARETLERİNİN GİRİŞİ
+           Etiketler CSS'te zaten sessizce duruyor; buradaki tek seferlik
+           kayma onları GÖZE SOKMADAN fark ettirmek için. Bölüm ekrana
+           girerken kenarlardan içeri süzülüyorlar; sonra oldukları yerde
+           kalıp sergi üzerine gelindiğinde belirginleşiyorlar (CSS).
+
+           x yönü indekse bağlı: soldaki soldan, sağdaki sağdan. */
+        if (geri && ileri) {
+            gsap.fromTo([geri, ileri],
+                {
+                    autoAlpha: 0,
+                    x: function (i) { return i === 0 ? -16 : 16; }
+                },
+                {
+                    autoAlpha: 1, x: 0, duration: 0.9, ease: 'expo.out', stagger: 0.12,
+                    scrollTrigger: { trigger: bolum, start: 'top 70%' }
+                });
+        }
+
         function durumYaz(i) {
             if (dolgu) {
                 gsap.to(dolgu, {
@@ -2344,7 +2363,7 @@
                 ' .nav__marka, .nav__menu > li, .nav__eylem,' +
                 ' .menu__kalem, .menu__bas > *, .menu__ray-ic, .menu__oda-bas,' +
                 ' .vitrin__kart, .vitrin__bas > *, .vitrin__eylem,' +
-                ' .defter__yaprak, .defter__satir, .defter__isaret, .defter__imza,' +
+                ' .defter__yaprak, .defter__satir, .defter__isaret, .defter__imza, .defter__yon,' +
                 ' .paylas__panel, .paylas__zemin, .paylas__ustbaslik, .paylas__baslik,' +
                 ' .paylas__alt, .paylas__form > *,' +
                 ' .kelime-kap > *, .konsiyer__satir, .konsiyer__baslik,' +
