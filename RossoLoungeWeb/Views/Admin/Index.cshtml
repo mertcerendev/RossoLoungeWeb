@@ -1,25 +1,45 @@
+﻿@model RossoLoungeWeb.Models.OzetModeli
 @*
     ÖZET (DASHBOARD)
     ===============================================================
-    Yeni panel iskeletinin ilk kullanıcısı. Veri kaynağı değişmedi:
-    AdminController.Index'in doldurduğu ViewBag'ler aynen kullanılıyor.
+    Kurgu, yöneticinin gün içinde sorduğu sırayla:
+      1. Bugün ne var?          → karşılama + bekleyen işler
+      2. Bugün kim geliyor?     → bugünün servisi (tek tıkla onay)
+      3. Gidişat nasıl?         → dönem seçicili rezervasyon grafiği
+      4. Ne zaman yoğunuz?      → yoğun saatler + yaklaşan günler
+      5. Misafir ne diyor?      → memnuniyet
+      6. Bir şey mi bozuldu?    → veri kalitesi uyarıları
+      7. Neler oldu?            → son hareketler
 
-    Ekranın kurgusu "yöneticinin bekleyen işi" üzerine: en üstte
-    aksiyon gerektiren sayılar, altında son 7 günün rezervasyon
-    dağılımı ve hızlı geçişler.
+    CİRO KUTUSU YOK: bu sitede sipariş/ödeme kaydı tutulmuyor.
+    Uydurma bir sayı göstermektense o kutu hiç konmadı.
 *@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
-    ViewData["Baslik"] = "Özet";
-    ViewData["AltBaslik"] = "Bekleyen işler ve son hareketler";
-    ViewData["Aktif"] = "ozet";
-    ViewData["BekleyenYorum"] = (int?)ViewBag.OnayBekleyenYorum;
-    ViewData["OkunmamisMesaj"] = (int?)ViewBag.OkunmamisMesaj;
-    ViewData["Bildirim"] = (int?)ViewBag.OkunmamisMesaj;
 
-    var gunler = ViewBag.GrafikGunler as List<string> ?? new List<string>();
-    var sayilar = ViewBag.GrafikSayilar as List<int> ?? new List<int>();
-    var enYuksek = sayilar.Count > 0 && sayilar.Max() > 0 ? sayilar.Max() : 1;
+    // Uygulama InvariantCulture ile çalışıyor; ay ve gün adları Türkçe
+    // görünsün diye kültür burada açıkça veriliyor.
+    var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+
+    ViewData["Baslik"] = "Özet";
+    ViewData["AltBaslik"] = Model.Simdi.ToString("d MMMM yyyy, dddd", tr);
+    ViewData["Aktif"] = "ozet";
+    ViewData["BekleyenYorum"] = (int?)Model.BekleyenYorum;
+    ViewData["OkunmamisMesaj"] = (int?)Model.OkunmamisMesaj;
+    ViewData["Bildirim"] = (int?)Model.OkunmamisMesaj;
+
+    var selam = Model.Simdi.Hour < 11 ? "Günaydın"
+              : Model.Simdi.Hour < 18 ? "İyi çalışmalar"
+              : "İyi akşamlar";
+
+    var enYogunSaat = Model.YogunSaatler.Count > 0
+        ? Model.YogunSaatler.OrderByDescending(s => s.Rezervasyon).First()
+        : null;
+    var saatEnYuksek = Model.YogunSaatler.Count > 0
+        ? Math.Max(1, Model.YogunSaatler.Max(s => s.Rezervasyon))
+        : 1;
+    var puanEnYuksek = Math.Max(1, Model.PuanDagilimi.Max());
+    var yaklasanEnYuksek = Math.Max(1, Model.YaklasanGunler.Max(g => g.Rezervasyon));
 }
 
 @section Eylemler {
@@ -31,19 +51,40 @@
     </a>
 }
 
-@* --- Bekleyen işler --- *@
-<section class="y-izgara-kart" aria-label="Bekleyen işler">
-    <article class="y-olcut">
-        <p class="y-olcut__etiket">Bugünkü rezervasyon</p>
-        <p class="y-olcut__deger">@ViewBag.BugunkuRezervasyon</p>
-        <p class="y-olcut__alt">Toplam @ViewBag.ToplamRezervasyon kayıt</p>
-    </article>
+@* ---------- 1. Karşılama ---------- *@
+<section class="y-selam">
+    <div>
+        <h2 class="y-selam__baslik">@selam, @Model.Kullanici.</h2>
+        <p class="y-selam__alt">
+            @if (Model.BugunRezervasyon > 0)
+            {
+                <text>Bugün <strong class="y-sayi">@Model.BugunRezervasyon</strong> rezervasyon var — toplam <strong class="y-sayi">@Model.BugunKisi</strong> kişi.</text>
+            }
+            else
+            {
+                <text>Bugün için henüz rezervasyon yok.</text>
+            }
+        </p>
+    </div>
 
-    <article class="y-olcut">
-        <p class="y-olcut__etiket">Onay bekleyen</p>
-        <p class="y-olcut__deger">@ViewBag.BekleyenRezervasyon</p>
-        <p class="y-olcut__alt">
-            @if (ViewBag.BekleyenRezervasyon > 0)
+    <span class="y-rozet @(Model.SuAnAcik ? "y-rozet--basari" : "y-rozet--sonuk")">
+        @(Model.SuAnAcik ? "Şu an açık" : "Şu an kapalı") · 11.30 – 00.00
+    </span>
+</section>
+
+@* ---------- 2. Bekleyen işler ---------- *@
+<section class="y-izgara-kart" aria-label="Bekleyen işler">
+    <a class="y-olcut y-olcut--bag" href="/Admin/Rezervasyonlar">
+        <span class="y-olcut__etiket">Bugünkü rezervasyon</span>
+        <span class="y-olcut__deger">@Model.BugunRezervasyon</span>
+        <span class="y-olcut__alt">@Model.BugunKisi kişi bekleniyor</span>
+    </a>
+
+    <a class="y-olcut y-olcut--bag @(Model.BekleyenRezervasyon > 0 ? "y-olcut--dikkat" : null)" href="/Admin/Rezervasyonlar">
+        <span class="y-olcut__etiket">Onay bekleyen</span>
+        <span class="y-olcut__deger">@Model.BekleyenRezervasyon</span>
+        <span class="y-olcut__alt">
+            @if (Model.BekleyenRezervasyon > 0)
             {
                 <span class="y-rozet y-rozet--uyari">İşlem bekliyor</span>
             }
@@ -51,64 +92,372 @@
             {
                 <span class="y-rozet y-rozet--basari">Hepsi yanıtlandı</span>
             }
-        </p>
-    </article>
+        </span>
+    </a>
 
-    <article class="y-olcut y-olcut--neon">
-        <p class="y-olcut__etiket">Okunmamış mesaj</p>
-        <p class="y-olcut__deger">@ViewBag.OkunmamisMesaj</p>
-        <p class="y-olcut__alt">Toplam @ViewBag.ToplamMesaj mesaj</p>
-    </article>
+    <a class="y-olcut y-olcut--bag y-olcut--neon @(Model.OkunmamisMesaj > 0 ? "y-olcut--dikkat" : null)" href="/Admin/Mesajlar">
+        <span class="y-olcut__etiket">Okunmamış mesaj</span>
+        <span class="y-olcut__deger">@Model.OkunmamisMesaj</span>
+        <span class="y-olcut__alt">Toplam @Model.ToplamMesaj mesaj</span>
+    </a>
 
-    <article class="y-olcut y-olcut--neon">
-        <p class="y-olcut__etiket">Onay bekleyen yorum</p>
-        <p class="y-olcut__deger">@ViewBag.OnayBekleyenYorum</p>
-        <p class="y-olcut__alt">Toplam @ViewBag.ToplamYorum yorum</p>
-    </article>
+    <a class="y-olcut y-olcut--bag y-olcut--neon @(Model.BekleyenYorum > 0 ? "y-olcut--dikkat" : null)" href="/Admin/Yorumlar">
+        <span class="y-olcut__etiket">Onay bekleyen yorum</span>
+        <span class="y-olcut__deger">@Model.BekleyenYorum</span>
+        <span class="y-olcut__alt">Toplam @Model.ToplamYorum yorum</span>
+    </a>
 </section>
 
-@* --- Son 7 gün + menü durumu --- *@
-<div class="y-ozet-alt">
+@* ---------- 3. Uyarılar ---------- *@
+@if (Model.Uyarilar.Count > 0)
+{
+    <section class="y-uyari-serit" aria-label="Dikkat gerektirenler">
+        @foreach (var uyari in Model.Uyarilar)
+        {
+            <a class="y-uyari" href="@uyari.Adres">
+                <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+                <span>@uyari.Metin</span>
+                <span class="y-uyari__eylem">@uyari.Eylem <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+            </a>
+        }
+    </section>
+}
+
+<div class="y-ozet-ust">
+    @* ---------- 4. Rezervasyon grafiği ---------- *@
     <section class="y-kart">
-        <header class="y-kart__bas">
-            <h2 class="y-kart__baslik">Son 7 gün</h2>
-            <span class="y-rozet y-rozet--sonuk">Rezervasyon</span>
+        <header class="y-kart__bas y-kart__bas--sarmal">
+            <div>
+                <h2 class="y-kart__baslik">Rezervasyon akışı</h2>
+                <p class="y-kart__alt">
+                    Bu hafta <strong class="y-sayi">@Model.BuHaftaRezervasyon</strong>
+                    @if (Model.HaftaDegisimYuzde is int fark)
+                    {
+                        <span class="y-fark @(fark >= 0 ? "y-fark--artis" : "y-fark--dusus")">
+                            <i class="fas @(fark >= 0 ? "fa-arrow-trend-up" : "fa-arrow-trend-down")" aria-hidden="true"></i>
+                            @(fark >= 0 ? "+" : "")@fark%
+                        </span>
+                        <span class="y-kart__alt">geçen haftaya göre</span>
+                    }
+                </p>
+            </div>
+
+            @* Dönem seçici — WAI-ARIA sekme deseni. Veri dört dönem için de
+               sunucudan tek seferde geldi; değişim anında oluyor. *@
+            <div class="y-donem" role="tablist" aria-label="Grafik dönemi">
+                <button type="button" class="y-donem__dugme y-donem__dugme--aktif" role="tab"
+                        aria-selected="true" data-donem="gun7">7 gün</button>
+                <button type="button" class="y-donem__dugme" role="tab"
+                        aria-selected="false" tabindex="-1" data-donem="gun30">30 gün</button>
+                <button type="button" class="y-donem__dugme" role="tab"
+                        aria-selected="false" tabindex="-1" data-donem="aylik">Aylık</button>
+                <button type="button" class="y-donem__dugme" role="tab"
+                        aria-selected="false" tabindex="-1" data-donem="yillik">Yıllık</button>
+            </div>
         </header>
 
-        @* Sütunlar CSS ile çiziliyor; grafik kütüphanesi yüklemek
-           yedi sayı için gereksiz ağırlık olurdu. *@
-        <ul class="y-sutunlar">
-            @for (int i = 0; i < gunler.Count; i++)
+        @* Yıl seçici yalnızca "Aylık" dönemde görünür *@
+        <div class="y-grafik-arac" data-yil-secici hidden>
+            <label class="y-form__etiket" for="grafikYil">Yıl</label>
+            <select class="y-secim y-secim--dar" id="grafikYil">
+                @foreach (var yil in Model.Grafik.Yillar)
+                {
+                    <option value="@yil" selected="@(yil == Model.Grafik.VarsayilanYil)">@yil</option>
+                }
+            </select>
+        </div>
+
+        @* Grafik verisi ayrı bir script bloğunda: data-* niteliğine
+           sıkıştırmak tırnak kaçırma gerektiriyordu. Varsayılan JSON
+           kodlayıcısı < > & karakterlerini kaçırdığı için script
+           etiketinin içinde güvenli. *@
+        <script type="application/json" id="grafik-verisi">
+            @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Grafik))
+        </script>
+
+        <div class="y-grafik" data-grafik>
+            @* Sütunlar JS tarafından basılıyor. JS yoksa aşağıdaki tablo
+               kalır — veri hiçbir koşulda kaybolmuyor. *@
+            <noscript>
+                <table class="y-tablo">
+                    <caption class="y-gizli">Son 7 günün rezervasyon sayıları</caption>
+                    <thead>
+                        <tr><th scope="col">Gün</th><th scope="col">Rezervasyon</th><th scope="col">Kişi</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var n in Model.Grafik.Gun7)
+                        {
+                            <tr>
+                                <td>@n.TamEtiket</td>
+                                <td class="y-sayi">@n.Rezervasyon</td>
+                                <td class="y-sayi">@n.Kisi</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </noscript>
+        </div>
+
+        <p class="y-grafik__ozet" data-grafik-ozet aria-live="polite"></p>
+    </section>
+
+    @* ---------- 5. Bugünün servisi ---------- *@
+    <section class="y-kart">
+        <header class="y-kart__bas">
+            <h2 class="y-kart__baslik">Bugünün servisi</h2>
+            <span class="y-rozet y-rozet--sonuk">@Model.BugunKisi kişi</span>
+        </header>
+
+        @if (Model.BugunListe.Count == 0)
+        {
+            <div class="y-bos y-bos--kucuk">
+                <i class="y-bos__im fas fa-mug-hot" aria-hidden="true"></i>
+                <p class="y-bos__alt">Bugün için rezervasyon yok.</p>
+            </div>
+        }
+        else
+        {
+            <ul class="y-servis">
+                @foreach (var rez in Model.BugunListe)
+                {
+                    <li class="y-servis__satir @(rez.OnaylandiMi ? null : "y-servis__satir--bekliyor")">
+                        <span class="y-servis__saat y-sayi">@rez.Tarih.ToString("HH:mm")</span>
+
+                        <span class="y-servis__kisi">
+                            <span class="y-tablo__ad">@rez.AdSoyad</span>
+                            <span class="y-tablo__ikincil">
+                                @rez.KisiSayisi kişi
+                                @if (!string.IsNullOrWhiteSpace(rez.Not))
+                                {
+                                    <text> · </text><span title="@rez.Not">@(rez.Not.Length > 24 ? rez.Not.Substring(0, 24) + "…" : rez.Not)</span>
+                                }
+                            </span>
+                        </span>
+
+                        @if (rez.OnaylandiMi)
+                        {
+                            <span class="y-rozet y-rozet--basari">Onaylı</span>
+                        }
+                        else
+                        {
+                            @* Onay buradan da verilebilsin: sabah listesine bakan
+                               kişi ayrı sayfaya gitmek zorunda kalmasın. *@
+                            <form method="post" action="/Admin/Onayla/@rez.Id">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="y-dugme y-dugme--minik"
+                                        aria-label="@rez.AdSoyad adına rezervasyonu onayla">
+                                    <i class="fas fa-check" aria-hidden="true"></i> Onayla
+                                </button>
+                            </form>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+</div>
+
+<div class="y-ozet-orta">
+    @* ---------- 6. Yaklaşan günler ---------- *@
+    <section class="y-kart">
+        <header class="y-kart__bas">
+            <h2 class="y-kart__baslik">Önümüzdeki hafta</h2>
+        </header>
+
+        <ul class="y-gunler">
+            @foreach (var gun in Model.YaklasanGunler)
             {
-                var sayi = i < sayilar.Count ? sayilar[i] : 0;
-                var yuzde = (int)Math.Round(sayi * 100.0 / enYuksek);
-                <li class="y-sutun">
-                    <span class="y-sutun__deger y-sayi">@sayi</span>
-                    <span class="y-sutun__cubuk" style="height:@(Math.Max(yuzde, 2))%"
-                          role="img" aria-label="@gunler[i]: @sayi rezervasyon"></span>
-                    <span class="y-sutun__etiket">@gunler[i]</span>
+                var oran = (int)Math.Round(gun.Rezervasyon * 100.0 / yaklasanEnYuksek);
+                <li class="y-gun @(gun.Bugun ? "y-gun--bugun" : null)">
+                    <span class="y-gun__ad">@gun.GunAdi</span>
+                    <span class="y-gun__tarih y-sayi">@gun.Tarih.ToString("dd.MM")</span>
+                    <span class="y-gun__cubuk" aria-hidden="true">
+                        <span class="y-gun__dolgu" style="width:@(gun.Rezervasyon > 0 ? Math.Max(oran, 6) : 0)%"></span>
+                    </span>
+                    <span class="y-gun__sayi y-sayi" title="@gun.Kisi kişi">@gun.Rezervasyon</span>
                 </li>
             }
         </ul>
     </section>
 
+    @* ---------- 7. Yoğun saatler ---------- *@
     <section class="y-kart">
         <header class="y-kart__bas">
-            <h2 class="y-kart__baslik">Menü durumu</h2>
+            <h2 class="y-kart__baslik">Yoğun saatler</h2>
+            @if (enYogunSaat != null)
+            {
+                <span class="y-rozet y-rozet--sonuk">En yoğun @enYogunSaat.Saat.ToString("00"):00</span>
+            }
+        </header>
+
+        @if (Model.YogunSaatler.Count == 0)
+        {
+            <div class="y-bos y-bos--kucuk">
+                <p class="y-bos__alt">Saat dağılımı için henüz yeterli rezervasyon yok.</p>
+            </div>
+        }
+        else
+        {
+            <ul class="y-saatler">
+                @foreach (var dilim in Model.YogunSaatler)
+                {
+                    var yukseklik = (int)Math.Round(dilim.Rezervasyon * 100.0 / saatEnYuksek);
+                    <li class="y-saat">
+                        <span class="y-saat__cubuk" style="height:@Math.Max(yukseklik, 4)%"
+                              role="img"
+                              aria-label="@dilim.Saat.ToString("00"):00 — @dilim.Rezervasyon rezervasyon, @dilim.Kisi kişi"></span>
+                        <span class="y-saat__etiket y-sayi">@dilim.Saat.ToString("00")</span>
+                    </li>
+                }
+            </ul>
+            <p class="y-kart__alt">Personel planlaması için: rezervasyonların saat dağılımı.</p>
+        }
+    </section>
+
+    @* ---------- 8. Memnuniyet ---------- *@
+    <section class="y-kart">
+        <header class="y-kart__bas">
+            <h2 class="y-kart__baslik">Misafir memnuniyeti</h2>
+            <a class="y-kart__bag" href="/Admin/Yorumlar">Tümü</a>
+        </header>
+
+        @if (Model.OrtalamaPuan is double ortalama)
+        {
+            <div class="y-puan-ozet">
+                <span class="y-puan-ozet__deger y-sayi">@ortalama.ToString("0.0", tr)</span>
+                <span class="y-puan-ozet__alt">5 üzerinden · @Model.PuanDagilimi.Sum() yayında yorum</span>
+            </div>
+
+            <ul class="y-puan-dagilim">
+                @for (int p = 5; p >= 1; p--)
+                {
+                    var adet = Model.PuanDagilimi[p - 1];
+                    var oran = (int)Math.Round(adet * 100.0 / puanEnYuksek);
+                    <li class="y-puan-satir">
+                        <span class="y-puan-satir__no y-sayi">@p</span>
+                        <span class="y-puan-satir__cubuk" aria-hidden="true">
+                            <span class="y-puan-satir__dolgu" style="width:@(adet > 0 ? Math.Max(oran, 4) : 0)%"></span>
+                        </span>
+                        <span class="y-puan-satir__adet y-sayi">@adet</span>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <div class="y-bos y-bos--kucuk">
+                <p class="y-bos__alt">Henüz yayında yorum yok.</p>
+            </div>
+        }
+
+        @if (Model.SonYorumlar.Count > 0)
+        {
+            <ul class="y-son-yorumlar">
+                @foreach (var yorum in Model.SonYorumlar)
+                {
+                    <li class="y-son-yorum">
+                        <span class="y-son-yorum__bas">
+                            <span class="y-tablo__ad">@yorum.AdSoyad</span>
+                            @if (!yorum.OnaylandiMi)
+                            {
+                                <span class="y-rozet y-rozet--uyari">Bekliyor</span>
+                            }
+                        </span>
+                        <span class="y-son-yorum__metin">
+                            @(yorum.Mesaj.Length > 90 ? yorum.Mesaj.Substring(0, 90) + "…" : yorum.Mesaj)
+                        </span>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+</div>
+
+<div class="y-ozet-alt">
+    @* ---------- 9. Son hareketler ---------- *@
+    <section class="y-kart">
+        <header class="y-kart__bas">
+            <h2 class="y-kart__baslik">Son hareketler</h2>
+        </header>
+
+        @if (Model.SonHareketler.Count == 0)
+        {
+            <div class="y-bos y-bos--kucuk">
+                <p class="y-bos__alt">Henüz hareket yok.</p>
+            </div>
+        }
+        else
+        {
+            <ul class="y-akis">
+                @foreach (var hareket in Model.SonHareketler)
+                {
+                    @* Satırın TAMAMI tıklanabilir: yalnızca başlık metnini
+                       bağlantı yapmak 22px'lik ince bir hedef bırakıyordu. *@
+                    <li>
+                        @if (hareket.Adres != null)
+                        {
+                            <a class="y-akis__satir y-akis__satir--bag" href="@hareket.Adres">
+                                <span class="y-akis__im y-akis__im--@hareket.Tur" aria-hidden="true">
+                                    <i class="fas @hareket.Ikon"></i>
+                                </span>
+                                <span class="y-akis__govde">
+                                    <span class="y-tablo__ad">@hareket.Baslik</span>
+                                    @if (hareket.Ayrinti != null)
+                                    {
+                                        <span class="y-tablo__ikincil">@hareket.Ayrinti</span>
+                                    }
+                                </span>
+                                <time class="y-akis__zaman y-sayi" datetime="@hareket.Tarih.ToString("s")">
+                                    @hareket.Tarih.ToString("dd.MM HH:mm")
+                                </time>
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="y-akis__satir">
+                                <span class="y-akis__im y-akis__im--@hareket.Tur" aria-hidden="true">
+                                    <i class="fas @hareket.Ikon"></i>
+                                </span>
+                                <span class="y-akis__govde">
+                                    <span class="y-tablo__ad">@hareket.Baslik</span>
+                                    @if (hareket.Ayrinti != null)
+                                    {
+                                        <span class="y-tablo__ikincil">@hareket.Ayrinti</span>
+                                    }
+                                </span>
+                                <time class="y-akis__zaman y-sayi" datetime="@hareket.Tarih.ToString("s")">
+                                    @hareket.Tarih.ToString("dd.MM HH:mm")
+                                </time>
+                            </span>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
+    @* ---------- 10. Menü durumu ---------- *@
+    <section class="y-kart">
+        <header class="y-kart__bas">
+            <h2 class="y-kart__baslik">Menü ve kitle</h2>
         </header>
 
         <dl class="y-liste">
             <div class="y-liste__satir">
                 <dt>Kategori</dt>
-                <dd class="y-sayi">@ViewBag.ToplamKategori</dd>
+                <dd class="y-sayi">@Model.ToplamKategori</dd>
             </div>
             <div class="y-liste__satir">
                 <dt>Ürün</dt>
-                <dd class="y-sayi">@ViewBag.ToplamUrun</dd>
+                <dd class="y-sayi">@Model.ToplamUrun</dd>
             </div>
             <div class="y-liste__satir">
-                <dt>Onaylı rezervasyon</dt>
-                <dd class="y-sayi">@ViewBag.OnayliRezervasyon</dd>
+                <dt>Toplam rezervasyon</dt>
+                <dd class="y-sayi">@Model.ToplamRezervasyon</dd>
+            </div>
+            <div class="y-liste__satir">
+                <dt>Bülten abonesi</dt>
+                <dd class="y-sayi">@Model.BultenAbone</dd>
             </div>
         </dl>
 

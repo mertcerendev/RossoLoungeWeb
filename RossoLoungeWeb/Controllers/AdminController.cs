@@ -194,41 +194,295 @@ namespace RossoLoungeWeb.Controllers
         }
 
         // --- 2. DASHBOARD (ÖZET) ---
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            // Rezervasyon istatistikleri
-            ViewBag.ToplamRezervasyon = _context.Rezervasyons.Count();
-            ViewBag.BekleyenRezervasyon = _context.Rezervasyons.Count(x => !x.OnaylandiMi);
-            ViewBag.OnayliRezervasyon = _context.Rezervasyons.Count(x => x.OnaylandiMi);
-            ViewBag.ToplamUrun = _context.Urunler.Count();
+            var simdi = TurkiyeSaati.Simdi;
+            var bugun = simdi.Date;
 
-            // Panelde gerçekten işe yarayan sayaçlar: yöneticinin bekleyen işleri.
-            var bugun = TurkiyeSaati.Bugun;
-            ViewBag.BugunkuRezervasyon = _context.Rezervasyons.Count(x => x.Tarih.Date == bugun);
-            ViewBag.OkunmamisMesaj = _context.IletisimMesajlari.Count(m => !m.OkunduMu);
-            ViewBag.ToplamMesaj = _context.IletisimMesajlari.Count();
-            ViewBag.OnayBekleyenYorum = _context.Yorumlar.Count(y => !y.OnaylandiMi);
-            ViewBag.ToplamYorum = _context.Yorumlar.Count();
-            ViewBag.ToplamKategori = _context.Kategoriler.Count();
-
-            // Grafik Verisi (Son 7 Gün) — Türkiye saatiyle.
-            // DateTime.Today sunucu saat dilimini kullanıyordu; sunucu UTC ise
-            // pencere kayıyor ve bugünün rezervasyonları yanlış güne düşüyordu.
-            var son7Gun = new List<string>();
-            var rezervasyonSayilari = new List<int>();
-
-            for (int i = 6; i >= 0; i--)
+            var model = new OzetModeli
             {
-                var tarih = bugun.AddDays(-i);
-                son7Gun.Add(tarih.ToString("dd MMM", TurkceKultur));
-                int sayi = _context.Rezervasyons.Count(x => x.Tarih.Date == tarih);
-                rezervasyonSayilari.Add(sayi);
+                Kullanici = User.Identity?.Name ?? "Yönetici",
+                Simdi = simdi,
+                // Çalışma saatleri 11.30 – 00.00; gece yarısına sarktığı için
+                // "saat >= açılış" tek başına yetiyor.
+                SuAnAcik = simdi.TimeOfDay >= new TimeSpan(11, 30, 0)
+            };
+
+            /* ---------------------------------------------------------
+               BEKLEYEN İŞLER + TOPLAMLAR
+               --------------------------------------------------------- */
+            model.ToplamRezervasyon = await _context.Rezervasyons.CountAsync();
+            model.BekleyenRezervasyon = await _context.Rezervasyons.CountAsync(r => !r.OnaylandiMi);
+            model.OkunmamisMesaj = await _context.IletisimMesajlari.CountAsync(m => !m.OkunduMu);
+            model.ToplamMesaj = await _context.IletisimMesajlari.CountAsync();
+            model.BekleyenYorum = await _context.Yorumlar.CountAsync(y => !y.OnaylandiMi);
+            model.ToplamYorum = await _context.Yorumlar.CountAsync();
+            model.ToplamUrun = await _context.Urunler.CountAsync();
+            model.ToplamKategori = await _context.Kategoriler.CountAsync();
+            model.BultenAbone = await _context.BultenAboneleri.CountAsync();
+
+            /* ---------------------------------------------------------
+               BUGÜNÜN SERVİSİ
+               Sabah panele bakan kişinin asıl aradığı liste: bugün kim
+               geliyor, saat kaçta, kaç kişi, onaylı mı.
+               --------------------------------------------------------- */
+            model.BugunListe = await _context.Rezervasyons
+                .Where(r => r.Tarih.Date == bugun)
+                .OrderBy(r => r.Tarih)
+                .ToListAsync();
+
+            model.BugunRezervasyon = model.BugunListe.Count;
+            model.BugunKisi = model.BugunListe.Sum(r => r.KisiSayisi);
+
+            /* ---------------------------------------------------------
+               HAFTA KARŞILAŞTIRMASI
+               Tek bir sayı bağlamsızdır: "12 rezervasyon" iyi mi kötü mü
+               belli değil. Geçen haftayla kıyas anlam veriyor.
+               --------------------------------------------------------- */
+            var haftaBasi = bugun.AddDays(-6);
+            var oncekiHaftaBasi = bugun.AddDays(-13);
+
+            model.BuHaftaRezervasyon = await _context.Rezervasyons
+                .CountAsync(r => r.Tarih.Date >= haftaBasi && r.Tarih.Date <= bugun);
+            model.GecenHaftaRezervasyon = await _context.Rezervasyons
+                .CountAsync(r => r.Tarih.Date >= oncekiHaftaBasi && r.Tarih.Date < haftaBasi);
+
+            /* ---------------------------------------------------------
+               GRAFİK — dört dönem, iki sorgu
+               Eskiden yalnızca 7 gün vardı ve her gün için AYRI bir COUNT
+               sorgusu atılıyordu (N+1). Şimdi günlük ve aylık kırılım birer
+               sorguyla alınıp bellekte dönemlere dağıtılıyor.
+               --------------------------------------------------------- */
+            var otuzGunOnce = bugun.AddDays(-29);
+
+            var gunlukHam = await _context.Rezervasyons
+                .Where(r => r.Tarih.Date >= otuzGunOnce && r.Tarih.Date <= bugun)
+                .GroupBy(r => r.Tarih.Date)
+                .Select(g => new { Tarih = g.Key, Sayi = g.Count(), Kisi = g.Sum(x => x.KisiSayisi) })
+                .ToListAsync();
+
+            var gunlukHarita = gunlukHam.ToDictionary(x => x.Tarih, x => new { x.Sayi, x.Kisi });
+
+            List<GrafikNoktasi> GunSerisi(int gunSayisi)
+            {
+                var seri = new List<GrafikNoktasi>();
+                for (int i = gunSayisi - 1; i >= 0; i--)
+                {
+                    var tarih = bugun.AddDays(-i);
+                    gunlukHarita.TryGetValue(tarih, out var deger);
+                    seri.Add(new GrafikNoktasi
+                    {
+                        // 30 günlük seride 30 etiket sığmıyor: yalnızca gün numarası.
+                        Etiket = tarih.ToString(gunSayisi > 10 ? "dd" : "dd MMM", TurkceKultur),
+                        TamEtiket = tarih.ToString("d MMMM yyyy, dddd", TurkceKultur),
+                        Rezervasyon = deger?.Sayi ?? 0,
+                        Kisi = deger?.Kisi ?? 0
+                    });
+                }
+                return seri;
             }
 
-            ViewBag.GrafikGunler = son7Gun;
-            ViewBag.GrafikSayilar = rezervasyonSayilari;
+            model.Grafik.Gun7 = GunSerisi(7);
+            model.Grafik.Gun30 = GunSerisi(30);
 
-            return View();
+            var aylikHam = await _context.Rezervasyons
+                .GroupBy(r => new { r.Tarih.Year, r.Tarih.Month })
+                .Select(g => new { g.Key.Year, g.Key.Month, Sayi = g.Count(), Kisi = g.Sum(x => x.KisiSayisi) })
+                .ToListAsync();
+
+            model.Grafik.Yillar = aylikHam.Select(a => a.Year).Distinct().OrderByDescending(y => y).ToList();
+            if (model.Grafik.Yillar.Count == 0) model.Grafik.Yillar.Add(bugun.Year);
+            model.Grafik.VarsayilanYil = model.Grafik.Yillar.Contains(bugun.Year)
+                ? bugun.Year
+                : model.Grafik.Yillar[0];
+
+            foreach (var yil in model.Grafik.Yillar)
+            {
+                var aylar = new List<GrafikNoktasi>();
+                for (int ay = 1; ay <= 12; ay++)
+                {
+                    var kayit = aylikHam.FirstOrDefault(a => a.Year == yil && a.Month == ay);
+                    aylar.Add(new GrafikNoktasi
+                    {
+                        Etiket = new DateTime(yil, ay, 1).ToString("MMM", TurkceKultur),
+                        TamEtiket = new DateTime(yil, ay, 1).ToString("MMMM yyyy", TurkceKultur),
+                        Rezervasyon = kayit?.Sayi ?? 0,
+                        Kisi = kayit?.Kisi ?? 0
+                    });
+                }
+                model.Grafik.Aylik[yil] = aylar;
+            }
+
+            model.Grafik.Yillik = aylikHam
+                .GroupBy(a => a.Year)
+                .OrderBy(g => g.Key)
+                .Select(g => new GrafikNoktasi
+                {
+                    Etiket = g.Key.ToString(),
+                    TamEtiket = g.Key + " yılı toplamı",
+                    Rezervasyon = g.Sum(x => x.Sayi),
+                    Kisi = g.Sum(x => x.Kisi)
+                })
+                .ToList();
+
+            /* ---------------------------------------------------------
+               YAKLAŞAN 8 GÜN — ileriye dönük planlama
+               --------------------------------------------------------- */
+            var yediGunSonra = bugun.AddDays(7);
+            var yaklasanHam = await _context.Rezervasyons
+                .Where(r => r.Tarih.Date >= bugun && r.Tarih.Date <= yediGunSonra)
+                .GroupBy(r => r.Tarih.Date)
+                .Select(g => new { Tarih = g.Key, Sayi = g.Count(), Kisi = g.Sum(x => x.KisiSayisi) })
+                .ToListAsync();
+
+            for (int i = 0; i <= 7; i++)
+            {
+                var tarih = bugun.AddDays(i);
+                var kayit = yaklasanHam.FirstOrDefault(y => y.Tarih == tarih);
+                model.YaklasanGunler.Add(new GunOzeti
+                {
+                    Tarih = tarih,
+                    GunAdi = i == 0 ? "Bugün" : (i == 1 ? "Yarın" : tarih.ToString("ddd", TurkceKultur)),
+                    Rezervasyon = kayit?.Sayi ?? 0,
+                    Kisi = kayit?.Kisi ?? 0,
+                    Bugun = i == 0
+                });
+            }
+
+            /* ---------------------------------------------------------
+               YOĞUN SAATLER — personel planlaması için
+               --------------------------------------------------------- */
+            model.YogunSaatler = (await _context.Rezervasyons
+                .GroupBy(r => r.Tarih.Hour)
+                .Select(g => new { Saat = g.Key, Sayi = g.Count(), Kisi = g.Sum(x => x.KisiSayisi) })
+                .ToListAsync())
+                .OrderBy(x => x.Saat)
+                .Select(x => new SaatDilimi { Saat = x.Saat, Rezervasyon = x.Sayi, Kisi = x.Kisi })
+                .ToList();
+
+            /* ---------------------------------------------------------
+               MEMNUNİYET
+               Ortalama yalnızca YAYINDAKİ yorumlardan: sitede görünen puan
+               neyse panelde de o görünmeli.
+               --------------------------------------------------------- */
+            var puanlar = await _context.Yorumlar
+                .Where(y => y.OnaylandiMi)
+                .Select(y => y.Puan)
+                .ToListAsync();
+
+            if (puanlar.Count > 0)
+            {
+                model.OrtalamaPuan = Math.Round(puanlar.Average(), 1);
+                foreach (var p in puanlar)
+                {
+                    if (p >= 1 && p <= 5) model.PuanDagilimi[p - 1]++;
+                }
+            }
+
+            model.SonYorumlar = await _context.Yorumlar
+                .OrderByDescending(y => y.Tarih)
+                .Take(3)
+                .ToListAsync();
+
+            /* ---------------------------------------------------------
+               SON HAREKETLER — dört kaynak tek akışta
+               --------------------------------------------------------- */
+            var sonRezervasyonlar = await _context.Rezervasyons
+                .OrderByDescending(r => r.OlusturulmaTarihi).Take(5)
+                .Select(r => new Hareket
+                {
+                    Tarih = r.OlusturulmaTarihi,
+                    Tur = "rezervasyon",
+                    Ikon = "fa-calendar-check",
+                    Baslik = r.AdSoyad + " masa ayırttı",
+                    Ayrinti = r.KisiSayisi + " kişi",
+                    Adres = "/Admin/Rezervasyonlar"
+                }).ToListAsync();
+
+            var sonMesajlar = await _context.IletisimMesajlari
+                .OrderByDescending(m => m.Tarih).Take(5)
+                .Select(m => new Hareket
+                {
+                    Tarih = m.Tarih,
+                    Tur = "mesaj",
+                    Ikon = "fa-envelope",
+                    Baslik = m.AdSoyad + " mesaj gönderdi",
+                    Ayrinti = null,
+                    Adres = "/Admin/MesajOku/" + m.Id
+                }).ToListAsync();
+
+            var sonYorumHareket = await _context.Yorumlar
+                .OrderByDescending(y => y.Tarih).Take(5)
+                .Select(y => new Hareket
+                {
+                    Tarih = y.Tarih,
+                    Tur = "yorum",
+                    Ikon = "fa-star-half-stroke",
+                    Baslik = y.AdSoyad + " yorum bıraktı",
+                    Ayrinti = y.Puan + " puan",
+                    Adres = "/Admin/Yorumlar"
+                }).ToListAsync();
+
+            var sonAboneler = await _context.BultenAboneleri
+                .OrderByDescending(b => b.Tarih).Take(5)
+                .Select(b => new Hareket
+                {
+                    Tarih = b.Tarih,
+                    Tur = "bulten",
+                    Ikon = "fa-paper-plane",
+                    Baslik = "Yeni bülten aboneliği",
+                    Ayrinti = b.Email,
+                    Adres = null
+                }).ToListAsync();
+
+            model.SonHareketler = sonRezervasyonlar
+                .Concat(sonMesajlar).Concat(sonYorumHareket).Concat(sonAboneler)
+                .OrderByDescending(h => h.Tarih)
+                .Take(7)
+                .ToList();
+
+            /* ---------------------------------------------------------
+               VERİ KALİTESİ UYARILARI
+               Menüde sessizce bozulan şeyleri yöneticiye söyler; her biri
+               tıklanabilir ve doğrudan düzeltileceği ekrana götürür.
+               --------------------------------------------------------- */
+            var gorselsiz = (await _context.Urunler.Select(u => u.ResimUrl).ToListAsync())
+                .Count(r => !UrunGorseli.Gecerli(r));
+
+            if (gorselsiz > 0)
+            {
+                model.Uyarilar.Add(new Uyari
+                {
+                    Metin = gorselsiz + " ürünün görseli yok ya da geçersiz.",
+                    Adres = "/Urun/Index",
+                    Eylem = "Ürünlere git"
+                });
+            }
+
+            var bosKategori = await _context.Kategoriler.CountAsync(k => !k.Urunler.Any());
+            if (bosKategori > 0)
+            {
+                model.Uyarilar.Add(new Uyari
+                {
+                    Metin = bosKategori + " kategori boş — menüde görünmüyor.",
+                    Adres = "/Kategori/Index",
+                    Eylem = "Kategorilere git"
+                });
+            }
+
+            var aciklamasiz = await _context.Urunler
+                .CountAsync(u => u.Aciklama == null || u.Aciklama == "");
+            if (aciklamasiz > 0)
+            {
+                model.Uyarilar.Add(new Uyari
+                {
+                    Metin = aciklamasiz + " ürünün açıklaması boş.",
+                    Adres = "/Urun/Index",
+                    Eylem = "Ürünlere git"
+                });
+            }
+
+            return View(model);
         }
 
         // --- 3. REZERVASYON LİSTESİ ---

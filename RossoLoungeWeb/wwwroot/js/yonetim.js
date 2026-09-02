@@ -249,6 +249,167 @@
     });
 
     /* ---------------------------------------------------------
+       ÖZET GRAFİĞİ — dönem seçici
+       Dört dönemin verisi (7 gün / 30 gün / aylık / yıllık) sunucudan
+       tek seferde geliyor; dönem değiştirmek sunucuya gitmiyor, sütunlar
+       yeniden çiziliyor. Nokta sayısı küçük olduğu için maliyeti yok.
+
+       Grafik kütüphanesi YÜKLENMİYOR: sütunlar div + yükseklik yüzdesi.
+       Otuz sayı için 60 KB'lık bir kütüphane taşımak gereksiz.
+       --------------------------------------------------------- */
+    (function () {
+        var kap = document.querySelector('[data-grafik]');
+        var kaynak = document.getElementById('grafik-verisi');
+        if (!kap || !kaynak) return;
+
+        var veri;
+        try {
+            veri = JSON.parse(kaynak.textContent);
+        } catch (h) {
+            return; // Bozuk veri: <noscript> tablosu yerinde kalır
+        }
+
+        var dugmeler = Array.prototype.slice.call(document.querySelectorAll('[data-donem]'));
+        var yilSecici = document.querySelector('[data-yil-secici]');
+        var yilKutusu = document.getElementById('grafikYil');
+        var ozet = document.querySelector('[data-grafik-ozet]');
+        var ANAHTAR = 'rosso-panel-grafik-donem';
+
+        function seriGetir(donem) {
+            if (donem === 'gun30') return veri.Gun30 || [];
+            if (donem === 'yillik') return veri.Yillik || [];
+            if (donem === 'aylik') {
+                var yil = yilKutusu ? yilKutusu.value : veri.VarsayilanYil;
+                return (veri.Aylik && veri.Aylik[yil]) || [];
+            }
+            return veri.Gun7 || [];
+        }
+
+        function ciz(donem) {
+            var seri = seriGetir(donem);
+            kap.innerHTML = '';
+
+            if (!seri.length) {
+                var bos = document.createElement('p');
+                bos.className = 'y-bos__alt';
+                bos.textContent = 'Bu dönem için kayıt yok.';
+                kap.appendChild(bos);
+                if (ozet) ozet.textContent = '';
+                return;
+            }
+
+            var enYuksek = Math.max.apply(null, seri.map(function (n) { return n.Rezervasyon; }));
+            if (enYuksek < 1) enYuksek = 1;
+
+            var liste = document.createElement('ul');
+            liste.className = 'y-sutunlar';
+            // 30 sütun dar olur; kap sınıfı sütun genişliğini ayarlıyor
+            liste.classList.add(seri.length > 15 ? 'y-sutunlar--sik' : 'y-sutunlar--genis');
+
+            seri.forEach(function (nokta) {
+                var oran = Math.round(nokta.Rezervasyon * 100 / enYuksek);
+
+                var oge = document.createElement('li');
+                oge.className = 'y-sutun';
+
+                var deger = document.createElement('span');
+                deger.className = 'y-sutun__deger y-sayi';
+                deger.textContent = nokta.Rezervasyon;
+
+                var cubuk = document.createElement('span');
+                cubuk.className = 'y-sutun__cubuk';
+                // Sıfır bile ince bir iz bıraksın: "veri yok" ile "gün boş"
+                // ayrımı görünür olmalı
+                cubuk.style.height = (nokta.Rezervasyon > 0 ? Math.max(oran, 4) : 2) + '%';
+                cubuk.setAttribute('role', 'img');
+                cubuk.setAttribute('aria-label',
+                    nokta.TamEtiket + ': ' + nokta.Rezervasyon + ' rezervasyon, ' + nokta.Kisi + ' kişi');
+                cubuk.title = nokta.TamEtiket + ' — ' + nokta.Rezervasyon + ' rezervasyon · ' + nokta.Kisi + ' kişi';
+
+                if (nokta.Rezervasyon === enYuksek && nokta.Rezervasyon > 0) {
+                    cubuk.classList.add('y-sutun__cubuk--zirve');
+                }
+
+                var etiket = document.createElement('span');
+                etiket.className = 'y-sutun__etiket';
+                etiket.textContent = nokta.Etiket;
+
+                oge.appendChild(deger);
+                oge.appendChild(cubuk);
+                oge.appendChild(etiket);
+                liste.appendChild(oge);
+            });
+
+            kap.appendChild(liste);
+
+            if (ozet) {
+                var toplam = seri.reduce(function (t, n) { return t + n.Rezervasyon; }, 0);
+                var kisi = seri.reduce(function (t, n) { return t + n.Kisi; }, 0);
+                var zirve = seri.reduce(function (e, n) { return n.Rezervasyon > e.Rezervasyon ? n : e; }, seri[0]);
+
+                ozet.textContent = toplam > 0
+                    ? 'Dönem toplamı: ' + toplam + ' rezervasyon · ' + kisi + ' kişi · en yoğun ' + zirve.TamEtiket
+                    : 'Bu dönemde rezervasyon yok.';
+            }
+        }
+
+        function donemSec(donem, odakla) {
+            dugmeler.forEach(function (d) {
+                var aktif = d.dataset.donem === donem;
+                d.classList.toggle('y-donem__dugme--aktif', aktif);
+                d.setAttribute('aria-selected', aktif ? 'true' : 'false');
+                d.tabIndex = aktif ? 0 : -1;
+                if (aktif && odakla) d.focus();
+            });
+
+            if (yilSecici) yilSecici.hidden = donem !== 'aylik';
+
+            try { localStorage.setItem(ANAHTAR, donem); } catch (h) { /* yoksay */ }
+            ciz(donem);
+        }
+
+        dugmeler.forEach(function (d) {
+            d.addEventListener('click', function () { donemSec(d.dataset.donem, false); });
+        });
+
+        // Ok tuşlarıyla gezinme (WAI-ARIA sekme deseni)
+        var sekmeKabi = dugmeler.length ? dugmeler[0].parentNode : null;
+        if (sekmeKabi) {
+            sekmeKabi.addEventListener('keydown', function (olay) {
+                var su = dugmeler.indexOf(document.activeElement);
+                if (su === -1) return;
+
+                var hedef = null;
+                if (olay.key === 'ArrowRight') hedef = dugmeler[(su + 1) % dugmeler.length];
+                else if (olay.key === 'ArrowLeft') hedef = dugmeler[(su - 1 + dugmeler.length) % dugmeler.length];
+                else if (olay.key === 'Home') hedef = dugmeler[0];
+                else if (olay.key === 'End') hedef = dugmeler[dugmeler.length - 1];
+
+                if (hedef) {
+                    olay.preventDefault();
+                    donemSec(hedef.dataset.donem, true);
+                }
+            });
+        }
+
+        if (yilKutusu) {
+            yilKutusu.addEventListener('change', function () { ciz('aylik'); });
+        }
+
+        // Son seçilen dönem hatırlanıyor: panelde gün boyu çalışan biri
+        // her açılışta aynı tıklamayı tekrarlamasın.
+        var baslangic = 'gun7';
+        try {
+            var kayitli = localStorage.getItem(ANAHTAR);
+            if (kayitli && dugmeler.some(function (d) { return d.dataset.donem === kayitli; })) {
+                baslangic = kayitli;
+            }
+        } catch (h) { /* yoksay */ }
+
+        donemSec(baslangic, false);
+    })();
+
+    /* ---------------------------------------------------------
        Şifre göster/gizle
        --------------------------------------------------------- */
     document.querySelectorAll('[data-sifre-gor]').forEach(function (dugme) {
