@@ -486,22 +486,119 @@ namespace RossoLoungeWeb.Controllers
         }
 
         // --- 3. REZERVASYON LİSTESİ ---
-        public IActionResult Rezervasyonlar()
+        /// <summary>
+        /// Süzülebilir, sıralanabilir, sayfalanabilir rezervasyon listesi.
+        ///
+        /// Eskiden tüm kayıtlar tek sayfada basılıyordu; birkaç yüz
+        /// rezervasyondan sonra sayfa hem yavaşlar hem taranamaz hâle gelir.
+        /// Süzme ve sayfalama SUNUCUDA yapılıyor — tarayıcıda gizlemek
+        /// kayıtların yine de indirilmesi demekti.
+        /// </summary>
+        public async Task<IActionResult> Rezervasyonlar(
+            string durum = "yaklasan",
+            string? ara = null,
+            DateTime? bas = null,
+            DateTime? bit = null,
+            string sirala = "",
+            int sayfa = 1,
+            int boyut = 25)
         {
-            var liste = _context.Rezervasyons.OrderBy(r => r.Tarih).ToList();
-            return View(liste);
+            var bugun = TurkiyeSaati.Bugun;
+
+            // Dışarıdan gelen değerler beyaz listeye çekiliyor: adres
+            // çubuğuna yazılan rastgele bir değer sorguyu bozmasın.
+            var gecerliDurumlar = new[] { "yaklasan", "bugun", "bekleyen", "gecmis", "tumu" };
+            if (!gecerliDurumlar.Contains(durum)) durum = "yaklasan";
+
+            var gecerliSiralar = new[] { "tarih_artan", "tarih_azalan", "kisi_azalan", "talep_azalan" };
+            // Varsayılan sıra sekmeye göre: geçmişte en yeni üstte, ileriye
+            // dönük listelerde en yakın tarih üstte olmalı.
+            if (!gecerliSiralar.Contains(sirala))
+                sirala = durum == "gecmis" ? "tarih_azalan" : "tarih_artan";
+
+            if (boyut != 25 && boyut != 50 && boyut != 100) boyut = 25;
+            if (sayfa < 1) sayfa = 1;
+
+            var suzgec = new RezervasyonSuzgeci
+            {
+                Durum = durum,
+                Ara = string.IsNullOrWhiteSpace(ara) ? null : ara.Trim(),
+                Bas = bas,
+                Bit = bit,
+                Sirala = sirala,
+                Sayfa = sayfa,
+                Boyut = boyut
+            };
+
+            var model = new RezervasyonListeModeli { Suzgec = suzgec };
+
+            // Sekme rozetleri — kullanıcı sekmeye geçmeden kaç kayıt
+            // olduğunu görsün.
+            model.SayiTumu = await _context.Rezervasyons.CountAsync();
+            model.SayiYaklasan = await _context.Rezervasyons.CountAsync(r => r.Tarih.Date >= bugun);
+            model.SayiBugun = await _context.Rezervasyons.CountAsync(r => r.Tarih.Date == bugun);
+            model.SayiBekleyen = await _context.Rezervasyons.CountAsync(r => !r.OnaylandiMi);
+            model.SayiGecmis = await _context.Rezervasyons.CountAsync(r => r.Tarih.Date < bugun);
+
+            IQueryable<Rezervasyon> sorgu = _context.Rezervasyons;
+
+            sorgu = durum switch
+            {
+                "bugun" => sorgu.Where(r => r.Tarih.Date == bugun),
+                // Onay bekleyenler tarihten bağımsız: geçmişte kalmış ama
+                // hiç yanıtlanmamış bir talep de yöneticinin işidir.
+                "bekleyen" => sorgu.Where(r => !r.OnaylandiMi),
+                "gecmis" => sorgu.Where(r => r.Tarih.Date < bugun),
+                "tumu" => sorgu,
+                _ => sorgu.Where(r => r.Tarih.Date >= bugun)
+            };
+
+            if (suzgec.Ara != null)
+            {
+                var kalip = suzgec.Ara;
+                sorgu = sorgu.Where(r =>
+                    EF.Functions.Like(r.AdSoyad, "%" + kalip + "%") ||
+                    EF.Functions.Like(r.Telefon, "%" + kalip + "%") ||
+                    (r.Not != null && EF.Functions.Like(r.Not, "%" + kalip + "%")));
+            }
+
+            if (bas.HasValue) sorgu = sorgu.Where(r => r.Tarih.Date >= bas.Value.Date);
+            if (bit.HasValue) sorgu = sorgu.Where(r => r.Tarih.Date <= bit.Value.Date);
+
+            // Toplamlar süzgece göre, SAYFAYA göre değil: "kaç kişi
+            // bekleniyor" sorusunun cevabı sayfa 2'de değişmemeli.
+            model.ToplamKayit = await sorgu.CountAsync();
+            model.ToplamKisi = model.ToplamKayit == 0 ? 0 : await sorgu.SumAsync(r => r.KisiSayisi);
+
+            model.ToplamSayfa = Math.Max(1, (int)Math.Ceiling(model.ToplamKayit / (double)boyut));
+            if (suzgec.Sayfa > model.ToplamSayfa) suzgec.Sayfa = model.ToplamSayfa;
+
+            sorgu = sirala switch
+            {
+                "tarih_azalan" => sorgu.OrderByDescending(r => r.Tarih),
+                "kisi_azalan" => sorgu.OrderByDescending(r => r.KisiSayisi).ThenBy(r => r.Tarih),
+                "talep_azalan" => sorgu.OrderByDescending(r => r.OlusturulmaTarihi),
+                _ => sorgu.OrderBy(r => r.Tarih)
+            };
+
+            model.Kayitlar = await sorgu
+                .Skip((suzgec.Sayfa - 1) * boyut)
+                .Take(boyut)
+                .ToListAsync();
+
+            return View(model);
         }
 
         // --- 4. ONAYLAMA & SİLME ---
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Onayla(int id)
+        public IActionResult Onayla(int id, string? donus = null)
         {
             var rez = _context.Rezervasyons.Find(id);
             if (rez == null)
             {
                 TempData["Hata"] = "Onaylanacak rezervasyon bulunamadı.";
-                return RedirectToAction("Rezervasyonlar");
+                return ListeyeDon(donus);
             }
 
             rez.OnaylandiMi = true;
@@ -510,18 +607,34 @@ namespace RossoLoungeWeb.Controllers
             else
                 TempData["Hata"] = "Rezervasyon onaylanamadı. Lütfen tekrar deneyin.";
 
+            return ListeyeDon(donus);
+        }
+
+        /// <summary>
+        /// İşlem sonrası kullanıcıyı GELDİĞİ süzgeç/sayfaya döndürür.
+        /// Aksi hâlde 3. sayfadaki bir kaydı onaylayan kişi listenin
+        /// başına düşüyor ve kaldığı yeri kaybediyordu.
+        ///
+        /// <c>Url.IsLocalUrl</c> şart: adres dışarıdan (formdan) geliyor,
+        /// denetlenmezse açık yönlendirme (open redirect) açığı olur.
+        /// </summary>
+        private IActionResult ListeyeDon(string? donus)
+        {
+            if (!string.IsNullOrWhiteSpace(donus) && Url.IsLocalUrl(donus))
+                return Redirect(donus);
+
             return RedirectToAction("Rezervasyonlar");
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Sil(int id)
+        public IActionResult Sil(int id, string? donus = null)
         {
             var rez = _context.Rezervasyons.Find(id);
             if (rez == null)
             {
                 TempData["Hata"] = "Silinecek rezervasyon bulunamadı.";
-                return RedirectToAction("Rezervasyonlar");
+                return ListeyeDon(donus);
             }
 
             _context.Rezervasyons.Remove(rez);
@@ -530,7 +643,7 @@ namespace RossoLoungeWeb.Controllers
             else
                 TempData["Hata"] = "Rezervasyon silinemedi. Lütfen tekrar deneyin.";
 
-            return RedirectToAction("Rezervasyonlar");
+            return ListeyeDon(donus);
         }
 
         // --- 5. HESAP AYARLARI ---

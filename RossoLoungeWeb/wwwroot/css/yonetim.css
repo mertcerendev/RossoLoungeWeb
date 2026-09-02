@@ -2274,3 +2274,210 @@ textarea.y-girdi {
     padding: var(--y-8) var(--y-4);
     border-style: dashed;
 }
+
+/* =============================================================
+   LİSTE SEKMELERİ (rezervasyon görünümleri)
+   -------------------------------------------------------------
+   Bunlar bağlantı, düğme değil: her görünüm kendi adresine sahip
+   olmalı ki yer imine eklenebilsin ve tarayıcı geri tuşu çalışsın.
+   ============================================================= */
+.y-sekmeler {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--y-1);
+    margin-block-end: var(--y-5);
+    padding-block-end: var(--y-2);
+    border-block-end: 1px solid var(--y-kenar);
+}
+
+.y-sekme {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--y-2);
+    min-height: var(--y-dokunma);
+    padding-inline: var(--y-4);
+    border-radius: var(--y-r-sm);
+    color: var(--y-metin-3);
+    font-size: var(--y-sm);
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background var(--y-hizli) var(--y-egri),
+                color var(--y-hizli) var(--y-egri);
+}
+
+    .y-sekme:hover {
+        background: var(--y-cam);
+        color: var(--y-metin);
+    }
+
+.y-sekme--aktif {
+    background: var(--y-bronz-sis);
+    color: var(--y-bronz);
+}
+
+.y-sekme__sayi {
+    padding-inline: var(--y-2);
+    background: var(--y-cam);
+    border: 1px solid var(--y-kenar);
+    border-radius: 999px;
+    font-family: var(--y-mono);
+    font-size: var(--y-xs);
+}
+
+.y-sekme--aktif .y-sekme__sayi {
+    background: rgba(201, 169, 97, 0.18);
+    border-color: rgba(201, 169, 97, 0.35);
+}
+
+/* --- Geniş süzgeç çubuğu --- */
+.y-suzgec--genis {
+    align-items: flex-end;
+}
+
+.y-suzgec__alan--genis {
+    flex: 1 1 16rem;
+    min-width: 12rem;
+}
+
+.y-suzgec__eylemler {
+    display: flex;
+    gap: var(--y-2);
+    margin-inline-start: auto;
+}
+
+/* --- Geçmiş satır: soluk ama okunur --- */
+.y-tablo tbody tr.y-satir--gecmis td {
+    color: var(--y-metin-3);
+}
+
+    .y-tablo tbody tr.y-satir--gecmis .y-tablo__ad {
+        color: var(--y-metin-2);
+    }
+
+/* Tablo içi satır bağları (telefon, not) satır yüksekliğini
+   BÜYÜTMEDEN daha rahat tıklanabilir olsun.
+
+   Dolgu + negatif marj denendi ve satırı 65px'ten 75px'e çıkardı:
+   inline-block'un dikey dolgusu satır kutusuna ekleniyor, negatif
+   marj bunu geri almıyor. Mutlak konumlu bir ::after ise akışın
+   tamamen dışında — hedef alanı büyür, ızgara zerre oynamaz. */
+.y-tablo .y-bag,
+.y-tablo .y-metin-bag {
+    position: relative;
+}
+
+    .y-tablo .y-bag::after,
+    .y-tablo .y-metin-bag::after {
+        content: "";
+        position: absolute;
+        inset: -9px -6px;
+    }
+
+/* --- Not: tamamını açan metin bağı --- */
+.y-metin-bag {
+    padding: 0;
+    background: none;
+    border: 0;
+    border-block-end: 1px dotted var(--y-kenar-2);
+    color: var(--y-metin-2);
+    font-family: var(--y-sans);
+    font-size: var(--y-sm);
+    text-align: start;
+    cursor: pointer;
+    transition: color var(--y-hizli) var(--y-egri);
+}
+
+    .y-metin-bag:hover {
+        color: var(--y-bronz);
+        border-block-end-color: var(--y-bronz);
+    }
+
+/* =============================================================
+   SAYFALAMA
+   ============================================================= */
+.y-sayfalama {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--y-4);
+    margin-block-start: var(--y-5);
+    padding-block-start: var(--y-4);
+    border-block-start: 1px solid var(--y-kenar);
+}
+
+.y-sayfalama__bilgi {
+    color: var(--y-metin-3);
+    font-size: var(--y-xs);
+}
+
+.y-sayfalama__gezinme {
+    display: flex;
+    align-items: center;
+    gap: var(--y-3);
+}
+
+.y-sayfalama__sayi {
+    color: var(--y-metin-2);
+    font-size: var(--y-sm);
+}
+
+/* Devre dışı ok: <a> değil <span>, tıklanamaz olduğu görünmeli */
+.y-dugme[aria-disabled="true"] {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+}
+
+.y-sayfalama__boyut {
+    display: flex;
+    align-items: center;
+    gap: var(--y-2);
+}
+
+.y-boyut {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    min-height: 30px;
+    padding-inline: var(--y-2);
+    border: 1px solid var(--y-kenar);
+    border-radius: var(--y-r-sm);
+    color: var(--y-metin-3);
+    font-family: var(--y-mono);
+    font-size: var(--y-xs);
+    transition: background var(--y-hizli) var(--y-egri),
+                color var(--y-hizli) var(--y-egri);
+}
+
+    .y-boyut:hover {
+        background: var(--y-cam);
+        color: var(--y-metin);
+    }
+
+.y-boyut--aktif {
+    background: var(--y-bronz-sis);
+    border-color: rgba(201, 169, 97, 0.35);
+    color: var(--y-bronz);
+}
+
+@media (max-width: 720px) {
+    .y-sayfalama {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .y-sayfalama__gezinme {
+        justify-content: space-between;
+    }
+
+    .y-suzgec__eylemler {
+        margin-inline-start: 0;
+        width: 100%;
+    }
+
+        .y-suzgec__eylemler .y-dugme {
+            flex: 1 1 auto;
+        }
+}
