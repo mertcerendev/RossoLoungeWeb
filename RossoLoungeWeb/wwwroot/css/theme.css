@@ -4,7 +4,8 @@
    Bu dosya SADECE tokenlar (CSS değişkenleri), sıfırlama ve
    bileşen ilkellerini içerir. Sayfaya özel kural YAZMA.
 
-   Yükleme sırası:  bootstrap.min.css → theme.css → style.css / panel.css
+   Yükleme sırası:  bootstrap.min.css → theme.css → style.css
+   (Panel artık bu dosyayı kullanmıyor; kendi yonetim.css'i var.)
 
    Kırılım noktaları (media query'de değişken kullanılamaz,
    bu yüzden sabit yazılır — hepsi max-width mantığıyla):

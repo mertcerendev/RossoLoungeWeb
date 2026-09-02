@@ -2,7 +2,7 @@
    ROSSO LOUNGE BISTRO — ZİYARETÇİ SİTESİ
    ---------------------------------------------------------
    _Layout.cshtml üzerinden ziyaretçi sayfalarında yüklenir.
-   Panel sayfaları panel.js kullanır; ortak.js ikisinde de yüklüdür.
+   Panel sayfaları yonetim.js kullanır; ortak.js ikisinde de yüklüdür.
 
    NOT: Sayfa içi çapa kaydırması, navbar kaydırma durumu, hamburger ve
    menü filtresi BURADAN KALDIRILDI. Hepsinin karşılığı rosso-hareket.js'te

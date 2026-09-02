@@ -1547,3 +1547,206 @@ textarea.y-alan__girdi {
     display: flex;
     justify-content: flex-end;
 }
+
+/* =============================================================
+   FORMLAR (veri girişi)
+   -------------------------------------------------------------
+   Giriş ekranı yüzen etiket kullanıyor; veri formlarında üst etiket
+   tercih edildi. Sekiz alanlı bir formda yüzen etiket alanı boşken
+   ne istendiğini gizliyor, <select> ve dosya alanında zaten
+   çalışmıyor — karışık desen yerine tek ve okunur desen.
+   ============================================================= */
+.y-form {
+    display: grid;
+    gap: var(--y-5);
+    max-width: 46rem;
+    padding: var(--y-6);
+    background: var(--y-yuzey);
+    border: 1px solid var(--y-kenar);
+    border-radius: var(--y-r);
+}
+
+.y-form__izgara {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: var(--y-5);
+}
+
+.y-form__alan {
+    display: grid;
+    gap: var(--y-2);
+    min-width: 0;
+}
+
+.y-form__etiket {
+    color: var(--y-metin-3);
+    font-size: var(--y-xs);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.y-zorunlu {
+    color: var(--y-bronz);
+}
+
+.y-girdi {
+    width: 100%;
+    min-height: var(--y-dokunma);
+    padding: var(--y-2) var(--y-3);
+    background: var(--y-cam-koyu);
+    border: 1px solid var(--y-kenar);
+    border-radius: var(--y-r-sm);
+    color: var(--y-metin);
+    font-family: var(--y-sans);
+    font-size: var(--y-sm);
+    outline: none;
+    transition: border-color var(--y-hizli) var(--y-egri),
+                background var(--y-hizli) var(--y-egri);
+}
+
+    .y-girdi::placeholder {
+        color: var(--y-metin-3);
+    }
+
+    .y-girdi:hover {
+        border-color: var(--y-kenar-2);
+    }
+
+    .y-girdi:focus {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: var(--y-bronz);
+    }
+
+textarea.y-girdi {
+    min-height: 6rem;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+/* Sayı ve fiyat alanları mono: hizalı okunur */
+.y-girdi--sayi {
+    font-family: var(--y-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Dosya seçici — tarayıcı düğmesi koyu zemine uydurulmuyor,
+   kendi kabuğunu veriyoruz */
+.y-girdi[type="file"] {
+    padding: var(--y-2);
+    cursor: pointer;
+}
+
+.y-girdi[type="file"]::file-selector-button {
+    margin-inline-end: var(--y-3);
+    padding: var(--y-2) var(--y-4);
+    background: var(--y-cam);
+    border: 1px solid var(--y-kenar-2);
+    border-radius: var(--y-r-sm);
+    color: var(--y-metin);
+    font-family: var(--y-sans);
+    font-size: var(--y-xs);
+    cursor: pointer;
+}
+
+.y-form__yardim {
+    color: var(--y-metin-3);
+    font-size: var(--y-xs);
+}
+
+.y-form__ayak {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--y-2);
+    padding-block-start: var(--y-2);
+}
+
+.y-alanlik {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.y-alanlik__baslik {
+    padding: 0;
+    margin-block-end: var(--y-3);
+    color: var(--y-metin-3);
+    font-size: var(--y-xs);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+/* Onay kutusu satırı */
+.y-onay {
+    display: flex;
+    align-items: center;
+    gap: var(--y-3);
+    min-height: var(--y-dokunma);
+    color: var(--y-metin-2);
+    font-size: var(--y-sm);
+    cursor: pointer;
+}
+
+.y-onay input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--y-bronz);
+    cursor: pointer;
+}
+
+/* Mevcut görsel önizlemesi (düzenle ekranları) */
+.y-onizleme {
+    display: flex;
+    align-items: center;
+    gap: var(--y-4);
+    padding: var(--y-3);
+    background: var(--y-cam-koyu);
+    border: 1px solid var(--y-kenar);
+    border-radius: var(--y-r-sm);
+}
+
+.y-onizleme img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: var(--y-r-sm);
+}
+
+/* Okuma ekranı (mesaj detayı) */
+.y-okuma {
+    max-width: 46rem;
+    padding: var(--y-6);
+    background: var(--y-yuzey);
+    border: 1px solid var(--y-kenar);
+    border-radius: var(--y-r);
+}
+
+.y-okuma__bas {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--y-4);
+    padding-block-end: var(--y-5);
+    margin-block-end: var(--y-5);
+    border-block-end: 1px solid var(--y-kenar);
+}
+
+.y-okuma__govde {
+    color: var(--y-metin-2);
+    font-size: var(--y-md);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.y-okuma__ayak {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--y-2);
+    margin-block-start: var(--y-6);
+    padding-block-start: var(--y-5);
+    border-block-start: 1px solid var(--y-kenar);
+}

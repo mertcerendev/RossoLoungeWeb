@@ -234,6 +234,21 @@
     })();
 
     /* ---------------------------------------------------------
+       FİYAT ALANLARINDA VİRGÜL → NOKTA
+       Sunucu sayıları InvariantCulture ile okuyor; '12,50' yazılırsa
+       1250 olarak kaydediliyordu (100 kat). Sunucu tarafında
+       OndalikModelBinder de var — bu, JS varken hatayı kullanıcı
+       göndermeden düzelten ikinci katman.
+       --------------------------------------------------------- */
+    document.querySelectorAll('[data-ondalik-form]').forEach(function (form) {
+        form.addEventListener('submit', function () {
+            form.querySelectorAll('[data-ondalik]').forEach(function (alan) {
+                alan.value = alan.value.trim().replace(',', '.');
+            });
+        });
+    });
+
+    /* ---------------------------------------------------------
        Şifre göster/gizle
        --------------------------------------------------------- */
     document.querySelectorAll('[data-sifre-gor]').forEach(function (dugme) {

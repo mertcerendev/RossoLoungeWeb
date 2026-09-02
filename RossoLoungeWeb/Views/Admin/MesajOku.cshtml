@@ -1,91 +1,65 @@
 @model RossoLoungeWeb.Models.Iletisim
+@*
+    MESAJ DETAYI
+    ===============================================================
+    Uç değişmedi: POST /Admin/MesajSil/{id}. Sayfanın açılması
+    mesajı okundu olarak işaretliyor (controller'da).
+*@
 @{
-    Layout = null;
-    ViewBag.AktifMenu = "mesajlar";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Baslik"] = "Mesaj";
+    ViewData["AltBaslik"] = Model.AdSoyad;
+    ViewData["Aktif"] = "mesajlar";
 }
 
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mesaj Detayı | Rosso Lounge</title>
-    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true">
-    <link rel="stylesheet" href="~/css/panel.css" asp-append-version="true">
-</head>
-<body class="panel">
-    <a href="#icerik" class="icerige-atla">İçeriğe atla</a>
+@section Eylemler {
+    <a class="y-dugme" href="/Admin/Mesajlar">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i> Gelen kutusu
+    </a>
+}
 
-    @await Html.PartialAsync("~/Views/Admin/_YanMenu.cshtml")
-
-    <main class="content" id="icerik">
-        @await Html.PartialAsync("~/Views/Admin/_Bildirim.cshtml")
-
-        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
-            <h2 class="m-0">Mesaj Detayı</h2>
-            <a href="/Admin/Mesajlar" class="rs-btn rs-btn-hayalet rs-btn-sm">
-                <i class="fas fa-arrow-left" aria-hidden="true"></i> Gelen Kutusu
-            </a>
+<article class="y-okuma">
+    <header class="y-okuma__bas">
+        <div>
+            <h2 class="y-kart__baslik">@Model.AdSoyad</h2>
+            <p class="y-tablo__ikincil y-sayi">@Model.Tarih.ToString("dd.MM.yyyy HH:mm")</p>
         </div>
+        <span class="y-rozet y-rozet--sonuk">@(Model.OkunduMu ? "Okundu" : "Yeni")</span>
+    </header>
 
-        <div class="custom-card">
-            <div class="card-header-custom">
-                <div>
-                    <h4 class="m-0">@Model.AdSoyad</h4>
-                    <p class="rs-soluk small m-0">@Model.Tarih.ToString("dd.MM.yyyy HH:mm")</p>
-                </div>
-            </div>
-
-            <div class="p-3 p-md-4">
-                <div class="row g-3 mb-4">
-                    <div class="col-12 col-md-6">
-                        <strong class="rs-soluk d-block">
-                            <i class="fas fa-envelope me-2" aria-hidden="true"></i>E-Posta
-                        </strong>
-                        <a href="mailto:@Model.Email">@Model.Email</a>
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <strong class="rs-soluk d-block">
-                            <i class="fas fa-phone me-2" aria-hidden="true"></i>Telefon
-                        </strong>
-                        @if (string.IsNullOrEmpty(Model.Telefon))
-                        {
-                            <span class="rs-soluk">Belirtilmemiş</span>
-                        }
-                        else
-                        {
-                            <a href="tel:@Model.Telefon">@Model.Telefon</a>
-                        }
-                    </div>
-                </div>
-
-                <strong class="rs-soluk d-block mb-2">
-                    <i class="fas fa-comment-dots me-2" aria-hidden="true"></i>Mesaj
-                </strong>
-                <div class="mesaj-govde">@Model.Mesaj</div>
-
-                <div class="d-flex flex-wrap gap-2 mt-4">
-                    <a href="mailto:@Model.Email?subject=Rosso Lounge Bistro" class="rs-btn rs-btn-birincil rs-btn-sm">
-                        <i class="fas fa-reply" aria-hidden="true"></i> Yanıtla
-                    </a>
-                    <form action="/Admin/MesajSil/@Model.Id" method="post"
-                          onsubmit="return confirm('Bu mesajı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="rs-btn rs-btn-tehlike rs-btn-sm">
-                            <i class="fas fa-trash" aria-hidden="true"></i> Sil
-                        </button>
-                    </form>
-                </div>
-            </div>
+    <dl class="y-liste">
+        <div class="y-liste__satir">
+            <dt>E-posta</dt>
+            <dd><a class="y-bag" href="mailto:@Model.Email">@Model.Email</a></dd>
         </div>
-    </main>
-    <script src="~/js/ortak.js" asp-append-version="true"></script>
-    <script src="~/js/panel.js" asp-append-version="true"></script>
-</body>
-</html>
+        <div class="y-liste__satir">
+            <dt>Telefon</dt>
+            <dd>
+                @if (string.IsNullOrEmpty(Model.Telefon))
+                {
+                    <span class="y-tablo__ikincil">Belirtilmemiş</span>
+                }
+                else
+                {
+                    <a class="y-bag y-sayi" href="tel:@Model.Telefon">@Model.Telefon</a>
+                }
+            </dd>
+        </div>
+    </dl>
+
+    <p class="y-okuma__govde">@Model.Mesaj</p>
+
+    <div class="y-okuma__ayak">
+        <a class="y-dugme y-dugme--birincil" href="mailto:@Model.Email?subject=Rosso Lounge Bistro">
+            <i class="fas fa-reply" aria-hidden="true"></i> Yanıtla
+        </a>
+
+        <form method="post" action="/Admin/MesajSil/@Model.Id"
+              onsubmit="return confirm('Bu mesajı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="y-dugme y-dugme--tehlike">
+                <i class="fas fa-trash-can" aria-hidden="true"></i> Sil
+            </button>
+        </form>
+    </div>
+</article>

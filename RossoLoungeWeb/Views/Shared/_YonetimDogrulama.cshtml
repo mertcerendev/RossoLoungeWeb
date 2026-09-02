@@ -1,0 +1,15 @@
+@*
+    YÖNETİM — DOĞRULAMA ÖZETİ
+    ---------------------------------------------------------------
+    ModelState hatalarını ince kırmızı çerçeveli kutuda toplar.
+    Çağrı: @await Html.PartialAsync("_YonetimDogrulama")
+*@
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="y-ozet y-ozet--sayfa" role="alert">
+        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+        <div>
+            @Html.ValidationSummary(false, "", new { @class = "y-ozet__liste" })
+        </div>
+    </div>
+}

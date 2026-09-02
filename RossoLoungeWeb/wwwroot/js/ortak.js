@@ -2,7 +2,7 @@
    ROSSO LOUNGE BISTRO — ORTAK YARDIMCILAR
    ---------------------------------------------------------
    Hem ziyaretçi sitesinde (script.js ile birlikte) hem de
-   yönetim panelinde (panel.js ile birlikte) yükleniyor.
+   yönetim panelinde (yonetim.js ile birlikte) yükleniyor.
 
    Tek işi: POST formlarında çift gönderimi engellemek.
    Sayfaya özel hiçbir şey bilmez, her yerde güvenle çalışır.

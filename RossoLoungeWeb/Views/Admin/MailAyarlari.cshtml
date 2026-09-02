@@ -1,101 +1,92 @@
 @model RossoLoungeWeb.Models.SistemAyarlari
+@*
+    AYARLAR — SMTP
+    ===============================================================
+    Uç değişmedi: POST /Admin/MailAyarlariGuncelle.
+
+    NOT: GonderenSifre veritabanında düz metin duruyor (DEVAM.md'de
+    açık madde). Alan tipi password, ekranda gizli — ama bu yalnızca
+    omuz üstünden okumayı engelliyor, saklama sorununu çözmüyor.
+*@
 @{
-    Layout = null;
-    ViewBag.AktifMenu = "mail";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Baslik"] = "Mail Ayarları";
+    ViewData["AltBaslik"] = "Şifre sıfırlama ve bildirim e-postaları bu hesaptan gönderilir";
+    ViewData["Aktif"] = "ayarlar";
 }
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mail Ayarları | Rosso Lounge</title>
-    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true">
-    <link rel="stylesheet" href="~/css/panel.css" asp-append-version="true">
-</head>
-<body class="panel">
-    <a href="#icerik" class="icerige-atla">İçeriğe atla</a>
 
-    @await Html.PartialAsync("~/Views/Admin/_YanMenu.cshtml")
+@section Eylemler {
+    <a class="y-dugme" href="/Admin/Profil">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i> Hesap ayarları
+    </a>
+}
 
-    <main class="content" id="icerik">
-        @await Html.PartialAsync("~/Views/Admin/_Bildirim.cshtml")
+@if (ViewBag.Mesaj != null)
+{
+    <div class="y-ozet y-ozet--basari y-ozet--sayfa" role="status">
+        <i class="fas fa-circle-check" aria-hidden="true"></i>
+        <div>@ViewBag.Mesaj</div>
+    </div>
+}
+@if (ViewBag.Hata != null)
+{
+    <div class="y-ozet y-ozet--sayfa" role="alert">
+        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+        <div>@ViewBag.Hata</div>
+    </div>
+}
+@await Html.PartialAsync("_YonetimDogrulama")
 
-        <h2 class="mb-4">Sistem Mail Ayarları</h2>
+<form class="y-form" method="post" action="/Admin/MailAyarlariGuncelle">
+    @Html.AntiForgeryToken()
 
-        <div class="row">
-            <div class="col-12 col-lg-8 col-xxl-6">
-                @if (ViewBag.Mesaj != null)
-                {
-                    <div class="rs-uyari rs-uyari-basari" role="status">
-                        <i class="fas fa-circle-check" aria-hidden="true"></i>
-                        <div>@ViewBag.Mesaj</div>
-                    </div>
-                }
-                @if (ViewBag.Hata != null)
-                {
-                    <div class="rs-uyari rs-uyari-hata" role="alert">
-                        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-                        <div>@ViewBag.Hata</div>
-                    </div>
-                }
-                @if (!ViewData.ModelState.IsValid)
-                {
-                    <div class="rs-uyari rs-uyari-hata" role="alert">
-                        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
-                        <div>@Html.ValidationSummary(false, "", new { @class = "mb-0" })</div>
-                    </div>
-                }
+    <div class="y-form__alan">
+        <label class="y-form__etiket" for="gonderenMail">
+            Gönderen e-posta <span class="y-zorunlu" aria-hidden="true">*</span>
+        </label>
+        <input class="y-girdi" type="email" id="gonderenMail" name="GonderenMail"
+               value="@Model.GonderenMail" autocomplete="email" required>
+    </div>
 
-                <div class="custom-card">
-                    <div class="card-header-custom">
-                        <div>
-                            <h4 class="m-0">SMTP Bilgileri</h4>
-                            <p class="rs-soluk small m-0">Şifre sıfırlama ve bildirim e-postaları bu hesaptan gönderilir.</p>
-                        </div>
-                    </div>
+    <div class="y-form__alan">
+        <label class="y-form__etiket" for="gonderenSifre">
+            Uygulama şifresi <span class="y-zorunlu" aria-hidden="true">*</span>
+        </label>
 
-                    <form action="/Admin/MailAyarlariGuncelle" method="post" class="p-3 p-md-4">
-                        @Html.AntiForgeryToken()
-
-                        <div class="rs-alan">
-                            <label class="rs-etiket" for="gonderenMail">Gönderen e-posta <span class="zorunlu">*</span></label>
-                            <input class="rs-girdi" type="email" id="gonderenMail" name="GonderenMail"
-                                   value="@Model.GonderenMail" required autocomplete="email">
-                        </div>
-
-                        <div class="rs-alan">
-                            <label class="rs-etiket" for="gonderenSifre">Uygulama şifresi <span class="zorunlu">*</span></label>
-                            <input class="rs-girdi" type="password" id="gonderenSifre" name="GonderenSifre"
-                                   value="@Model.GonderenSifre" required autocomplete="off">
-                            <p class="rs-yardim">Gmail için normal hesap şifresi değil, 16 haneli "uygulama şifresi" girilmelidir.</p>
-                        </div>
-
-                        <div class="rs-form-izgara">
-                            <div class="rs-alan">
-                                <label class="rs-etiket" for="smtpSunucu">SMTP sunucu <span class="zorunlu">*</span></label>
-                                <input class="rs-girdi" type="text" id="smtpSunucu" name="SmtpSunucu"
-                                       value="@Model.SmtpSunucu" required>
-                            </div>
-                            <div class="rs-alan">
-                                <label class="rs-etiket" for="smtpPort">Port <span class="zorunlu">*</span></label>
-                                <input class="rs-girdi" type="number" id="smtpPort" name="SmtpPort"
-                                       value="@Model.SmtpPort" min="1" max="65535" required>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="rs-btn rs-btn-birincil rs-btn-blok">Ayarları Kaydet</button>
-                    </form>
-                </div>
-            </div>
+        <div class="y-alan">
+            <input class="y-girdi" type="password" id="gonderenSifre" name="GonderenSifre"
+                   value="@Model.GonderenSifre" autocomplete="off" required
+                   aria-describedby="sifre-yardim">
+            <button type="button" class="y-alan__eylem" data-sifre-gor
+                    aria-controls="gonderenSifre" aria-label="Şifreyi göster">
+                <i class="fas fa-eye" aria-hidden="true"></i>
+            </button>
         </div>
-    </main>
-    <script src="~/js/ortak.js" asp-append-version="true"></script>
-    <script src="~/js/panel.js" asp-append-version="true"></script>
-</body>
-</html>
+
+        <p class="y-form__yardim" id="sifre-yardim">
+            Gmail için normal hesap şifresi değil, 16 haneli “uygulama şifresi” girilmelidir.
+        </p>
+    </div>
+
+    <div class="y-form__izgara">
+        <div class="y-form__alan">
+            <label class="y-form__etiket" for="smtpSunucu">
+                SMTP sunucu <span class="y-zorunlu" aria-hidden="true">*</span>
+            </label>
+            <input class="y-girdi" type="text" id="smtpSunucu" name="SmtpSunucu"
+                   value="@Model.SmtpSunucu" required>
+        </div>
+
+        <div class="y-form__alan">
+            <label class="y-form__etiket" for="smtpPort">
+                Port <span class="y-zorunlu" aria-hidden="true">*</span>
+            </label>
+            <input class="y-girdi y-girdi--sayi" type="number" id="smtpPort" name="SmtpPort"
+                   value="@Model.SmtpPort" min="1" max="65535" required>
+        </div>
+    </div>
+
+    <div class="y-form__ayak">
+        <button type="submit" class="y-dugme y-dugme--birincil">Ayarları kaydet</button>
+    </div>
+</form>
