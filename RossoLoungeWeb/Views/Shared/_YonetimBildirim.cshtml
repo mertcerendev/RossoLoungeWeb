@@ -1,0 +1,22 @@
+@*
+    YÖNETİM — İŞLEM SONUCU BİLDİRİMİ
+    ---------------------------------------------------------------
+    Controller'lar sonucu TempData["Mesaj"] (başarı) ve
+    TempData["Hata"] ile yazıyor. Layout bunu her sayfada, içeriğin
+    en üstünde basar.
+*@
+@if (TempData["Mesaj"] != null)
+{
+    <div class="y-ozet y-ozet--basari y-ozet--sayfa" role="status">
+        <i class="fas fa-circle-check" aria-hidden="true"></i>
+        <div>@TempData["Mesaj"]</div>
+    </div>
+}
+
+@if (TempData["Hata"] != null)
+{
+    <div class="y-ozet y-ozet--sayfa" role="alert">
+        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+        <div>@TempData["Hata"]</div>
+    </div>
+}

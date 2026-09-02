@@ -386,6 +386,10 @@ namespace RossoLoungeWeb.Controllers
         }
 
         // --- 8. ÇIKIŞ YAP ---
+        // GET ile tetiklenebilen çıkış, başka bir sitedeki <img src="/Admin/CikisYap">
+        // ya da bağlantı ön-yüklemesiyle istem dışı kapanabiliyordu. POST + token.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult CikisYap()
         {
             HttpContext.Session.Clear();

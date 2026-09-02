@@ -1,0 +1,53 @@
+@*
+    YÖNETİM — ÜST BAR
+    ---------------------------------------------------------------
+    Arama kutusu sayfaya bağlı: bir görünüm ViewData["AramaHedefi"]
+    ile bir tablo id'si verirse arama o tabloyu süzer (yonetim.js),
+    vermezse kutu hiç basılmaz — çalışmayan bir arama kutusu
+    göstermek, hiç göstermemekten kötü.
+
+    Bildirim sayısı ViewData["Bildirim"] ile geliyor; layout veri
+    çekmez.
+*@
+@{
+    var aramaHedefi = ViewData["AramaHedefi"] as string;
+    var aramaYer = ViewData["AramaYerTutucu"] as string ?? "Bu sayfada ara";
+    var bildirim = ViewData["Bildirim"] as int? ?? 0;
+    var kullanici = Context.Session.GetString("User") ?? "Yönetici";
+    var basHarf = string.IsNullOrEmpty(kullanici) ? "?" : kullanici.Substring(0, 1).ToUpperInvariant();
+}
+
+<header class="y-ust">
+    <button type="button" class="y-ust__daralt" data-kenar-dugme
+            aria-label="Menüyü daralt veya genişlet" aria-expanded="false" aria-pressed="false">
+        <i class="fas fa-bars" aria-hidden="true"></i>
+    </button>
+
+    @if (!string.IsNullOrEmpty(aramaHedefi))
+    {
+        <div class="y-ara">
+            <i class="y-ara__im fas fa-magnifying-glass" aria-hidden="true"></i>
+            <label class="y-gizli" for="y-arama">@aramaYer</label>
+            <input class="y-ara__girdi" id="y-arama" type="search" placeholder="@aramaYer"
+                   data-tablo-ara aria-controls="@aramaHedefi" autocomplete="off">
+        </div>
+    }
+
+    <div class="y-ust__sag">
+        <a class="y-zil" href="/Admin/Mesajlar" aria-label="Bildirimler@(bildirim > 0 ? $" — {bildirim} yeni" : "")">
+            <i class="fas fa-bell" aria-hidden="true"></i>
+            @if (bildirim > 0)
+            {
+                <span class="y-zil__nokta" aria-hidden="true">@(bildirim > 9 ? "9+" : bildirim.ToString())</span>
+            }
+        </a>
+
+        <a class="y-profil" href="/Admin/Profil">
+            <span class="y-profil__im" aria-hidden="true">@basHarf</span>
+            <span class="y-profil__bilgi">
+                <span class="y-profil__ad">@kullanici</span>
+                <span class="y-profil__rol">Yönetici</span>
+            </span>
+        </a>
+    </div>
+</header>

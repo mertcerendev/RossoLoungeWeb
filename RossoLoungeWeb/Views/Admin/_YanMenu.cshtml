@@ -37,7 +37,12 @@
     <a href="/" target="_blank" rel="noopener" class="menu-item">
         <i class="fas fa-globe" aria-hidden="true"></i> Siteye Git
     </a>
-    <a href="/Admin/CikisYap" class="menu-item bg-dark mt-3">
-        <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Çıkış Yap
-    </a>
+    @* Çıkış POST'a taşındı (GET ile istem dışı tetiklenebiliyordu).
+       Bu menü yeni panel iskeletine geçişte kaldırılacak. *@
+    <form method="post" action="/Admin/CikisYap" class="mt-3">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="menu-item bg-dark" style="width:100%;border:0;text-align:left;cursor:pointer">
+            <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Çıkış Yap
+        </button>
+    </form>
 </nav>

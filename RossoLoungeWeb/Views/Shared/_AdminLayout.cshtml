@@ -1,0 +1,89 @@
+@*
+    YÖNETİM PANELİ — ANA YERLEŞİM
+    ===============================================================
+    Kullanımı (her panel görünümünün başında):
+
+        @{
+            Layout = "~/Views/Shared/_AdminLayout.cshtml";
+            ViewData["Baslik"] = "Rezervasyonlar";
+            ViewData["AltBaslik"] = "Gelen talepleri onaylayın veya reddedin";
+            ViewData["Aktif"] = "rezervasyonlar";
+            ViewData["AramaHedefi"] = "rezervasyon-tablosu";   // isteğe bağlı
+        }
+
+    Bölümler:
+        @section Eylemler { ... }   sayfa başlığının sağındaki düğmeler
+        @section Scripts  { ... }   sayfaya özel script
+
+    Ziyaretçi sitesinin varlıkları (theme.css, style.css, rosso-*.css,
+    Lenis, GSAP) burada BİLİNÇLİ olarak yüklenmiyor: panel hız ve
+    okunabilirlik için ayrı bir tasarım sistemi kullanıyor.
+*@
+@{
+    var baslik = ViewData["Baslik"] as string ?? "Panel";
+    var altBaslik = ViewData["AltBaslik"] as string;
+}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>@baslik · Rosso Panel</title>
+    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/yonetim.css" asp-append-version="true">
+
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body class="yonetim">
+
+    <a class="y-gizli" href="#y-icerik">İçeriğe atla</a>
+
+    <div class="y-kabuk">
+        @await Html.PartialAsync("_YonetimMenu")
+
+        @* Dar ekranda çekmece açıkken arkayı karartan katman *@
+        <div class="y-perde" aria-hidden="true"></div>
+
+        <div>
+            @await Html.PartialAsync("_YonetimUst")
+
+            <main class="y-icerik" id="y-icerik">
+                @await Html.PartialAsync("_YonetimBildirim")
+
+                <div class="y-sayfa-bas">
+                    <div>
+                        <h1 class="y-sayfa-bas__baslik">@baslik</h1>
+                        @if (!string.IsNullOrEmpty(altBaslik))
+                        {
+                            <p class="y-sayfa-bas__alt">@altBaslik</p>
+                        }
+                    </div>
+
+                    @if (IsSectionDefined("Eylemler"))
+                    {
+                        <div class="y-sayfa-bas__eylemler">
+                            @await RenderSectionAsync("Eylemler", required: false)
+                        </div>
+                    }
+                </div>
+
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    @* ortak.js: POST formlarında çift gönderim kilidi. Panelde de
+       geçerli — iki kez tıklanan "Sil" iki istek demek. *@
+    <script src="~/js/ortak.js" asp-append-version="true"></script>
+    <script src="~/js/yonetim.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
