@@ -214,7 +214,7 @@
                         {
                             <article class="vitrin__kart">
                                 <div class="vitrin__gorsel">
-                                    <img src="@(string.IsNullOrEmpty(urun.ResimUrl) || urun.ResimUrl.StartsWith("http") ? vitrinYedek : urun.ResimUrl)"
+                                    <img src="@UrunGorseli.Yolu(urun.ResimUrl, vitrinYedek)"
                                          alt="@urun.Ad" loading="lazy" width="800" height="1000">
                                 </div>
 

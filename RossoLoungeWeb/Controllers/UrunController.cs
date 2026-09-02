@@ -332,9 +332,21 @@ namespace RossoLoungeWeb.Controllers
                 return RedirectToAction("Index");
             }
 
+            // Yolu kayıttan ÖNCE alıyoruz; Remove sonrası nesne izlenmiyor olabilir.
+            string? silinecekResim = urun.ResimUrl;
+
             _context.Urunler.Remove(urun);
             if (GuvenliKaydet("Ürün silme"))
+            {
+                /* Ürün gidince görseli de gitmeli — aksi hâlde dosyalar
+                   sunucuda birikiyordu. Kayıt BAŞARILI olduktan sonra
+                   çağrılıyor: EskiResmiSil "bu görseli başka ürün de
+                   kullanıyor mu" diye veritabanına bakıyor ve silinen satır
+                   o sorguya artık dahil olmamalı. Paylaşılan görseller,
+                   dış adresler ve klasör dışı yollar zaten korunuyor. */
+                EskiResmiSil(silinecekResim);
                 TempData["Mesaj"] = $"'{urun.Ad}' ürünü silindi.";
+            }
             else
                 TempData["Hata"] = $"'{urun.Ad}' ürünü silinemedi. Lütfen tekrar deneyin.";
 

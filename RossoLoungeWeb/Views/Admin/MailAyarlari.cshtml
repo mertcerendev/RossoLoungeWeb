@@ -4,9 +4,11 @@
     ===============================================================
     Uç değişmedi: POST /Admin/MailAyarlariGuncelle.
 
-    NOT: GonderenSifre veritabanında düz metin duruyor (DEVAM.md'de
-    açık madde). Alan tipi password, ekranda gizli — ama bu yalnızca
-    omuz üstünden okumayı engelliyor, saklama sorununu çözmüyor.
+    ŞİFRE ALANI: saklanan şifre tarayıcıya HİÇ gönderilmiyor. Önceden
+    value="@@Model.GonderenSifre" ile geri basılıyordu, yani şifre her
+    sayfa açılışında HTML kaynağında duruyordu. Artık alan boş açılır;
+    boş bırakılırsa kayıtlı şifre korunur, doldurulursa değiştirilir.
+    Veritabanında da şifreli tutuluyor (Services/AyarKorumasi).
 *@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -54,8 +56,11 @@
         </label>
 
         <div class="y-alan">
+            @* value YOK — bkz. yukarıdaki not. required de yok: boş bırakmak
+               "değiştirme" anlamına geliyor. İlk kayıtta sunucu zorunlu tutuyor. *@
             <input class="y-girdi" type="password" id="gonderenSifre" name="GonderenSifre"
-                   value="@Model.GonderenSifre" autocomplete="off" required
+                   autocomplete="new-password"
+                   placeholder="@(ViewBag.SifreKayitli == true ? "Değiştirmek için yeni şifreyi girin" : "16 haneli uygulama şifresi")"
                    aria-describedby="sifre-yardim">
             <button type="button" class="y-alan__eylem" data-sifre-gor
                     aria-controls="gonderenSifre" aria-label="Şifreyi göster">
@@ -65,6 +70,10 @@
 
         <p class="y-form__yardim" id="sifre-yardim">
             Gmail için normal hesap şifresi değil, 16 haneli “uygulama şifresi” girilmelidir.
+            @if (ViewBag.SifreKayitli == true)
+            {
+                <text>Kayıtlı bir şifre var; <strong>boş bırakırsanız değişmez</strong>.</text>
+            }
         </p>
     </div>
 

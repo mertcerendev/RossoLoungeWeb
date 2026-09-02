@@ -110,7 +110,7 @@
                                         <article class="menu__kalem@(urun.FiyatBuyuk.HasValue ? " menu__kalem--cift" : "")"
                                                  data-kategori="kat-@kategori.Id"
                                                  data-ara="@urun.Ad @urun.Aciklama @kategori.Ad"
-                                                 data-cursor-image="@(string.IsNullOrEmpty(urun.ResimUrl) || urun.ResimUrl.StartsWith("http") ? yerTutucu : urun.ResimUrl)">
+                                                 data-cursor-image="@UrunGorseli.Yolu(urun.ResimUrl, yerTutucu)">
                                             <h3 class="menu__ad">@urun.Ad</h3>
 
                                             @* Fiyat kutusu ızgarada İKİ SATIRA yayılıyor (bkz. CSS):

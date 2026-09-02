@@ -1994,27 +1994,57 @@
                 });
         }
 
-        /* --- Başa dön --- */
+        /* --- Başa dön + kaydırma yüzdesi ---
+           Buton artık SÜREKLİ görünüyor; eskiden yalnızca footer'a
+           yaklaşınca beliriyordu. Karşılığında boş bir daire değil,
+           sayfada ne kadar ilerlendiğini gösteren dolan bir gösterge. */
         var dugme = document.querySelector('.basa-don');
         if (!dugme) return;
 
         dugme.hidden = false;
 
+        var dolgu = dugme.querySelector('.basa-don__dolgu');
+        var sayi = dugme.querySelector('.basa-don__sayi');
+        var sonYuzde = -1;
+
+        function ilerlemeyiYaz() {
+            var yol = document.documentElement.scrollHeight - window.innerHeight;
+            var kaydirma = window.scrollY || window.pageYOffset || 0;
+
+            /* Galeri pin'i sayfa boyunu değiştiriyor; oran her karede
+               yeniden hesaplanıyor, önbelleğe alınmıyor. */
+            var oran = yol > 0 ? Math.min(1, Math.max(0, kaydirma / yol)) : 0;
+
+            /* scaleY, height DEĞİL: yükseklik her karede yeniden düzen
+               hesaplatırdı, dönüşüm yalnızca kompozisyon katmanında kalıyor. */
+            if (dolgu) dolgu.style.transform = 'scaleY(' + oran.toFixed(4) + ')';
+
+            var yuzde = Math.round(oran * 100);
+            if (yuzde !== sonYuzde) {
+                sonYuzde = yuzde;
+                if (sayi) sayi.textContent = yuzde;
+            }
+        }
+
+        var bekliyor = false;
+        window.addEventListener('scroll', function () {
+            if (bekliyor) return;
+            bekliyor = true;
+            requestAnimationFrame(function () {
+                ilerlemeyiYaz();
+                bekliyor = false;
+            });
+        }, { passive: true });
+
+        // Ekran boyu ve geç yüklenen görseller sayfa boyunu değiştiriyor
+        window.addEventListener('resize', ilerlemeyiYaz);
+        window.addEventListener('load', ilerlemeyiYaz);
+        ilerlemeyiYaz();
+
         dugme.addEventListener('click', function () {
             if (lenis) lenis.scrollTo(0, { duration: 1.1 });
             else window.scrollTo({ top: 0, behavior: azHareket ? 'auto' : 'smooth' });
         });
-
-        var esik = document.querySelector('.finale') || serit;
-        if (esik && 'IntersectionObserver' in window) {
-            new IntersectionObserver(function (girisler) {
-                girisler.forEach(function (giris) {
-                    dugme.classList.toggle('basa-don--gorunur', giris.isIntersecting);
-                });
-            }, { rootMargin: '0px 0px 20% 0px', threshold: 0 }).observe(esik);
-        } else {
-            dugme.classList.add('basa-don--gorunur');
-        }
     }
 
 

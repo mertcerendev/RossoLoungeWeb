@@ -3162,39 +3162,112 @@ body:not(.panel) footer.finale {
    Sona yaklaşınca beliriyor. İmleç 10000'de olduğu için onun
    altında ama içeriğin üstünde duruyor.
    ============================================================= */
+/* -------------------------------------------------------------
+   BAŞA DÖN + KAYDIRMA İLERLEMESİ
+
+   Buton artık sürekli ekranda; karşılığında boş durmuyor, sayfanın
+   ne kadarının geçildiğini gösteriyor. Kare — imlecin kadraj diliyle
+   aynı: sayfada başka yuvarlak gösterge yok.
+   ------------------------------------------------------------- */
 .basa-don {
     position: fixed;
     inset-block-end: clamp(1.25rem, 3vw, 2rem);
     inset-inline-end: clamp(1.25rem, 3vw, 2rem);
     z-index: var(--k-nav);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
+    display: grid;
+    place-items: center;
+    width: 54px;
+    height: 54px;
+    padding: 0;
     background: rgba(8, 8, 10, 0.72);
     border: 1px solid var(--cizgi-2);
-    border-radius: 50%;
     color: var(--metin-2);
     cursor: pointer;
+    /* Dolgu köşelerden taşmasın */
+    overflow: hidden;
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity var(--h2) var(--egri), transform var(--h2) var(--egri),
-                color var(--h2) var(--egri), border-color var(--h2) var(--egri);
-}
-
-.basa-don--gorunur {
-    opacity: 1;
-    transform: translateY(0);
+    transition: border-color var(--h2) var(--egri);
 }
 
     .basa-don:hover,
     .basa-don:focus-visible {
-        color: var(--sampanya);
         border-color: var(--sampanya);
     }
+
+/* Aşağıdan yükselen şampanya dolgu. Yüksekliği JS scaleY ile
+   sürüyor; height kullanılsaydı her karede yeniden düzen hesabı
+   çıkardı, dönüşüm ise kompozisyon katmanında kalıyor. */
+.basa-don__dolgu {
+    position: absolute;
+    inset: 0;
+    background: var(--sampanya);
+    transform: scaleY(0);
+    transform-origin: bottom center;
+    will-change: transform;
+}
+
+/* difference ŞART: rakam dolgunun altında kalınca koyu zeminde açık,
+   dolgu yükselip üstünü örtünce şampanyanın üstünde koyu okunuyor.
+   Tek bir renkle iki zemin idare edilemiyordu. */
+.basa-don__ic {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    color: #fff;
+    mix-blend-mode: difference;
+}
+
+/* Rakam ve ok AYNI ızgara gözünde; biri çıkarken öteki giriyor */
+.basa-don__yuzde,
+.basa-don__ok {
+    grid-area: 1 / 1;
+    transition: opacity var(--h2) var(--egri), transform var(--h2) var(--egri);
+}
+
+.basa-don__yuzde {
+    display: inline-flex;
+    align-items: baseline;
+    font-family: var(--f-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.basa-don__isaret {
+    font-size: 0.625rem;
+    margin-inline-start: 0.08em;
+    opacity: 0.75;
+}
+
+.basa-don__ok {
+    opacity: 0;
+    transform: translateY(9px);
+}
+
+.basa-don:hover .basa-don__yuzde,
+.basa-don:focus-visible .basa-don__yuzde {
+    opacity: 0;
+    transform: translateY(-9px);
+}
+
+.basa-don:hover .basa-don__ok,
+.basa-don:focus-visible .basa-don__ok {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Hareket azaltma: yer değiştirme yok, yalnızca görünürlük */
+@media (prefers-reduced-motion: reduce) {
+    .basa-don__yuzde,
+    .basa-don__ok {
+        transition: opacity var(--h1) linear;
+        transform: none !important;
+    }
+}
 
 /* =============================================================
    NAVBAR GİZLEME

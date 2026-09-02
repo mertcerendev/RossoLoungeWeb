@@ -25,16 +25,20 @@ namespace RossoLoungeWeb.Controllers
         private readonly UserManager<IdentityUser> _kullaniciYoneticisi;
         private readonly SignInManager<IdentityUser> _girisYoneticisi;
 
+        private readonly AyarKorumasi _ayarKorumasi;
+
         public AdminController(
             ApplicationDbContext context,
             ILogger<AdminController> logger,
             UserManager<IdentityUser> kullaniciYoneticisi,
-            SignInManager<IdentityUser> girisYoneticisi)
+            SignInManager<IdentityUser> girisYoneticisi,
+            AyarKorumasi ayarKorumasi)
         {
             _context = context;
             _logger = logger;
             _kullaniciYoneticisi = kullaniciYoneticisi;
             _girisYoneticisi = girisYoneticisi;
+            _ayarKorumasi = ayarKorumasi;
         }
 
         // Uygulama geneli invariant kültürle çalışıyor; grafik etiketlerinde
@@ -91,7 +95,8 @@ namespace RossoLoungeWeb.Controllers
                 using var client = new SmtpClient(ayar.SmtpSunucu, ayar.SmtpPort)
                 {
                     EnableSsl = true,
-                    Credentials = new NetworkCredential(ayar.GonderenMail, ayar.GonderenSifre)
+                    // Şifre veritabanında şifreli duruyor; burada çözülüyor.
+                    Credentials = new NetworkCredential(ayar.GonderenMail, _ayarKorumasi.Coz(ayar.GonderenSifre))
                 };
 
                 using var mail = new MailMessage
@@ -350,6 +355,11 @@ namespace RossoLoungeWeb.Controllers
         public IActionResult MailAyarlari()
         {
             var ayar = _context.Ayarlar.FirstOrDefault() ?? new SistemAyarlari();
+
+            // Saklanan şifre tarayıcıya gönderilmiyor; görünüm yalnızca
+            // "kayıtlı bir şifre var mı" bilgisini kullanıyor.
+            ViewBag.SifreKayitli = !string.IsNullOrEmpty(ayar.GonderenSifre);
+            ayar.GonderenSifre = "";
             return View(ayar);
         }
 
@@ -357,6 +367,19 @@ namespace RossoLoungeWeb.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult MailAyarlariGuncelle(SistemAyarlari gelenAyar)
         {
+            /* ŞİFRE ALANI BOŞ GELEBİLİR — ve bu geçerli bir durum: "değiştirme"
+               demek. Ama GonderenSifre nullable OLMAYAN bir string, bu yüzden
+               MVC ona örtük bir [Required] kuralı ekliyor; boş girdi de
+               ConvertEmptyStringToNull ile null'a çevrildiği için doğrulama
+               patlıyordu. Sonuç: şifreye dokunmadan e-posta/SMTP güncellemek
+               imkânsızdı ("Ayarlar kaydedilmedi" dönüyordu).
+
+               Kuralı burada düşürüyoruz; boş/dolu ayrımını aşağıda kendimiz
+               ele alıyoruz. Modelin nullable yapılması şema değişikliği
+               gerektirirdi. UrunController da Kategori için aynı kalıbı
+               kullanıyor. */
+            ModelState.Remove(nameof(SistemAyarlari.GonderenSifre));
+
             // Modeldeki [EmailAddress] / [Range] doğrulamaları burada da devreye girsin.
             if (!ModelState.IsValid)
             {
@@ -366,13 +389,32 @@ namespace RossoLoungeWeb.Controllers
 
             var mevcut = _context.Ayarlar.FirstOrDefault();
 
-            if (mevcut == null) _context.Ayarlar.Add(gelenAyar);
+            /* ŞİFRE ALANI TARAYICIYA HİÇ GÖNDERİLMİYOR (bkz. MailAyarlari.cshtml).
+               Bu yüzden alan boş geldiyse "değiştirilmedi" demektir; kayıtlı
+               şifre korunur. Doluysa şifrelenip yazılır.
+
+               Önceden form, saklanan şifreyi value= ile geri basıyordu: şifre
+               her sayfa açılışında HTML kaynağında görünüyordu. */
+            if (mevcut == null)
+            {
+                if (string.IsNullOrEmpty(gelenAyar.GonderenSifre))
+                {
+                    ViewBag.Hata = "Ayarlar kaydedilmedi. İlk kayıtta uygulama şifresi zorunludur.";
+                    gelenAyar.GonderenSifre = "";
+                    return View("MailAyarlari", gelenAyar);
+                }
+
+                gelenAyar.GonderenSifre = _ayarKorumasi.Koru(gelenAyar.GonderenSifre);
+                _context.Ayarlar.Add(gelenAyar);
+            }
             else
             {
                 mevcut.GonderenMail = gelenAyar.GonderenMail;
-                mevcut.GonderenSifre = gelenAyar.GonderenSifre;
                 mevcut.SmtpSunucu = gelenAyar.SmtpSunucu;
                 mevcut.SmtpPort = gelenAyar.SmtpPort;
+
+                if (!string.IsNullOrEmpty(gelenAyar.GonderenSifre))
+                    mevcut.GonderenSifre = _ayarKorumasi.Koru(gelenAyar.GonderenSifre);
             }
 
             if (GuvenliKaydet("Mail ayarları güncelleme"))
@@ -380,6 +422,9 @@ namespace RossoLoungeWeb.Controllers
             else
                 ViewBag.Hata = "Mail ayarları kaydedilemedi. Lütfen tekrar deneyin.";
 
+            // Kullanıcının yazdığı şifre görünüme geri gitmesin.
+            gelenAyar.GonderenSifre = "";
+            ViewBag.SifreKayitli = _context.Ayarlar.Any(a => a.GonderenSifre != "");
             return View("MailAyarlari", gelenAyar);
         }
 

@@ -89,15 +89,27 @@
 
     @RenderBody()
 
-    @* Sayfanın başına dön — yalnızca sona yaklaşınca beliriyor (script.js).
-       JS yoksa gizli kalır; çapa zaten "#" ile en üste gitmez, o yüzden
-       görünürlüğü de davranışı da JS'e bırakıldı. *@
+    @* Sayfanın başına dön — SÜREKLİ görünür; ayrıca sayfada ne kadar
+       ilerlendiğini gösteriyor (rosso-hareket.js → imzaBolumu).
+       JS yoksa gizli kalır: bir <button> onsuz zaten hiçbir şey yapmaz. *@
     <button type="button" class="basa-don" aria-label="Sayfanın başına dön" hidden>
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-             stroke-width="1.5" aria-hidden="true">
-            <path d="M12 19V6" />
-            <path d="m6 12 6-6 6 6" />
-        </svg>
+        @* Kaydırma ilerlemesi: aşağıdan yükselen şampanya dolgu. *@
+        <span class="basa-don__dolgu" aria-hidden="true"></span>
+
+        @* Rakam ve ok aynı ızgara gözünde duruyor; üzerine gelince yer
+           değiştiriyorlar. Katman mix-blend-mode: difference kullanıyor,
+           bu sayede hem koyu zeminde hem dolgunun üstünde okunuyor. *@
+        <span class="basa-don__ic" aria-hidden="true">
+            <span class="basa-don__yuzde">
+                <span class="basa-don__sayi">0</span><span class="basa-don__isaret">%</span>
+            </span>
+
+            <svg class="basa-don__ok" viewBox="0 0 24 24" width="18" height="18" fill="none"
+                 stroke="currentColor" stroke-width="1.5">
+                <path d="M12 19V6" />
+                <path d="m6 12 6-6 6 6" />
+            </svg>
+        </span>
     </button>
 
     @* --- 1) Sahne motoru --- *@

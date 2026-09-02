@@ -97,7 +97,7 @@
             JPG, PNG, WEBP veya GIF · en fazla 5 MB. Boş bırakırsanız mevcut görsel korunur.
         </p>
 
-        @if (!string.IsNullOrEmpty(Model.ResimUrl))
+        @if (UrunGorseli.Gecerli(Model.ResimUrl))
         {
             <div class="y-onizleme">
                 <img src="@Model.ResimUrl" alt="@Model.Ad ürününün mevcut görseli">

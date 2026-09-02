@@ -30,6 +30,9 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(anahtarDizini))
     .SetApplicationName("RossoLoungeWeb");
 
+// SMTP uygulama şifresini veritabanında şifreli tutar (bkz. Services/AyarKorumasi).
+builder.Services.AddScoped<RossoLoungeWeb.Services.AyarKorumasi>();
+
 // Veritabanı
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -190,6 +193,19 @@ using (var kapsam = app.Services.CreateScope())
         // Geçiş başarısız olsa bile site ayakta kalmalı: ziyaretçi
         // tarafı kimlik doğrulamaya bağlı değil.
         kayit.LogError(hata, "Kimlik geçişi sırasında beklenmeyen hata.");
+    }
+
+    /* Veritabanında kalmış DÜZ METİN SMTP şifresini şifreler.
+       İdempotent; şifrelenmiş kaydı tekrar sarmalamaz. */
+    try
+    {
+        var koruma = kapsam.ServiceProvider.GetRequiredService<RossoLoungeWeb.Services.AyarKorumasi>();
+        var baglam = kapsam.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await koruma.DuzMetniSifreleAsync(baglam);
+    }
+    catch (Exception hata)
+    {
+        kayit.LogError(hata, "SMTP şifresi şifrelenirken hata oluştu.");
     }
 }
 

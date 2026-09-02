@@ -104,7 +104,7 @@ else
                             </div>
                         </td>
                         <td>
-                            @if (string.IsNullOrEmpty(item.ResimUrl))
+                            @if (!UrunGorseli.Gecerli(item.ResimUrl))
                             {
                                 <span class="y-gorsel y-gorsel--bos" title="Görsel yok">
                                     <i class="fas fa-image" aria-hidden="true"></i>
