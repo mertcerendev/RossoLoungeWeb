@@ -3,6 +3,10 @@
     ViewData["Baslik"] = "Rosso Lounge Bistro | Bandırma";
     ViewData["Aciklama"] = "Rosso Lounge Bistro — Bandırma'da modern atmosfer, taze lezzetler ve imza kokteyller. Online masa rezervasyonu yapın.";
 
+    // Girişi aşağıdaki .sahne-perde üstleniyor; _Layout'un geçiş perdesi
+    // bu sayfada KAPALI başlamasın (ikisi üst üste binerdi).
+    ViewData["Giris"] = "sinematik";
+
     // Öne çıkan ürünler HomeController.Index'ten geliyor (SiraNo'ya göre ilk 3).
     var oneCikanlar = ViewBag.OneCikanlar as List<RossoLoungeWeb.Models.Urun> ?? new List<RossoLoungeWeb.Models.Urun>();
     var yorumlar = Model ?? new List<RossoLoungeWeb.Models.Yorum>();
@@ -78,7 +82,7 @@
 
                 <div class="hero__eylemler">
                     <a href="#rezervasyon" class="btn btn--sampanya">Masa Ayırt</a>
-                    <a href="/Home/Menu" class="btn btn--hat">Menüyü Keşfet</a>
+                    <a href="/menu" class="btn btn--hat">Menüyü Keşfet</a>
                 </div>
 
                 @* Açık/kapalı rozeti kaldırıldı; saat tek başına ortada.
@@ -172,7 +176,7 @@
 
         @* ============================================================
            VİTRİN — ana sayfada yalnızca seçilmiş birkaç tabak.
-           Tam menü /Home/Menu sayfasında; ana sayfa bitmez bir listeye
+           Tam menü /menu sayfasında; ana sayfa bitmez bir listeye
            dönüşmesin diye burada sadece 3 ürün gösteriliyor.
            Seçim panelden yönetiliyor: SiraNo'su en küçük 3 ürün gelir.
            Razor notu: Views/Home/_Vitrin.cshtml partial'ına taşınabilir.
@@ -237,7 +241,7 @@
                     </div>
 
                     <div class="vitrin__eylem">
-                        <a href="/Home/Menu" class="btn btn--sampanya">Tüm Menüyü Gör</a>
+                        <a href="/menu" class="btn btn--sampanya">Tüm Menüyü Gör</a>
                         <p class="vitrin__ipucu">@(ViewBag.ToplamUrun ?? 0) tabak, @(ViewBag.KategoriSayisi ?? 0) kategori</p>
                     </div>
                 }

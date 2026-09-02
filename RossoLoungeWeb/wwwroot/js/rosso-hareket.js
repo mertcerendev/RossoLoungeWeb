@@ -502,30 +502,145 @@
         });
     };
 
-    function capaBagla() {
+    /* ---------------------------------------------------------
+       SAYFA GEÇİŞ PERDESİ
+
+       Çıkışta yukarıdan iniyor, yeni sayfada aşağı doğru çekilip
+       çıkıyor — tek sürekli hareket gibi okunsun diye yön aynı.
+
+       Ana sayfada KAPALI başlamıyor: orada sinematik loader
+       (.sahne-perde) zaten var, ikisi üst üste binerdi. Kararı
+       _Layout veriyor (ViewData["Giris"] == "sinematik"), JS
+       yalnızca sınıfa bakıyor.
+       --------------------------------------------------------- */
+    var gecisSuruyor = false;
+
+    function gecisGirisi() {
+        var perde = document.querySelector('.gecis-perde');
+        if (!perde || !perde.classList.contains('gecis-perde--kapali')) return;
+
+        function ac() {
+            perde.classList.remove('gecis-perde--kapali');
+        }
+
+        if (!kinetik || !gsapVar) { ac(); return; }
+
+        gsap.fromTo(perde,
+            { scaleY: 1, transformOrigin: 'bottom center' },
+            {
+                scaleY: 0, duration: 0.62, ease: 'expo.inOut', delay: 0.04,
+                onComplete: function () {
+                    ac();
+                    gsap.set(perde, { clearProps: 'transform' });
+                }
+            });
+    }
+
+    function gecisleGit(adres) {
+        if (gecisSuruyor) return;
+        gecisSuruyor = true;
+
+        var perde = document.querySelector('.gecis-perde');
+
+        function git() { window.location.href = adres; }
+
+        if (!perde || !kinetik || !gsapVar || azHareket) { git(); return; }
+
+        // Perde inerken kaydırma sürmesin; yeni sayfa da baştan başlıyor
+        if (lenis) lenis.stop();
+
+        gsap.fromTo(perde,
+            { scaleY: 0, transformOrigin: 'top center' },
+            { scaleY: 1, duration: 0.42, ease: 'power2.inOut', onComplete: git });
+    }
+
+    /* GERİ TUŞU — sayfa bfcache'ten dönerse perde, gitmeden hemen önce
+       indirdiğimiz KAPALI hâliyle geri geliyor. Tarayıcı bu durumda
+       script'i yeniden çalıştırmıyor; açmayı pageshow üstleniyor. */
+    window.addEventListener('pageshow', function (olay) {
+        if (!olay.persisted) return;
+
+        gecisSuruyor = false;
+        if (lenis) lenis.start();
+
+        var perde = document.querySelector('.gecis-perde');
+        if (!perde) return;
+
+        if (!gsapVar) { perde.classList.remove('gecis-perde--kapali'); return; }
+
+        gsap.to(perde, {
+            scaleY: 0, duration: 0.5, ease: 'expo.out', transformOrigin: 'bottom center',
+            onComplete: function () {
+                perde.classList.remove('gecis-perde--kapali');
+                gsap.set(perde, { clearProps: 'transform' });
+            }
+        });
+    });
+
+    /* Site içi BAŞKA sayfaya giden bağlantı mı? Değilse null döner ve
+       tıklama tarayıcıya bırakılır (yeni sekme, indirme, mailto, dış
+       site — hepsi burada eleniyor). */
+    function siteIciGezinme(bag) {
+        if (bag.hasAttribute('download')) return null;
+        if (bag.getAttribute('rel') === 'external') return null;
+        if (bag.protocol !== window.location.protocol) return null;  // mailto:, tel:
+        if (bag.host !== window.location.host) return null;
+        if (bag.pathname === window.location.pathname) return null;  // çapa işi
+        return bag.href;
+    }
+
+    /* =========================================================
+       GEZİNME — TEK tıklama sahibi
+
+       Öncelik sırası bilerek açık:
+         1) Aynı sayfadaki çapa → preventDefault + Lenis ile kaydır
+         2) Site içi başka sayfa → preventDefault + perde + git
+         3) Kalan her şey       → tarayıcıya bırak
+
+       Sayfa geçişi ayrı bir dinleyici OLARAK yazılmadı: aynı tıklama
+       iki koda birden düşer, hangisinin preventDefault ettiği sıraya
+       kalırdı. Tek dinleyici, tek karar.
+       ========================================================= */
+    function gezinmeBagla() {
         navOlcusunuAl();
         window.addEventListener('resize', navOlcusunuAl);
 
+        gecisGirisi();
+
         document.addEventListener('click', function (olay) {
+            // Ctrl/Cmd/Shift/Alt + tık ve orta tık tarayıcının işi
+            if (olay.defaultPrevented || olay.button !== 0 ||
+                olay.metaKey || olay.ctrlKey || olay.shiftKey || olay.altKey) return;
+
             var bag = olay.target.closest ? olay.target.closest('a[href]') : null;
-            if (!bag || bag.target === '_blank') return;
+            if (!bag) return;
+            if (bag.target && bag.target !== '_self') return;
 
+            // --- 1) Sayfa içi çapa ---
             var hedef = capayiCoz(bag);
-            if (!hedef) return;
+            if (hedef) {
+                olay.preventDefault();
 
-            olay.preventDefault();
+                if (hedef === 'tepe') {
+                    if (lenis) lenis.scrollTo(0, { duration: 1.1 });
+                    else window.scrollTo({ top: 0, behavior: azHareket ? 'auto' : 'smooth' });
+                    return;
+                }
 
-            if (hedef === 'tepe') {
-                if (lenis) lenis.scrollTo(0, { duration: 1.1 });
-                else window.scrollTo({ top: 0, behavior: azHareket ? 'auto' : 'smooth' });
+                window.rossoKaydir(hedef);
+
+                // Klavye odağı da hedefe taşınsın, yoksa Tab başa döner
+                if (!hedef.hasAttribute('tabindex')) hedef.setAttribute('tabindex', '-1');
+                hedef.focus({ preventScroll: true });
                 return;
             }
 
-            window.rossoKaydir(hedef);
+            // --- 2) Site içi sayfa geçişi ---
+            var adres = siteIciGezinme(bag);
+            if (!adres) return;
 
-            // Klavye odağı da hedefe taşınsın, yoksa Tab başa döner
-            if (!hedef.hasAttribute('tabindex')) hedef.setAttribute('tabindex', '-1');
-            hedef.focus({ preventScroll: true });
+            olay.preventDefault();
+            gecisleGit(adres);
         });
 
         /* Başka sayfadan #çıpa ile gelindiğinde tarayıcı sabit navbarı
@@ -2131,7 +2246,7 @@
         if (acildi) return;
         acildi = true;
 
-        [lenisBaslat, capaBagla, navIzleyici, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, imzaBolumu, gorunurlukEmniyeti]
+        [lenisBaslat, gezinmeBagla, navIzleyici, imlecBaslat, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, imzaBolumu, gorunurlukEmniyeti]
             .forEach(function (modul) {
                 try { modul(); } catch (h) {
                     if (window.console) console.error('rosso:', modul.name, h);

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RossoLoungeWeb.Data;   // Veritabanı bağlantısı için
 using RossoLoungeWeb.Models; // Rezervasyon sınıfı için
@@ -119,6 +119,10 @@ namespace RossoLoungeWeb.Controllers
             return "acik";
         }
 
+        /* Adres /Home/Menu yerine /menu. Nitelikli rota koyulunca bu eylem
+           varsayılan {controller}/{action} kalıbından ÇIKIYOR, eski adres
+           artık eşleşmiyor — Program.cs'te kalıcı yönlendirmesi var. */
+        [Route("menu")]
         public IActionResult Menu()
         {
             // Kategorileri SiraNo'ya göre (OrderBy) çekiyoruz.

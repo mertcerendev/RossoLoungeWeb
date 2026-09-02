@@ -70,6 +70,18 @@
 <body>
     @await Html.PartialAsync("_Imlec")
 
+    @* --- Sayfa geçiş perdesi ---
+       Çıkışta her sayfada kullanılıyor. GİRİŞTE ise yalnızca sinematik
+       loader'ı OLMAYAN sayfalarda kapalı başlıyor; ana sayfada
+       .sahne-perde zaten ekranı kapatıyor, ikisi üst üste binerdi.
+
+       Kapalı hâli CSS'te html.rosso-kinetik'e bağlı: hareket azaltma
+       açıkken ya da head'deki emniyet zamanlayıcısı sınıfı düşürdüğünde
+       perde kendiliğinden açılıyor, JS hiç çalışmasa bile sayfa siyah
+       ekranda kalmıyor. *@
+    <div class="gecis-perde@((ViewData["Giris"] as string) == "sinematik" ? "" : " gecis-perde--kapali")"
+         aria-hidden="true"></div>
+
     <a href="#icerik" class="atla">İçeriğe atla</a>
     <div class="nav-perde" aria-hidden="true"></div>
 

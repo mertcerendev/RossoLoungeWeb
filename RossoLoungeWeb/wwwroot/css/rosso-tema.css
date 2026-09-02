@@ -315,6 +315,39 @@ ul {
 }
 
 /* =============================================================
+   SAYFA GEÇİŞ PERDESİ
+
+   Çıkışta yukarıdan iniyor (transform-origin: top, JS'te),
+   yeni sayfada aşağı doğru çekilip çıkıyor (origin: bottom).
+   Aynı yönde devam ettiği için iki sayfa arasında tek bir
+   hareket gibi okunuyor.
+
+   scaleY kullanılıyor: opacity ile kararan tam ekran bir katman
+   her karede kompozisyon yapıyor; scaleY yalnızca dönüşüm.
+
+   KAPALI hâli html.rosso-kinetik'e BAĞLI. Bu bilinçli:
+     - hareket azaltma açıkken sınıf hiç eklenmiyor,
+     - JS düşerse head'deki emniyet zamanlayıcısı 5sn'de sınıfı
+       düşürüyor.
+   Her iki durumda da perde kendiliğinden açılıyor; kimse siyah
+   ekranda kalmıyor.
+   ============================================================= */
+.gecis-perde {
+    position: fixed;
+    inset: 0;
+    z-index: var(--k-loader);
+    background: var(--obsidyen);
+    transform: scaleY(0);
+    transform-origin: bottom center;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.rosso-kinetik .gecis-perde--kapali {
+    transform: scaleY(1);
+}
+
+/* =============================================================
    SİNEMATİK LOADER
    ============================================================= */
 .sahne-perde {

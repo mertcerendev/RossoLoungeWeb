@@ -77,6 +77,38 @@ app.UseSession();
 
 app.UseAuthorization();
 
+/* -------------------------------------------------------------
+   KISA ADRESLER
+
+   /menu gerçek bir sayfa: rotası HomeController.Menu'de [Route("menu")]
+   olarak duruyor. Aşağıdakiler yönlendirme:
+
+   - /Home/Menu   → /menu     Eski adres. Nitelikli rota gelince
+                              {controller}/{action} kalıbından çıktığı
+                              için artık 404 olurdu; yer imleri ve
+                              dizine girmiş bağlantılar kırılmasın.
+   - /rezervasyon → /#rezervasyon
+   - /iletisim    → /#contact
+                              Bunlar AYRI SAYFA DEĞİL, ana sayfanın
+                              bölümleri. Kendi adreslerinde ayrıca
+                              render edilselerdi aynı içerik iki adreste
+                              görünüp kopya sayılırdı; o yüzden kalıcı
+                              (301) yönlendiriyorlar.
+
+   Navbar bilerek hâlâ /#rezervasyon kullanıyor: kısa adres sunucuya
+   gidip dönerdi, çapa ise sayfayı hiç terk etmeden kaydırıyor.
+   ------------------------------------------------------------- */
+static Task KaliciYonlendir(HttpContext baglam, string hedef)
+{
+    baglam.Response.Redirect(hedef, permanent: true);
+    return Task.CompletedTask;
+}
+
+app.MapGet("/Home/Index", baglam => KaliciYonlendir(baglam, "/"));
+app.MapGet("/Home/Menu", baglam => KaliciYonlendir(baglam, "/menu"));
+app.MapGet("/rezervasyon", baglam => KaliciYonlendir(baglam, "/#rezervasyon"));
+app.MapGet("/iletisim", baglam => KaliciYonlendir(baglam, "/#contact"));
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
