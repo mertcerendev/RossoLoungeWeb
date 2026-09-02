@@ -723,11 +723,32 @@
        kurulmuyor: dinleyici bile bağlanmıyor.
        ========================================================= */
 
-    var MANYETIK_SECICI = '.btn, .nav__link, .nav__eylem, .nav__marka, .basa-don, .menu__sekme';
+    var MANYETIK_SECICI = '.btn, .nav__link, .nav__eylem, .nav__marka, .basa-don';
     var ISIK_SECICI = '.vitrin__kart, .form-panel';
     var EGILME_SECICI = '.galeri__foto, .hakkinda__foto';
 
-    /* --- 7a. MANYETİK ÖĞELER ---
+    /* KUTU BAYATLAMASI — üç modülün de ortak tuzağı.
+
+       Ölçüm mouseenter'da bir kez yapılıyor; mousemove içinde
+       getBoundingClientRect çağırmak her karede düzen hesabı demek.
+       Ama kaydırırken fare KIPIRDAMIYOR: mousemove gelmiyor, öğe ise
+       kayıyor. Ölçülen kutu bayatlayınca efekt imlecin altından çıkıyor
+       (kullanıcı bunu ışıkta gördü: ışık yukarıda/aşağıda kalıyordu).
+
+       Çözüm: modül etkinken kaydırma ve yeniden boyutlandırmayı
+       dinliyoruz, kutuyu tazeleyip SON fare konumuyla yeniden
+       uyguluyoruz. Dinleyiciler yalnızca öğenin üstündeyken bağlı. */
+    function tazelemeyeBagla(tazele) {
+        window.addEventListener('scroll', tazele, { passive: true });
+        window.addEventListener('resize', tazele);
+
+        return function coz() {
+            window.removeEventListener('scroll', tazele);
+            window.removeEventListener('resize', tazele);
+        };
+    }
+
+    /* --- MANYETİK ÖĞELER ---
        Öğe, imlecin merkeze göre sapmasının bir oranı kadar kayıyor;
        fare çıkınca yaylanarak yerine oturuyor (elastic).
 
@@ -738,8 +759,7 @@
 
         var GUC = 0.3;
         var EN_COK = 9; // piksel
-
-        var PAY = 4; // dinlenme kutusunun dışına küçük tolerans
+        var PAY = 4;    // dinlenme kutusunun dışına küçük tolerans
 
         Array.prototype.forEach.call(document.querySelectorAll(MANYETIK_SECICI), function (oge) {
             /* Tek quickTo çifti: takip ve dönüş aynı tween üzerinden.
@@ -747,10 +767,33 @@
                fonksiyonu sessizce ölü bırakıyor. */
             var xe = gsap.quickTo(oge, 'x', { duration: 0.6, ease: 'elastic.out(1, 0.8)' });
             var ye = gsap.quickTo(oge, 'y', { duration: 0.6, ease: 'elastic.out(1, 0.8)' });
-            var kutu = null;
 
-            /* DİNLEYİCİ ÖĞEDE DEĞİL BELGEDE, çıkış da öğenin DİNLENME
-               kutusuna göre hesaplanıyor. Sebebi ölçümle bulundu:
+            var kutu = null;
+            var coz = null;
+            var sonX = 0, sonY = 0;
+
+            /* Öğe o an kaymış olabilir; kaymayı geri çıkarıp DİNLENME
+               kutusunu buluyoruz. Çıkış kontrolü bu kutuya bakıyor. */
+            function dinlenmeKutusu() {
+                var k = oge.getBoundingClientRect();
+                var dx = gsap.getProperty(oge, 'x') || 0;
+                var dy = gsap.getProperty(oge, 'y') || 0;
+
+                return {
+                    left: k.left - dx, right: k.right - dx,
+                    top: k.top - dy, bottom: k.bottom - dy,
+                    width: k.width, height: k.height
+                };
+            }
+
+            function uygula() {
+                if (!kutu) return;
+                xe(gsap.utils.clamp(-EN_COK, EN_COK, (sonX - (kutu.left + kutu.width / 2)) * GUC));
+                ye(gsap.utils.clamp(-EN_COK, EN_COK, (sonY - (kutu.top + kutu.height / 2)) * GUC));
+            }
+
+            /* DİNLEYİCİ ÖĞEDE DEĞİL BELGEDE, çıkış da dinlenme kutusuna
+               göre. Sebebi ölçümle bulundu:
 
                  öğe imlece doğru kayıyor → karşı kenarı imlecin altından
                  çekiliyor → tarayıcı mouseleave yolluyor → öğe yerine
@@ -761,79 +804,108 @@
             function surukle(olay) {
                 if (!kutu) return;
 
-                if (olay.clientX < kutu.left - PAY || olay.clientX > kutu.right + PAY ||
-                    olay.clientY < kutu.top - PAY || olay.clientY > kutu.bottom + PAY) {
+                sonX = olay.clientX;
+                sonY = olay.clientY;
+
+                if (sonX < kutu.left - PAY || sonX > kutu.right + PAY ||
+                    sonY < kutu.top - PAY || sonY > kutu.bottom + PAY) {
                     birak();
                     return;
                 }
 
-                xe(gsap.utils.clamp(-EN_COK, EN_COK, (olay.clientX - (kutu.left + kutu.width / 2)) * GUC));
-                ye(gsap.utils.clamp(-EN_COK, EN_COK, (olay.clientY - (kutu.top + kutu.height / 2)) * GUC));
+                uygula();
+            }
+
+            function tazele() {
+                if (!kutu) return;
+                kutu = dinlenmeKutusu();
+
+                // Kaydırma öğeyi imlecin altından çıkardıysa bırak
+                if (sonX < kutu.left - PAY || sonX > kutu.right + PAY ||
+                    sonY < kutu.top - PAY || sonY > kutu.bottom + PAY) {
+                    birak();
+                    return;
+                }
+
+                uygula();
             }
 
             function birak() {
                 kutu = null;
                 document.removeEventListener('mousemove', surukle);
+                if (coz) { coz(); coz = null; }
                 xe(0);
                 ye(0);
             }
 
-            oge.addEventListener('mouseenter', function () {
+            oge.addEventListener('mouseenter', function (olay) {
                 if (kutu) return;
 
-                var k = oge.getBoundingClientRect();
-
-                /* Önceki yaylanma daha bitmemişse ölçülen kutu KAYIK
-                   olur; o anki kaymayı geri çıkarıp dinlenme kutusunu
-                   buluyoruz. */
-                var dx = gsap.getProperty(oge, 'x') || 0;
-                var dy = gsap.getProperty(oge, 'y') || 0;
-
-                kutu = {
-                    left: k.left - dx, right: k.right - dx,
-                    top: k.top - dy, bottom: k.bottom - dy,
-                    width: k.width, height: k.height
-                };
+                sonX = olay.clientX;
+                sonY = olay.clientY;
+                kutu = dinlenmeKutusu();
 
                 document.addEventListener('mousemove', surukle, { passive: true });
+                coz = tazelemeyeBagla(tazele);
             });
         });
     }
 
-    /* --- 7b. YAKINLIK IŞIĞI ---
+    /* --- YAKINLIK IŞIĞI ---
        Koyu kartın zemininde, imlecin altında süzülen bronz parıltı.
        JS yalnızca iki sayıyı CSS değişkenine yazıyor; parıltıyı
-       tamamen CSS çiziyor (radial-gradient). Böylece burada hiç
-       stil hesabı yok, tek iş iki custom property yazımı. */
+       tamamen CSS çiziyor (radial-gradient). Böylece burada hiç stil
+       hesabı yok, tek iş iki custom property yazımı. */
     function yakinlikIsigi() {
         if (!inceIsaretci || azHareket) return;
 
         Array.prototype.forEach.call(document.querySelectorAll(ISIK_SECICI), function (kart) {
             var kutu = null;
+            var coz = null;
+            var sonX = 0, sonY = 0;
 
-            kart.addEventListener('mouseenter', function () {
+            function uygula() {
+                if (!kutu) return;
+                kart.style.setProperty('--isik-x', (sonX - kutu.left) + 'px');
+                kart.style.setProperty('--isik-y', (sonY - kutu.top) + 'px');
+            }
+
+            function tazele() {
+                if (!kutu) return;
                 kutu = kart.getBoundingClientRect();
+                uygula();
+            }
+
+            kart.addEventListener('mouseenter', function (olay) {
+                sonX = olay.clientX;
+                sonY = olay.clientY;
+                kutu = kart.getBoundingClientRect();
+                uygula();
+
                 kart.classList.add('isik--acik');
+                coz = tazelemeyeBagla(tazele);
             });
 
             kart.addEventListener('mousemove', function (olay) {
                 if (!kutu) return;
-                kart.style.setProperty('--isik-x', (olay.clientX - kutu.left) + 'px');
-                kart.style.setProperty('--isik-y', (olay.clientY - kutu.top) + 'px');
+                sonX = olay.clientX;
+                sonY = olay.clientY;
+                uygula();
             }, { passive: true });
 
             kart.addEventListener('mouseleave', function () {
                 kutu = null;
                 kart.classList.remove('isik--acik');
+                if (coz) { coz(); coz = null; }
             });
         });
     }
 
-    /* --- 7c. KİNETİK 3B EĞİLME ---
+    /* --- KİNETİK 3B EĞİLME ---
        Eğilen şey ÇERÇEVE DEĞİL FOTOĞRAF. Çerçevenin kutusu bilerek
-       sabit kalıyor: galeri karesine tıklanınca tam ekran
-       görüntüleyici o çerçevenin getBoundingClientRect'inden
-       büyüyor — eğik bir kutu açılışı kaydırırdı.
+       sabit kalıyor: galeri karesine tıklanınca tam ekran görüntüleyici
+       o çerçevenin getBoundingClientRect'inden büyüyor — eğik bir kutu
+       açılışı kaydırırdı.
 
        Perspektif çerçevede (CSS); burada yalnızca iki açı sürülüyor.
        0.7sn'lik power3.out olmadan hareket mekanik oluyor: fare
@@ -853,24 +925,44 @@
             // Fotoğraf çerçeveden taştığı için ölçü ÇERÇEVEDEN alınıyor
             var cerceve = foto.parentElement;
             var kutu = null;
+            var coz = null;
+            var sonX = 0, sonY = 0;
 
-            cerceve.addEventListener('mouseenter', function () {
-                kutu = cerceve.getBoundingClientRect();
-            });
-
-            cerceve.addEventListener('mousemove', function (olay) {
+            function uygula() {
                 if (!kutu || !kutu.width || !kutu.height) return;
 
                 // -0.5 … +0.5
-                var ox = (olay.clientX - kutu.left) / kutu.width - 0.5;
-                var oy = (olay.clientY - kutu.top) / kutu.height - 0.5;
+                var ox = (sonX - kutu.left) / kutu.width - 0.5;
+                var oy = (sonY - kutu.top) / kutu.height - 0.5;
 
                 yatay(ox * EN_COK_ACI * 2);
                 dikey(-oy * EN_COK_ACI * 2);
+            }
+
+            function tazele() {
+                if (!kutu) return;
+                kutu = cerceve.getBoundingClientRect();
+                uygula();
+            }
+
+            cerceve.addEventListener('mouseenter', function (olay) {
+                sonX = olay.clientX;
+                sonY = olay.clientY;
+                kutu = cerceve.getBoundingClientRect();
+                uygula();
+                coz = tazelemeyeBagla(tazele);
+            });
+
+            cerceve.addEventListener('mousemove', function (olay) {
+                if (!kutu) return;
+                sonX = olay.clientX;
+                sonY = olay.clientY;
+                uygula();
             }, { passive: true });
 
             cerceve.addEventListener('mouseleave', function () {
                 kutu = null;
+                if (coz) { coz(); coz = null; }
                 yatay(0);
                 dikey(0);
             });
