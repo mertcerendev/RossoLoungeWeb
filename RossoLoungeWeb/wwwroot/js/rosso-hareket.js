@@ -2042,17 +2042,18 @@
             return gsapVar && kok.classList.contains('rosso-kinetik');
         }
 
-        /* Panelin arkasındaki sayfa kaymasın. Galeri pinliyken body
-           overflow'una dokunmuyoruz — pin-spacer'ın yüksekliğini bozup
-           ScrollTrigger'ı şaşırtıyor. Lenis'i durdurmak tekerleği kesiyor. */
+        /* Panel açıkken sayfa kaydırması kilitli.
+           Yalnızca Lenis'i durdurmak yetmiyordu: tekerlek kesiliyor ama
+           sayfa kaydırma çubuğu görünür kalıyor ve panelin kendi çubuğuyla
+           birlikte İKİ çubuk görünüyordu. Kilit artık html'e
+           overflow:hidden veren bir sınıf; scrollbar-gutter: stable oluğu
+           koruduğu için içerik yana kaymıyor ve pin-spacer'ın yüksekliğine
+           dokunulmadığı için ScrollTrigger da şaşmıyor. */
         function kilit(kapali) {
             if (lenis) {
                 if (kapali) { lenis.stop(); } else { lenis.start(); }
             }
-            var galeri = document.querySelector('.galeri');
-            if (!galeri || !galeri.classList.contains('galeri--pinli')) {
-                document.body.style.overflow = kapali ? 'hidden' : '';
-            }
+            kok.classList.toggle('katman-kilit', kapali);
         }
 
         function odaklanabilirler() {
@@ -2291,7 +2292,7 @@
                 console.warn('rosso: GSAP tickerı ilerlemiyor — kinetik mod bırakıldı, içerik açılıyor.');
             }
 
-            kok.classList.remove('rosso-kinetik', 'rosso-kilit');
+            kok.classList.remove('rosso-kinetik', 'rosso-kilit', 'katman-kilit');
 
             /* ÖNCE tween'leri öldür. gsap.from(...) immediateRender ile
                "gizli" başlangıç durumunu geri yazıyor: inline stilleri

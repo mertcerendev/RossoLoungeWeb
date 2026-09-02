@@ -314,6 +314,15 @@ ul {
     height: 100%;
 }
 
+/* Katman (off-canvas panel / tam ekran) açıkken sayfa kaydırması kilitli.
+   Lenis'i durdurmak tekerleği kesiyordu ama sayfa çubuğu görünür kalıyor,
+   panelin kendi çubuğuyla birlikte İKİ çubuk görünüyordu. Burada html
+   overflow:hidden alıyor; scrollbar-gutter: stable oluğu koruduğu için
+   içerik yana kaymıyor. */
+.katman-kilit {
+    overflow: hidden;
+}
+
 /* =============================================================
    SAYFA GEÇİŞ PERDESİ
 
