@@ -52,4 +52,30 @@ namespace RossoLoungeWeb.Models
         [Display(Name = "Yeni şifre")]
         public string? Sifre { get; set; }
     }
+
+    /// <summary>
+    /// Ayarlar ekranının verisi — iki bölüm tek sayfada.
+    ///
+    /// NEDEN BİRLEŞTİ: hesap bilgileri /Admin/Profil'de, SMTP ayarları
+    /// /Admin/MailAyarlari'ndaydı ve aralarında birbirine işaret eden
+    /// iki düğme vardı ("Mail ayarları" ↔ "Hesap ayarları"). İkisi de
+    /// aynı şeyin parçası: panele nasıl giriliyor ve şifre sıfırlama
+    /// e-postası nereden gönderiliyor. Menüde tek "Ayarlar" öğesi var,
+    /// sayfası da tek olmalı.
+    ///
+    /// İki AYRI FORM olarak duruyorlar: uçları ve doğrulama kuralları
+    /// farklı, biri kaydedilirken diğerinin alanları gönderilmemeli.
+    /// </summary>
+    public class AyarlarModeli
+    {
+        public ProfilModeli Hesap { get; set; } = new();
+        public SistemAyarlari Mail { get; set; } = new();
+
+        /// <summary>
+        /// Kayıtlı bir SMTP şifresi var mı? Şifrenin KENDİSİ görünüme
+        /// hiç gitmiyor; alan yalnızca yer tutucu metnini ve "boş
+        /// bırakırsanız değişmez" notunu belirliyor.
+        /// </summary>
+        public bool MailSifresiKayitli { get; set; }
+    }
 }

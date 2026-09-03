@@ -693,19 +693,65 @@ namespace RossoLoungeWeb.Controllers
             return ListeyeDon(donus);
         }
 
-        // --- 5. HESAP AYARLARI ---
-        public async Task<IActionResult> Profil()
+        // --- 5. AYARLAR (hesap + e-posta gönderimi, tek sayfa) ---
+        /// <summary>
+        /// Hesap bilgileri ve SMTP ayarları tek ekranda. Eskiden iki ayrı
+        /// sayfaydı (/Admin/Profil ve /Admin/MailAyarlari) ve aralarında
+        /// birbirine işaret eden iki düğme vardı; menüde ise tek "Ayarlar"
+        /// öğesi görünüyordu.
+        /// </summary>
+        public async Task<IActionResult> Ayarlar()
+        {
+            var model = await AyarlariTopla();
+            if (model == null) return RedirectToAction("Login");
+            return View(model);
+        }
+
+        /// <summary>Eski adres — yer imleri ve dış bağlantılar kırılmasın.</summary>
+        public IActionResult Profil() => RedirectToAction("Ayarlar");
+
+        /// <summary>Eski adres — yer imleri ve dış bağlantılar kırılmasın.</summary>
+        public IActionResult MailAyarlari() => RedirectToAction("Ayarlar");
+
+        /// <summary>
+        /// Ayarlar ekranının iki yarısını da kurar. Oturum düşmüşse null
+        /// döner. Formlardan biri doğrulamada kalırsa diğer yarı yine
+        /// veritabanından tazeleniyor — kullanıcı boş bir bölüm görmesin.
+        /// </summary>
+        private async Task<AyarlarModeli?> AyarlariTopla(
+            ProfilModeli? hesap = null,
+            SistemAyarlari? mail = null)
         {
             var kullanici = await _kullaniciYoneticisi.GetUserAsync(User);
-            if (kullanici == null) return RedirectToAction("Login");
+            if (kullanici == null) return null;
 
-            return View(new ProfilModeli
+            /* AsNoTracking ŞART: aşağıda GonderenSifre boşaltılıyor (şifre
+               tarayıcıya gitmesin diye). İzlenen bir varlık üzerinde bunu
+               yapmak, aynı istekte sonradan bir SaveChanges çağrılırsa
+               veritabanındaki şifreyi SİLERDİ. */
+            var ayar = _context.Ayarlar.AsNoTracking().FirstOrDefault();
+
+            var model = new AyarlarModeli
             {
-                Id = kullanici.Id,
-                KullaniciAdi = kullanici.UserName ?? string.Empty,
-                Eposta = kullanici.Email ?? string.Empty
-                // Sifre bilerek boş: özet asla görünüme gitmez.
-            });
+                Hesap = hesap ?? new ProfilModeli
+                {
+                    Id = kullanici.Id,
+                    KullaniciAdi = kullanici.UserName ?? string.Empty,
+                    Eposta = kullanici.Email ?? string.Empty
+                    // Sifre bilerek boş: özet asla görünüme gitmez.
+                },
+
+                // Kayıt yoksa varsayılanlarla açılıyor (smtp.gmail.com / 587).
+                Mail = mail ?? ayar ?? new SistemAyarlari(),
+
+                MailSifresiKayitli = !string.IsNullOrEmpty(ayar?.GonderenSifre)
+            };
+
+            // Saklanan şifre tarayıcıya HİÇ gönderilmiyor.
+            model.Hesap.Sifre = null;
+            model.Mail.GonderenSifre = "";
+
+            return model;
         }
 
         [HttpPost]
@@ -725,7 +771,7 @@ namespace RossoLoungeWeb.Controllers
                 ViewBag.Hata = "Bilgiler kaydedilmedi. Lütfen işaretli alanları düzeltin.";
                 gelenVeri.Sifre = null;
                 gelenVeri.Id = kullanici.Id;
-                return View("Profil", gelenVeri);
+                return View("Ayarlar", await AyarlariTopla(hesap: gelenVeri));
             }
 
             kullanici.UserName = gelenVeri.KullaniciAdi;
@@ -749,37 +795,29 @@ namespace RossoLoungeWeb.Controllers
                 // Kullanıcı adı/şifre değişmiş olabilir: çerezdeki kimliği
                 // tazelemezsek kullanıcı bir sonraki istekte dışarı atılır.
                 await _girisYoneticisi.RefreshSignInAsync(kullanici);
-                ViewBag.Mesaj = "Bilgileriniz başarıyla güncellendi!";
-            }
-            else
-            {
-                ViewBag.Hata = "Bilgileriniz kaydedilemedi: " +
-                    string.Join(" ", sonuc.Errors.Select(h => h.Description));
+
+                /* POST sonrası YÖNLENDİRME: eskiden doğrudan görünüm
+                   dönülüyordu, yani sayfa yenilenince form yeniden
+                   gönderiliyordu. TempData bildirimi zaten layout'ta. */
+                TempData["Mesaj"] = "Hesap bilgileriniz güncellendi.";
+                return RedirectToAction("Ayarlar");
             }
 
-            return View("Profil", new ProfilModeli
+            ViewBag.Hata = "Bilgileriniz kaydedilemedi: " +
+                string.Join(" ", sonuc.Errors.Select(h => h.Description));
+
+            return View("Ayarlar", await AyarlariTopla(hesap: new ProfilModeli
             {
                 Id = kullanici.Id,
-                KullaniciAdi = kullanici.UserName ?? string.Empty,
-                Eposta = kullanici.Email ?? string.Empty
-            });
+                KullaniciAdi = gelenVeri.KullaniciAdi,
+                Eposta = gelenVeri.Eposta
+            }));
         }
 
-        // --- 6. MAIL AYARLARI ---
-        public IActionResult MailAyarlari()
-        {
-            var ayar = _context.Ayarlar.FirstOrDefault() ?? new SistemAyarlari();
-
-            // Saklanan şifre tarayıcıya gönderilmiyor; görünüm yalnızca
-            // "kayıtlı bir şifre var mı" bilgisini kullanıyor.
-            ViewBag.SifreKayitli = !string.IsNullOrEmpty(ayar.GonderenSifre);
-            ayar.GonderenSifre = "";
-            return View(ayar);
-        }
-
+        // --- 6. E-POSTA GÖNDERİMİ (SMTP) ---
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult MailAyarlariGuncelle(SistemAyarlari gelenAyar)
+        public async Task<IActionResult> MailAyarlariGuncelle(SistemAyarlari gelenAyar)
         {
             /* ŞİFRE ALANI BOŞ GELEBİLİR — ve bu geçerli bir durum: "değiştirme"
                demek. Ama GonderenSifre nullable OLMAYAN bir string, bu yüzden
@@ -798,7 +836,7 @@ namespace RossoLoungeWeb.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.Hata = "Ayarlar kaydedilmedi. Gönderen e-posta adresi, SMTP sunucusu ve port alanlarını kontrol edin.";
-                return View("MailAyarlari", gelenAyar);
+                return View("Ayarlar", await AyarlariTopla(mail: gelenAyar));
             }
 
             var mevcut = _context.Ayarlar.FirstOrDefault();
@@ -815,7 +853,7 @@ namespace RossoLoungeWeb.Controllers
                 {
                     ViewBag.Hata = "Ayarlar kaydedilmedi. İlk kayıtta uygulama şifresi zorunludur.";
                     gelenAyar.GonderenSifre = "";
-                    return View("MailAyarlari", gelenAyar);
+                    return View("Ayarlar", await AyarlariTopla(mail: gelenAyar));
                 }
 
                 gelenAyar.GonderenSifre = _ayarKorumasi.Koru(gelenAyar.GonderenSifre);
@@ -832,14 +870,19 @@ namespace RossoLoungeWeb.Controllers
             }
 
             if (GuvenliKaydet("Mail ayarları güncelleme"))
-                ViewBag.Mesaj = "Mail ayarları başarıyla kaydedildi!";
-            else
-                ViewBag.Hata = "Mail ayarları kaydedilemedi. Lütfen tekrar deneyin.";
+            {
+                /* POST sonrası YÖNLENDİRME: eskiden doğrudan görünüm
+                   dönülüyordu, yani sayfa yenilenince form yeniden
+                   gönderiliyordu — üstelik yazılan şifreyle. */
+                TempData["Mesaj"] = "E-posta gönderim ayarları kaydedildi.";
+                return RedirectToAction("Ayarlar");
+            }
+
+            ViewBag.Hata = "Ayarlar kaydedilemedi. Lütfen tekrar deneyin.";
 
             // Kullanıcının yazdığı şifre görünüme geri gitmesin.
             gelenAyar.GonderenSifre = "";
-            ViewBag.SifreKayitli = _context.Ayarlar.Any(a => a.GonderenSifre != "");
-            return View("MailAyarlari", gelenAyar);
+            return View("Ayarlar", await AyarlariTopla(mail: gelenAyar));
         }
 
         // --- 7. ŞİFRE SIFIRLAMA ---

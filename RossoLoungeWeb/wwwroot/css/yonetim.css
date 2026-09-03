@@ -1643,8 +1643,22 @@ span.y-tablo__ad {
     gap: var(--y-5);
 }
 
+/* Form kartının kendi başlığı — bölümlü ayarlar sayfası için.
+   .y-form'un satır aralığı (--y-5) başlık ile açıklaması arasında
+   fazla; burada kendi dar aralığını veriyor. */
+.y-form__bas {
+    display: grid;
+    gap: var(--y-1);
+}
+
+/* align-content ŞART. Alanlar ızgarada yan yana dururken hepsi satırın
+   yüksekliğine uzuyor; içerideki ızgara da fazla yeri SATIRLAR ARASINA
+   dağıtıyordu. Sonuç: altında yardım metni OLMAYAN alanın girdisi,
+   olanınkinden aşağıda kalıyordu (ölçüldü: 254px'e karşı 241px).
+   start ile satırlar tepeye toplanıyor, boşluk altta kalıyor. */
 .y-form__alan {
     display: grid;
+    align-content: start;
     gap: var(--y-2);
     min-width: 0;
 }
