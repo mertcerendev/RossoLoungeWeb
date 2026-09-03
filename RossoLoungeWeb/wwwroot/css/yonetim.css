@@ -1384,8 +1384,12 @@ span.y-tablo__ad {
 }
 
 /* Ürün görseli */
+/* min-width ŞART: .yonetim img { max-width: 100% } dar bir hücrede
+   width:44px'i eziyor. Tablo dar ekranda sütunları sıkıştırınca küçük
+   resim 2px'lik bir çizgiye iniyordu (ölçüldü, 375px'te). */
 .y-gorsel {
     width: 44px;
+    min-width: 44px;
     height: 44px;
     object-fit: cover;
     border: 1px solid var(--y-kenar);
@@ -1471,6 +1475,17 @@ span.y-tablo__ad {
 
 .y-sira-durum {
     min-height: 1.4em;
+    margin-block-end: var(--y-3);
+    color: var(--y-metin-3);
+    font-size: var(--y-xs);
+}
+
+/* Sürükleme neden kapalı — .y-sira-durum'un yerini alıyor, aynı ölçüde
+   sessiz. Bir yasağı sessizce uygulamak, sebebini söylemekten kötü. */
+.y-ipucu {
+    display: flex;
+    gap: var(--y-2);
+    align-items: baseline;
     margin-block-end: var(--y-3);
     color: var(--y-metin-3);
     font-size: var(--y-xs);

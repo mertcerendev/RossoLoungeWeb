@@ -8,6 +8,17 @@
     gönderimden hemen önce noktaya çevriliyor. Sunucuda ayrıca
     OndalikModelBinder var; bu, JS varken hatayı kullanıcı
     göndermeden düzelten ikinci katman.
+
+    SIRA NO ALANI KALDIRILDI. Sıralamanın iki sahibi vardı: listedeki
+    sürükle-bırak ve buradaki sayı kutusu. Elle girilen numara başka
+    bir ürününkiyle çakışabiliyor, çakışınca menüdeki sıra belirsiz
+    kalıyordu. Artık numarayı sunucu veriyor (sona ekleme), sırayı
+    yönetici listede — kendi kategorisi seçiliyken — sürükleyerek
+    değiştiriyor.
+
+    DÜĞMELER FORMUN ALTINDA, tek yerde. Önceden sayfa başlığının
+    yanında "Listeye dön", formun altında "İptal" vardı: aynı adrese
+    giden iki düğme, biri üstte biri altta.
 *@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -16,24 +27,21 @@
     ViewData["Aktif"] = "urunler";
 }
 
-@section Eylemler {
-    <a class="y-dugme" href="/Urun/Index">
-        <i class="fas fa-arrow-left" aria-hidden="true"></i> Listeye dön
-    </a>
-}
-
 @await Html.PartialAsync("_YonetimDogrulama")
 
 <form class="y-form" method="post" action="/Urun/Ekle" enctype="multipart/form-data" data-ondalik-form>
     @Html.AntiForgeryToken()
 
+    @* Ad önce: sayfanın konusu bu. Kategori onun yanında —
+       ürünün menüde nereye düşeceğini birlikte okuyorsun. *@
     <div class="y-form__izgara">
         <div class="y-form__alan">
-            <label class="y-form__etiket" for="siraNo">
-                Sıra no <span class="y-zorunlu" aria-hidden="true">*</span>
+            <label class="y-form__etiket" for="ad">
+                Ürün adı <span class="y-zorunlu" aria-hidden="true">*</span>
             </label>
-            <input class="y-girdi y-girdi--sayi" type="number" id="siraNo" name="SiraNo"
-                   value="@Model.SiraNo" min="1" required>
+            <input class="y-girdi" type="text" id="ad" name="Ad"
+                   value="@Model.Ad" placeholder="Örn: Margherita" maxlength="100"
+                   required autofocus>
         </div>
 
         <div class="y-form__alan">
@@ -41,16 +49,11 @@
                 Kategori <span class="y-zorunlu" aria-hidden="true">*</span>
             </label>
             @Html.DropDownList("KategoriId", (SelectList)ViewBag.Kategoriler, "Kategori seçiniz...",
-                     new { @class = "y-girdi", required = "required" })
+                     new { @class = "y-girdi", required = "required", aria_describedby = "kategori-yardim" })
+            <p class="y-form__yardim" id="kategori-yardim">
+                Ürün bu kategorinin altına, listenin sonuna eklenir.
+            </p>
         </div>
-    </div>
-
-    <div class="y-form__alan">
-        <label class="y-form__etiket" for="ad">
-            Ürün adı <span class="y-zorunlu" aria-hidden="true">*</span>
-        </label>
-        <input class="y-girdi" type="text" id="ad" name="Ad"
-               value="@Model.Ad" placeholder="Örn: Margherita" required>
     </div>
 
     <fieldset class="y-alanlik">
@@ -68,24 +71,26 @@
             <div class="y-form__alan">
                 <label class="y-form__etiket" for="fiyatBuyuk">2. fiyat</label>
                 <input class="y-girdi y-girdi--sayi" type="text" id="fiyatBuyuk" name="FiyatBuyuk"
-                       inputmode="decimal" placeholder="Sadece pizzalar için…" data-ondalik>
+                       inputmode="decimal" placeholder="Sadece iki boyu varsa…" data-ondalik>
             </div>
 
             <div class="y-form__alan">
                 <label class="y-form__etiket" for="fiyatTur">1. fiyat ismi</label>
-                <input class="y-girdi" type="text" id="fiyatTur" name="FiyatTur" placeholder="Örn: Orta, Kutu">
+                <input class="y-girdi" type="text" id="fiyatTur" name="FiyatTur"
+                       maxlength="50" placeholder="Örn: Orta, Kutu">
             </div>
 
             <div class="y-form__alan">
                 <label class="y-form__etiket" for="fiyatBuyukTur">2. fiyat ismi</label>
-                <input class="y-girdi" type="text" id="fiyatBuyukTur" name="FiyatBuyukTur" placeholder="Örn: Büyük, Şişe">
+                <input class="y-girdi" type="text" id="fiyatBuyukTur" name="FiyatBuyukTur"
+                       maxlength="50" placeholder="Örn: Büyük, Şişe">
             </div>
         </div>
     </fieldset>
 
     <div class="y-form__alan">
         <label class="y-form__etiket" for="aciklama">Açıklama (içindekiler)</label>
-        <textarea class="y-girdi" id="aciklama" name="Aciklama" rows="3"
+        <textarea class="y-girdi" id="aciklama" name="Aciklama" rows="3" maxlength="1000"
                   placeholder="Örn: Domates sos, mozzarella…">@Model.Aciklama</textarea>
     </div>
 
@@ -93,11 +98,14 @@
         <label class="y-form__etiket" for="resimDosyasi">Ürün görseli</label>
         <input class="y-girdi" type="file" id="resimDosyasi" name="ResimDosyasi"
                accept="image/*" aria-describedby="resim-yardim">
-        <p class="y-form__yardim" id="resim-yardim">JPG, PNG, WEBP veya GIF · en fazla 5 MB.</p>
+        <p class="y-form__yardim" id="resim-yardim">
+            JPG, PNG, WEBP veya GIF · en fazla 5 MB. Boş bırakırsanız menüde
+            yer tutucu görsel çıkar.
+        </p>
     </div>
 
     <div class="y-form__ayak">
-        <button type="submit" class="y-dugme y-dugme--birincil">Kaydet</button>
-        <a class="y-dugme" href="/Urun/Index">İptal</a>
+        <button type="submit" class="y-dugme y-dugme--birincil">Ürünü ekle</button>
+        <a class="y-dugme" href="/Urun/Index">Vazgeç</a>
     </div>
 </form>

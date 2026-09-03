@@ -5,20 +5,38 @@
     Uç değişmedi: POST /Urun/Duzenle, multipart (ResimDosyasi).
     Fiyatlar InvariantCulture ile basılıyor — alan metin girdisi
     olduğu için sunucunun okuduğu biçimle aynı olmalı.
+
+    SIRA NO ALANI KALDIRILDI — gerekçe Ekle.cshtml'de. Burada ayrıca
+    zararlıydı: kategorisinin 5. sırasındaki ürüne "1" yazmak
+    diğerlerini kaydırmıyor, yalnızca ikinci bir 1 üretiyordu.
+    Controller da artık SiraNo'ya dokunmuyor.
+
+    Başlığın yanındaki rozet bir DÜĞME DEĞİL, bağlam: ürünün hangi
+    kategoride olduğunu söylüyor ve o kategorinin listesine götürüyor.
+    Eskiden orada duran "Listeye dön", formun altındaki "İptal" ile
+    aynı işi yapıyordu.
 *@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Baslik"] = "Ürün Düzenle";
-    ViewData["AltBaslik"] = Model.Ad;
+    // Doğrulama hatasında Model.Ad boş olabilir; o zaman kaydın adı
+    // controller'dan geliyor, başlık "hangi ürün" bilgisini yitirmesin.
+    ViewData["AltBaslik"] = string.IsNullOrWhiteSpace(Model.Ad)
+        ? ViewBag.MevcutAd as string
+        : Model.Ad;
     ViewData["Aktif"] = "urunler";
 
     var ik = System.Globalization.CultureInfo.InvariantCulture;
+    var kategoriAdi = ViewBag.KategoriAdi as string;
 }
 
 @section Eylemler {
-    <a class="y-dugme" href="/Urun/Index">
-        <i class="fas fa-arrow-left" aria-hidden="true"></i> Listeye dön
-    </a>
+    @if (!string.IsNullOrEmpty(kategoriAdi))
+    {
+        <a class="y-rozet y-rozet--sonuk" href="/Urun/Index?kategoriId=@Model.KategoriId">
+            @kategoriAdi
+        </a>
+    }
 }
 
 @await Html.PartialAsync("_YonetimDogrulama")
@@ -29,11 +47,11 @@
 
     <div class="y-form__izgara">
         <div class="y-form__alan">
-            <label class="y-form__etiket" for="siraNo">
-                Sıra no <span class="y-zorunlu" aria-hidden="true">*</span>
+            <label class="y-form__etiket" for="ad">
+                Ürün adı <span class="y-zorunlu" aria-hidden="true">*</span>
             </label>
-            <input class="y-girdi y-girdi--sayi" type="number" id="siraNo" name="SiraNo"
-                   value="@Model.SiraNo" min="1" required>
+            <input class="y-girdi" type="text" id="ad" name="Ad" value="@Model.Ad"
+                   maxlength="100" required autofocus>
         </div>
 
         <div class="y-form__alan">
@@ -41,15 +59,11 @@
                 Kategori <span class="y-zorunlu" aria-hidden="true">*</span>
             </label>
             @Html.DropDownList("KategoriId", (SelectList)ViewBag.Kategoriler,
-                     new { @class = "y-girdi", required = "required" })
+                     new { @class = "y-girdi", required = "required", aria_describedby = "kategori-yardim" })
+            <p class="y-form__yardim" id="kategori-yardim">
+                Kategori değişirse ürün menüde yeni başlığın altına taşınır.
+            </p>
         </div>
-    </div>
-
-    <div class="y-form__alan">
-        <label class="y-form__etiket" for="ad">
-            Ürün adı <span class="y-zorunlu" aria-hidden="true">*</span>
-        </label>
-        <input class="y-girdi" type="text" id="ad" name="Ad" value="@Model.Ad" required>
     </div>
 
     <fieldset class="y-alanlik">
@@ -73,20 +87,20 @@
             <div class="y-form__alan">
                 <label class="y-form__etiket" for="fiyatTur">1. fiyat ismi</label>
                 <input class="y-girdi" type="text" id="fiyatTur" name="FiyatTur"
-                       value="@Model.FiyatTur" placeholder="Boşsa 'Orta'">
+                       value="@Model.FiyatTur" maxlength="50" placeholder="Boşsa 'Orta'">
             </div>
 
             <div class="y-form__alan">
                 <label class="y-form__etiket" for="fiyatBuyukTur">2. fiyat ismi</label>
                 <input class="y-girdi" type="text" id="fiyatBuyukTur" name="FiyatBuyukTur"
-                       value="@Model.FiyatBuyukTur" placeholder="Boşsa 'Büyük'">
+                       value="@Model.FiyatBuyukTur" maxlength="50" placeholder="Boşsa 'Büyük'">
             </div>
         </div>
     </fieldset>
 
     <div class="y-form__alan">
         <label class="y-form__etiket" for="aciklama">Açıklama</label>
-        <textarea class="y-girdi" id="aciklama" name="Aciklama" rows="3">@Model.Aciklama</textarea>
+        <textarea class="y-girdi" id="aciklama" name="Aciklama" rows="3" maxlength="1000">@Model.Aciklama</textarea>
     </div>
 
     <div class="y-form__alan">
@@ -104,10 +118,14 @@
                 <span class="y-form__yardim">Mevcut görsel</span>
             </div>
         }
+        else
+        {
+            <p class="y-form__yardim">Bu ürünün görseli yok — menüde yer tutucu çıkıyor.</p>
+        }
     </div>
 
     <div class="y-form__ayak">
-        <button type="submit" class="y-dugme y-dugme--birincil">Değişiklikleri kaydet</button>
-        <a class="y-dugme" href="/Urun/Index">İptal</a>
+        <button type="submit" class="y-dugme y-dugme--birincil">Değişikliği kaydet</button>
+        <a class="y-dugme" href="/Urun/Index">Vazgeç</a>
     </div>
 </form>

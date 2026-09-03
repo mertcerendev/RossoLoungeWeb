@@ -30,8 +30,15 @@ namespace RossoLoungeWeb.Controllers
         // Kategori açılır listesi her action'da tek tek kuruluyordu; tek yere alındı.
         private void KategorileriYukle(int? seciliId = null)
         {
-            ViewBag.Kategoriler = new SelectList(
-                _context.Kategoriler.OrderBy(k => k.SiraNo).ToList(), "Id", "Ad", seciliId);
+            var kategoriler = _context.Kategoriler.OrderBy(k => k.SiraNo).ToList();
+
+            ViewBag.Kategoriler = new SelectList(kategoriler, "Id", "Ad", seciliId);
+
+            // Düzenleme sayfasının başlığındaki bağlam rozeti. Listeden ayrıca
+            // sorgulamıyoruz; kategoriler zaten elde.
+            ViewBag.KategoriAdi = seciliId.HasValue
+                ? kategoriler.FirstOrDefault(k => k.Id == seciliId.Value)?.Ad
+                : null;
         }
 
         // Veritabanı hatası kullanıcıya ham 500 sayfası olarak dönmesin diye
@@ -155,31 +162,114 @@ namespace RossoLoungeWeb.Controllers
         }
 
         // 1. ÜRÜN LİSTESİ
-        public IActionResult Index(int? kategoriId)
+        /// <summary>
+        /// Süzülebilir, sıralanabilir, sayfalanabilir ürün listesi.
+        ///
+        /// Eskiden bütün kalemler tek sayfada basılıyordu (canlıda 100+)
+        /// ve arama tarayıcıda satır gizleyerek yapılıyordu: kayıtlar yine
+        /// indiriliyordu ve "arama" yalnızca ekrandakini süzüyordu.
+        /// </summary>
+        public async Task<IActionResult> Index(
+            int? kategoriId = null,
+            string? ara = null,
+            string sirala = "menu",
+            int sayfa = 1,
+            int boyut = 25)
         {
-            KategorileriYukle(kategoriId);
-            ViewBag.SeciliKategoriId = kategoriId;
+            // Dışarıdan gelen değerler beyaz listeye çekiliyor: adres
+            // çubuğuna yazılan rastgele bir değer sorguyu bozmasın.
+            var gecerliSiralar = new[] { "menu", "ad", "fiyat_artan", "fiyat_azalan", "yeni" };
+            if (!gecerliSiralar.Contains(sirala)) sirala = "menu";
 
-            var urunlerSorgu = _context.Urunler.Include(u => u.Kategori).AsQueryable();
+            if (boyut != 25 && boyut != 50 && boyut != 100) boyut = 25;
+            if (sayfa < 1) sayfa = 1;
+            if (kategoriId is <= 0) kategoriId = null;
 
-            if (kategoriId.HasValue && kategoriId.Value > 0)
+            var suzgec = new UrunSuzgeci
             {
-                urunlerSorgu = urunlerSorgu.Where(u => u.KategoriId == kategoriId.Value);
+                KategoriId = kategoriId,
+                Ara = string.IsNullOrWhiteSpace(ara) ? null : ara.Trim(),
+                Sirala = sirala,
+                Sayfa = sayfa,
+                Boyut = boyut
+            };
+
+            var model = new UrunListeModeli { Suzgec = suzgec };
+
+            // Süzgeç açılır listesi menü sırasında; ürün sayıları rozetlerde.
+            model.Kategoriler = await _context.Kategoriler.OrderBy(k => k.SiraNo).ToListAsync();
+            model.SeciliKategoriAdi = kategoriId.HasValue
+                ? model.Kategoriler.FirstOrDefault(k => k.Id == kategoriId.Value)?.Ad
+                : null;
+
+            // Kategori silinmiş ya da uydurma bir id gelmişse süzgeci düşür:
+            // aksi hâlde "0 ürün" gösterip sebebini söylemeyen bir ekran çıkıyor.
+            if (kategoriId.HasValue && model.SeciliKategoriAdi == null)
+            {
+                suzgec.KategoriId = null;
+                kategoriId = null;
             }
 
-            return View(urunlerSorgu.OrderBy(u => u.Kategori.Ad).ThenBy(u => u.SiraNo).ToList());
+            model.TumKayit = await _context.Urunler.CountAsync();
+
+            IQueryable<Urun> sorgu = _context.Urunler.Include(u => u.Kategori);
+
+            if (kategoriId.HasValue)
+                sorgu = sorgu.Where(u => u.KategoriId == kategoriId.Value);
+
+            if (suzgec.Ara != null)
+            {
+                var kalip = suzgec.Ara;
+                sorgu = sorgu.Where(u =>
+                    EF.Functions.Like(u.Ad, "%" + kalip + "%") ||
+                    (u.Aciklama != null && EF.Functions.Like(u.Aciklama, "%" + kalip + "%")));
+            }
+
+            model.ToplamKayit = await sorgu.CountAsync();
+            model.ToplamSayfa = Math.Max(1, (int)Math.Ceiling(model.ToplamKayit / (double)boyut));
+            if (suzgec.Sayfa > model.ToplamSayfa) suzgec.Sayfa = model.ToplamSayfa;
+
+            // VARSAYILAN SIRA MENÜNÜN SIRASI. Eskiden kategoriler ADA göre
+            // diziliyordu (OrderBy(Kategori.Ad)); site ise kategorileri
+            // SiraNo'ya göre basıyor. Panelde gördüğün sıra ile misafirin
+            // gördüğü sıra birbirini tutmuyordu.
+            sorgu = sirala switch
+            {
+                "ad" => sorgu.OrderBy(u => u.Ad),
+                "fiyat_artan" => sorgu.OrderBy(u => u.Fiyat),
+                "fiyat_azalan" => sorgu.OrderByDescending(u => u.Fiyat),
+                "yeni" => sorgu.OrderByDescending(u => u.Id),
+                _ => sorgu.OrderBy(u => u.Kategori.SiraNo).ThenBy(u => u.SiraNo)
+            };
+
+            model.Kayitlar = await sorgu
+                .Skip((suzgec.Sayfa - 1) * boyut)
+                .Take(boyut)
+                .ToListAsync();
+
+            return View(model);
         }
 
-        // 2. EKLEME SAYFASI (Basit ve Manuel)
+        /// <summary>
+        /// İşlem sonrası kullanıcıyı GELDİĞİ süzgeç/sayfaya döndürür; aksi
+        /// hâlde 3. sayfadaki bir ürünü silen kişi listenin başına düşüyor.
+        /// <c>Url.IsLocalUrl</c> şart: adres formdan geliyor, denetlenmezse
+        /// açık yönlendirme (open redirect) açığı olur.
+        /// </summary>
+        private IActionResult ListeyeDon(string? donus)
+        {
+            if (!string.IsNullOrWhiteSpace(donus) && Url.IsLocalUrl(donus))
+                return Redirect(donus);
+
+            return RedirectToAction("Index");
+        }
+
+        // 2. EKLEME SAYFASI
+        // Sıra numarası artık formda sorulmuyor (bkz. Ekle POST).
         public IActionResult Ekle()
         {
             KategorileriYukle();
-
-            // Veritabanındaki en büyük sıra numarasını bul (Kategori fark etmeksizin)
-            int sonSira = _context.Urunler.Any() ? _context.Urunler.Max(x => x.SiraNo) : 0;
-
-            // Varsayılan olarak sonuncunun bir fazlasını öneriyoruz
-            return View(new Urun { SiraNo = sonSira + 1 });
+            return View(new Urun());
         }
 
         // 3. EKLEME İŞLEMİ (POST)
@@ -206,8 +296,18 @@ namespace RossoLoungeWeb.Controllers
                 }
                 else
                 {
-                    urun.ResimUrl = "https://placehold.co/600x400?text=Resim+Yok";
+                    // Eskiden buraya "https://placehold.co/..." yazılıyordu.
+                    // O adres UrunGorseli.Gecerli tarafından zaten reddediliyor
+                    // (dış adres) — yani veritabanına hiç kullanılmayan bir
+                    // değer kaydediliyordu. Görsel yoksa alan boş kalsın.
+                    urun.ResimUrl = null;
                 }
+
+                // SIRA NO'YU SUNUCU VERİYOR. Formdaki sayı kutusu kaldırıldı:
+                // sıralamanın iki sahibi (elle numara + listedeki sürükle-bırak)
+                // birbirinden habersizdi. Yeni ürün sona ekleniyor; sırası
+                // listede, kendi kategorisi seçiliyken sürüklenerek değişiyor.
+                urun.SiraNo = _context.Urunler.Any() ? _context.Urunler.Max(x => x.SiraNo) + 1 : 1;
 
                 _context.Urunler.Add(urun);
                 if (GuvenliKaydet("Ürün ekleme"))
@@ -256,7 +356,10 @@ namespace RossoLoungeWeb.Controllers
                 mevcutUrun.FiyatTur = gelenUrun.FiyatTur;
                 mevcutUrun.FiyatBuyukTur = gelenUrun.FiyatBuyukTur;
                 mevcutUrun.KategoriId = gelenUrun.KategoriId;
-                mevcutUrun.SiraNo = gelenUrun.SiraNo;
+
+                // SIRAYA DOKUNULMUYOR. Form artık SiraNo göndermiyor; gövdeden
+                // gelmeyen alan modelde 0 olur ve buraya yazılsaydı ürün kendi
+                // kategorisinin en başına fırlardı. Sıra SiraGuncelle'nin işi.
 
                 // Görsel değiştiyse eski dosyanın yolunu kaydediyoruz; kayıt
                 // başarılı olduktan sonra diskten temizlenecek. Daha önce eski
@@ -268,6 +371,7 @@ namespace RossoLoungeWeb.Controllers
                     if (yol == null)
                     {
                         KategorileriYukle(gelenUrun.KategoriId);
+                        gelenUrun.ResimUrl = mevcutUrun.ResimUrl; // önizleme kaybolmasın
                         return View(gelenUrun);
                     }
                     eskiResim = mevcutUrun.ResimUrl;
@@ -285,6 +389,23 @@ namespace RossoLoungeWeb.Controllers
             }
 
             KategorileriYukle(gelenUrun.KategoriId);
+
+            // Form ResimUrl göndermiyor; hata sayfasında "mevcut görsel"
+            // önizlemesi kaybolup görsel silinmiş gibi görünüyordu.
+            // Alt başlık da Model.Ad'den geliyor: ad boş bırakıldığında
+            // hangi ürünün düzenlendiği kayboluyordu. İkisi de yalnızca
+            // gösterim için kayıttan tazeleniyor.
+            var kayit = _context.Urunler
+                .Where(u => u.Id == gelenUrun.Id)
+                .Select(u => new { u.Ad, u.ResimUrl })
+                .FirstOrDefault();
+
+            if (kayit != null)
+            {
+                if (string.IsNullOrEmpty(gelenUrun.ResimUrl)) gelenUrun.ResimUrl = kayit.ResimUrl;
+                ViewBag.MevcutAd = kayit.Ad;
+            }
+
             return View(gelenUrun);
         }
 
@@ -323,13 +444,13 @@ namespace RossoLoungeWeb.Controllers
         // 6. SİLME İŞLEMİ
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Sil(int id)
+        public IActionResult Sil(int id, string? donus = null)
         {
             var urun = _context.Urunler.Find(id);
             if (urun == null)
             {
                 TempData["Hata"] = "Silinecek ürün bulunamadı.";
-                return RedirectToAction("Index");
+                return ListeyeDon(donus);
             }
 
             // Yolu kayıttan ÖNCE alıyoruz; Remove sonrası nesne izlenmiyor olabilir.
@@ -350,7 +471,7 @@ namespace RossoLoungeWeb.Controllers
             else
                 TempData["Hata"] = $"'{urun.Ad}' ürünü silinemedi. Lütfen tekrar deneyin.";
 
-            return RedirectToAction("Index");
+            return ListeyeDon(donus);
         }
     }
 }
