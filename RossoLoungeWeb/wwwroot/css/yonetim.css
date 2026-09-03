@@ -995,6 +995,13 @@ textarea.y-alan__girdi {
 .y-tablo-sarmal {
     overflow-x: auto;
     scrollbar-width: thin;
+
+    /* position ŞART: başlıktaki `.y-gizli` (ekran okuyucu metni) mutlak
+       konumlu. Konumlanmış bir atası olmayınca sayfaya göre yerleşiyor ve
+       tablo genişleyince sayfayı sağa itiyordu — 518 rezervasyonla
+       ölçüldü: 4px yatay taşma. Sarmal konumlanınca taşma sarmalın
+       kendi kaydırma alanında kalıyor. */
+    position: relative;
 }
 
 .y-tablo {
