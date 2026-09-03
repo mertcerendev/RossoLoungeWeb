@@ -515,6 +515,14 @@ textarea.y-alan__girdi {
     color: var(--y-tehlike);
 }
 
+/* Yapılamayan eylem — yerini koruyor ki satırlar aynı hizada kalsın,
+   ama tıklanacak bir şey gibi durmuyor (imleç ok, hover yok).
+   Sebebi title ile söyleniyor. */
+.y-hayalet--pasif {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
 /* =============================================================
    KABUK — kenar çubuğu + üst bar + içerik
    ============================================================= */
@@ -1039,6 +1047,15 @@ textarea.y-alan__girdi {
     white-space: nowrap;
 }
 
+/* İçeriği kadar yer kaplayan sütun. Tablo düzeni yer kalanını
+   sütunlara eşit dağıtıyor: kategori listesinde tutamak + tek
+   rakam taşıyan "Sıra" sütunu 310px alıyordu. width:1% tablo
+   algoritmasına "bu sütunu en dara indir" demenin yolu. */
+.y-tablo__dar {
+    width: 1%;
+    white-space: nowrap;
+}
+
 .y-eylemler {
     display: flex;
     justify-content: flex-end;
@@ -1324,15 +1341,28 @@ textarea.y-alan__girdi {
     font-size: var(--y-sm);
 }
 
-/* Hücre içindeki ikincil satır blok olmalı, yoksa ada bitişik akıyor */
-.y-tablo__ikincil {
+/* Hücre içindeki ikincil satır blok olmalı, yoksa ada bitişik akıyor.
+   SEÇİCİ span'e BAĞLI — y-tablo__ad ile aynı gerekçe: sınıf bazen
+   doğrudan <td>'ye veriliyor (Rezervasyonlar'daki "Talep" sütunu) ve
+   display:block hücreyi satır yüksekliğinden koparıyordu (75px satırda
+   51px hücre). <p> zaten blok, ona kural gerekmiyor. */
+span.y-tablo__ikincil {
     display: block;
+}
+
+.y-tablo__ikincil {
     margin-block-start: 2px;
     color: var(--y-metin-3);
     font-size: var(--y-xs);
 }
 
-.y-tablo__ad {
+/* SEÇİCİ span'e BAĞLI: bu kural hücre içindeki adı kendi satırına
+   almak için yazıldı, ama sınıf bazı görünümlerde doğrudan <td>'ye
+   veriliyordu. display:block bir <td>'yi tablo düzeninden çıkarıyor:
+   hücre satır yüksekliğine uzamıyor (ölçüldü: 74px satırda 55px
+   hücre) ve kendi kenarlığını satırın ortasında çiziyor — kategori
+   adının altındaki o açık şerit buydu. */
+span.y-tablo__ad {
     display: block;
     color: var(--y-metin);
     font-weight: 500;
@@ -1571,6 +1601,12 @@ textarea.y-alan__girdi {
     background: var(--y-yuzey);
     border: 1px solid var(--y-kenar);
     border-radius: var(--y-r);
+}
+
+/* Tek alanlı formlar (kategori adı) 46rem'lik kartta yalnız kalınca
+   girdi gereğinden uzun oluyor — okunacak şey 2 kelime. */
+.y-form--dar {
+    max-width: 30rem;
 }
 
 .y-form__izgara {
@@ -2382,12 +2418,14 @@ textarea.y-girdi {
    marj bunu geri almıyor. Mutlak konumlu bir ::after ise akışın
    tamamen dışında — hedef alanı büyür, ızgara zerre oynamaz. */
 .y-tablo .y-bag,
-.y-tablo .y-metin-bag {
+.y-tablo .y-metin-bag,
+.y-tablo a.y-rozet {
     position: relative;
 }
 
     .y-tablo .y-bag::after,
-    .y-tablo .y-metin-bag::after {
+    .y-tablo .y-metin-bag::after,
+    .y-tablo a.y-rozet::after {
         content: "";
         position: absolute;
         inset: -9px -6px;

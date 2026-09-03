@@ -50,20 +50,11 @@ namespace RossoLoungeWeb.Controllers
             return View(kategoriler);
         }
 
-        // 2. EKLEME SAYFASI (OTOMATİK SIRA NO EKLENDİ)
+        // 2. EKLEME SAYFASI
+        // Sıra numarası artık formda sorulmuyor (bkz. Ekle POST).
         public IActionResult Ekle()
         {
-            // Veritabanında hiç kategori var mı?
-            // Varsa en büyük SiraNo'yu al, yoksa 0 kabul et.
-            int sonSira = _context.Kategoriler.Any() ? _context.Kategoriler.Max(x => x.SiraNo) : 0;
-
-            // Yeni bir boş model oluştur ve sırayı ata (En sonuncunun 1 fazlası)
-            var yeniKategori = new Kategori
-            {
-                SiraNo = sonSira + 1
-            };
-
-            return View(yeniKategori); // Modeli sayfaya gönder
+            return View(new Kategori());
         }
 
         // 3. EKLEME İŞLEMİ
@@ -76,6 +67,15 @@ namespace RossoLoungeWeb.Controllers
 
             if (ModelState.IsValid)
             {
+                // SIRA NO'YU SUNUCU VERİYOR. Formdaki sayı kutusu kaldırıldı:
+                // sıralamanın iki sahibi (elle numara + listedeki sürükle-bırak)
+                // birbirinden habersizdi, elle girilen numara çakışabiliyordu.
+                // Yeni kategori sona ekleniyor, sırası listeden sürüklenerek
+                // değiştiriliyor. Gövdeden gelen SiraNo bilerek yok sayılıyor.
+                yeniKategori.SiraNo = _context.Kategoriler.Any()
+                    ? _context.Kategoriler.Max(x => x.SiraNo) + 1
+                    : 1;
+
                 _context.Kategoriler.Add(yeniKategori);
                 if (GuvenliKaydet("Kategori ekleme"))
                 {
@@ -93,6 +93,10 @@ namespace RossoLoungeWeb.Controllers
         {
             var kategori = _context.Kategoriler.Find(id);
             if (kategori == null) return NotFound();
+
+            // Başlık yanındaki bağlam rozeti için: kaç ürün var, boş mu.
+            ViewBag.UrunSayisi = _context.Urunler.Count(u => u.KategoriId == id);
+
             return View(kategori);
         }
 
@@ -111,10 +115,23 @@ namespace RossoLoungeWeb.Controllers
             // Doğrulama olmadan kaydedilirse [Range]/[Required] kuralları
             // atlanıyor, boş ad ise veritabanı istisnasıyla engelleniyordu.
             ModelState.Remove(nameof(Kategori.Urunler));
-            if (!ModelState.IsValid) return View(gelenKategori);
+            if (!ModelState.IsValid)
+            {
+                // Form geri geliyorsa başlıktaki bağlam rozeti de dolmalı.
+                ViewBag.UrunSayisi = _context.Urunler.Count(u => u.KategoriId == gelenKategori.Id);
+
+                // Alt başlık normalde Model.Ad; ad boş bırakıldığı için hata
+                // sayfasında hangi kategorinin düzenlendiği kaybolmasın.
+                ViewBag.MevcutAd = mevcut.Ad;
+
+                return View(gelenKategori);
+            }
 
             mevcut.Ad = gelenKategori.Ad;
-            mevcut.SiraNo = gelenKategori.SiraNo; // Sırayı güncelle
+
+            // SIRAYA DOKUNULMUYOR. Form artık SiraNo göndermiyor; gövdeden
+            // gelmeyen alan modelde 0 olur ve buraya yazılsaydı kategori
+            // menünün en başına fırlardı. Sıra yalnızca SiraGuncelle'nin işi.
 
             if (GuvenliKaydet("Kategori güncelleme"))
             {

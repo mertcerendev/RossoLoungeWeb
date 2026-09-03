@@ -2,7 +2,19 @@
 @*
     KATEGORİ EKLE
     ===============================================================
-    Uç değişmedi: POST /Kategori/Ekle (Ad, SiraNo).
+    Uç değişmedi: POST /Kategori/Ekle (Ad).
+
+    SIRA NO ALANI KALDIRILDI. Sıralamanın iki sahibi vardı: listedeki
+    sürükle-bırak ve buradaki sayı kutusu. İkisi birbirinden habersiz
+    çalışıyordu — elle girilen numara başka bir kategorininkiyle
+    çakışabiliyor, çakışınca menüdeki sıra belirsiz kalıyordu
+    (OrderBy(SiraNo) eşit değerleri keyfî diziyor).
+    Artık numarayı sunucu veriyor (sona ekleniyor), sırayı yönetici
+    listede sürükleyerek değiştiriyor. Tek yol, tek sahip.
+
+    DÜĞMELER FORMUN ALTINDA, tek yerde. Önceden sayfa başlığının
+    yanında "Listeye dön", formun altında "İptal" vardı: aynı adrese
+    giden iki düğme, biri üstte biri altta.
 *@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -11,38 +23,26 @@
     ViewData["Aktif"] = "kategoriler";
 }
 
-@section Eylemler {
-    <a class="y-dugme" href="/Kategori/Index">
-        <i class="fas fa-arrow-left" aria-hidden="true"></i> Listeye dön
-    </a>
-}
-
 @await Html.PartialAsync("_YonetimDogrulama")
 
-<form class="y-form" method="post" action="/Kategori/Ekle">
+<form class="y-form y-form--dar" method="post" action="/Kategori/Ekle">
     @Html.AntiForgeryToken()
 
-    <div class="y-form__izgara">
-        <div class="y-form__alan">
-            <label class="y-form__etiket" for="siraNo">
-                Sıra no <span class="y-zorunlu" aria-hidden="true">*</span>
-            </label>
-            <input class="y-girdi y-girdi--sayi" type="number" id="siraNo" name="SiraNo"
-                   value="@Model?.SiraNo" min="1" required aria-describedby="siraNo-yardim">
-            <p class="y-form__yardim" id="siraNo-yardim">Menüde hangi sırada görünsün? (1: en üst)</p>
-        </div>
-
-        <div class="y-form__alan">
-            <label class="y-form__etiket" for="ad">
-                Kategori adı <span class="y-zorunlu" aria-hidden="true">*</span>
-            </label>
-            <input class="y-girdi" type="text" id="ad" name="Ad"
-                   value="@Model?.Ad" placeholder="Örn: Pizzalar" maxlength="100" required>
-        </div>
+    <div class="y-form__alan">
+        <label class="y-form__etiket" for="ad">
+            Kategori adı <span class="y-zorunlu" aria-hidden="true">*</span>
+        </label>
+        <input class="y-girdi" type="text" id="ad" name="Ad"
+               value="@Model?.Ad" placeholder="Örn: Pizzalar" maxlength="50"
+               required autofocus aria-describedby="ad-yardim">
+        <p class="y-form__yardim" id="ad-yardim">
+            Menüde başlık olarak bu yazacak. Kategori listenin sonuna eklenir;
+            sırasını listede sürükleyerek değiştirebilirsiniz.
+        </p>
     </div>
 
     <div class="y-form__ayak">
-        <button type="submit" class="y-dugme y-dugme--birincil">Kaydet</button>
-        <a class="y-dugme" href="/Kategori/Index">İptal</a>
+        <button type="submit" class="y-dugme y-dugme--birincil">Kategoriyi ekle</button>
+        <a class="y-dugme" href="/Kategori/Index">Vazgeç</a>
     </div>
 </form>

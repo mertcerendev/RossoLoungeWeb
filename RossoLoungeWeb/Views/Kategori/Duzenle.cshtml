@@ -2,48 +2,62 @@
 @*
     KATEGORİ DÜZENLE
     ===============================================================
-    Uç değişmedi: POST /Kategori/Duzenle (Id, Ad, SiraNo).
+    Uç değişmedi: POST /Kategori/Duzenle (Id, Ad).
+
+    SIRA NO ALANI KALDIRILDI — gerekçe Ekle.cshtml'de. Burada ayrıca
+    zararlıydı: 5. sıradaki kategoriye "1" yazmak diğerlerini
+    kaydırmıyor, yalnızca ikinci bir 1 üretiyordu.
+    Controller da artık SiraNo'ya dokunmuyor.
+
+    Başlığın yanındaki rozet bir DÜĞME DEĞİL, bağlam: kategorinin
+    kaç ürünü olduğunu söylüyor ve o listeye götürüyor. Eskiden orada
+    duran "Listeye dön", formun altındaki "İptal" ile aynı işi yapıyordu.
 *@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Baslik"] = "Kategori Düzenle";
-    ViewData["AltBaslik"] = Model.Ad;
+    // Doğrulama hatasında Model.Ad boş olabilir; o zaman kaydın adı
+    // controller'dan geliyor, başlık "hangi kategori" bilgisini yitirmesin.
+    ViewData["AltBaslik"] = string.IsNullOrWhiteSpace(Model.Ad)
+        ? ViewBag.MevcutAd as string
+        : Model.Ad;
     ViewData["Aktif"] = "kategoriler";
+
+    var urunSayisi = ViewBag.UrunSayisi as int? ?? 0;
 }
 
 @section Eylemler {
-    <a class="y-dugme" href="/Kategori/Index">
-        <i class="fas fa-arrow-left" aria-hidden="true"></i> Listeye dön
-    </a>
+    @if (urunSayisi > 0)
+    {
+        <a class="y-rozet" href="/Urun/Index?kategoriId=@Model.Id">@urunSayisi ürün</a>
+    }
+    else
+    {
+        <span class="y-rozet y-rozet--sonuk">Boş — menüde görünmüyor</span>
+    }
 }
 
 @await Html.PartialAsync("_YonetimDogrulama")
 
-<form class="y-form" method="post" action="/Kategori/Duzenle">
+<form class="y-form y-form--dar" method="post" action="/Kategori/Duzenle">
     @Html.AntiForgeryToken()
     <input type="hidden" name="Id" value="@Model.Id">
 
-    <div class="y-form__izgara">
-        <div class="y-form__alan">
-            <label class="y-form__etiket" for="siraNo">
-                Sıra no <span class="y-zorunlu" aria-hidden="true">*</span>
-            </label>
-            <input class="y-girdi y-girdi--sayi" type="number" id="siraNo" name="SiraNo"
-                   value="@Model.SiraNo" min="1" required aria-describedby="siraNo-yardim">
-            <p class="y-form__yardim" id="siraNo-yardim">Menüde hangi sırada görünsün? (1: en üst)</p>
-        </div>
-
-        <div class="y-form__alan">
-            <label class="y-form__etiket" for="ad">
-                Kategori adı <span class="y-zorunlu" aria-hidden="true">*</span>
-            </label>
-            <input class="y-girdi" type="text" id="ad" name="Ad"
-                   value="@Model.Ad" maxlength="100" required>
-        </div>
+    <div class="y-form__alan">
+        <label class="y-form__etiket" for="ad">
+            Kategori adı <span class="y-zorunlu" aria-hidden="true">*</span>
+        </label>
+        <input class="y-girdi" type="text" id="ad" name="Ad"
+               value="@Model.Ad" maxlength="50"
+               required autofocus aria-describedby="ad-yardim">
+        <p class="y-form__yardim" id="ad-yardim">
+            Menüdeki başlık da bu isimle değişir. Sıralama listeden,
+            sürükleyerek yapılıyor.
+        </p>
     </div>
 
     <div class="y-form__ayak">
-        <button type="submit" class="y-dugme y-dugme--birincil">Güncelle</button>
-        <a class="y-dugme" href="/Kategori/Index">İptal</a>
+        <button type="submit" class="y-dugme y-dugme--birincil">Değişikliği kaydet</button>
+        <a class="y-dugme" href="/Kategori/Index">Vazgeç</a>
     </div>
 </form>

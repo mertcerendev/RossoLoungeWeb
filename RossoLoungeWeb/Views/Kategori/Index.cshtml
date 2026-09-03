@@ -50,7 +50,7 @@ else
             <caption class="y-gizli">Menü kategorileri. Sıralama tutamakla sürüklenerek ya da ok tuşlarıyla değiştirilir.</caption>
             <thead>
                 <tr>
-                    <th scope="col">Sıra</th>
+                    <th scope="col" class="y-tablo__dar">Sıra</th>
                     <th scope="col">Kategori</th>
                     <th scope="col">Ürün</th>
                     <th scope="col" class="y-tablo__eylem"><span class="y-gizli">İşlemler</span></th>
@@ -62,7 +62,7 @@ else
                     urunSayilari.TryGetValue(item.Id, out int adet);
 
                     <tr data-id="@item.Id">
-                        <td>
+                        <td class="y-tablo__dar">
                             <div class="y-sira">
                                 <button type="button" class="y-sira__tut"
                                         aria-label="@item.Ad sırasını değiştir. Sürükleyin veya yukarı/aşağı ok tuşlarını kullanın."
@@ -72,7 +72,16 @@ else
                                 <span class="y-sira__no y-sayi">@item.SiraNo</span>
                             </div>
                         </td>
-                        <td class="y-tablo__ad">@item.Ad</td>
+                        <td>
+                            <span class="y-tablo__ad">@item.Ad</span>
+                            @* Boş kategori menüde HİÇ basılmıyor (HomeController.Menu →
+                               Where(k => k.Urunler.Any())). Panelde duruyor ama sitede
+                               yok; yöneticinin bunu listeden görmesi gerekiyor. *@
+                            @if (adet == 0)
+                            {
+                                <span class="y-tablo__ikincil">Menüde görünmüyor — içi boş</span>
+                            }
+                        </td>
                         <td>
                             @if (adet > 0)
                             {
@@ -80,7 +89,7 @@ else
                             }
                             else
                             {
-                                <span class="y-tablo__ikincil">Boş</span>
+                                <span class="y-tablo__ikincil">—</span>
                             }
                         </td>
                         <td class="y-tablo__eylem">
@@ -90,15 +99,35 @@ else
                                     <i class="fas fa-pen" aria-hidden="true"></i>
                                 </a>
 
-                                <form method="post" action="/Kategori/Sil/@item.Id"
-                                      onsubmit="return confirm('Bu kategoriyi silmek istediğinize emin misiniz?');">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="y-hayalet y-hayalet--tehlike"
-                                            aria-label="@item.Ad kategorisini sil"
-                                            title="@(adet > 0 ? $"İçinde {adet} ürün var — önce ürünleri taşıyın" : "Sil")">
+                                @* Dolu kategori zaten SİLİNEMİYOR: ilişki Restrict,
+                                   KategoriController.Sil ürün sayısını önden kontrol
+                                   edip hata mesajıyla geri çeviriyor. Düğme etkin
+                                   kalınca yol "tıkla → onayla → kırmızı uyarı" oluyordu;
+                                   sonucu baştan söylemek daha dürüst.
+                                   Sunucu kontrolü YERİNDE DURUYOR — burası yalnızca kabuk. *@
+                                @if (adet > 0)
+                                {
+                                    <span class="y-hayalet y-hayalet--pasif"
+                                          aria-disabled="true"
+                                          title="Silinemez: içinde @adet ürün var. Önce ürünleri başka kategoriye taşıyın.">
                                         <i class="fas fa-trash-can" aria-hidden="true"></i>
-                                    </button>
-                                </form>
+                                        <span class="y-gizli">@item.Ad silinemez, içinde @adet ürün var</span>
+                                    </span>
+                                }
+                                else
+                                {
+                                    @* Onay metnine ad gömülmüyor: kesme işareti taşıyan bir
+                                       kategori adı ("Şef'in Seçimi") JS dizesini kırar. *@
+                                    <form method="post" action="/Kategori/Sil/@item.Id"
+                                          onsubmit="return confirm('Bu kategoriyi silmek istediğinize emin misiniz?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="y-hayalet y-hayalet--tehlike"
+                                                aria-label="@item.Ad kategorisini sil"
+                                                title="Sil">
+                                            <i class="fas fa-trash-can" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                }
                             </div>
                         </td>
                     </tr>
