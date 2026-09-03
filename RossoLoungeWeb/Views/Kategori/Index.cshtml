@@ -18,6 +18,13 @@
     ViewData["AramaYerTutucu"] = "Kategori adında ara";
 
     var urunSayilari = ViewBag.UrunSayilari as Dictionary<int, int> ?? new Dictionary<int, int>();
+
+    // "Sıra" sütunundaki sayı KONUM — kayıttaki SiraNo değil.
+    // SiraNo bir sıralama anahtarı ve boşluk bırakabiliyor: 3. kategori
+    // silinince geriye 1, 2, 4, 5 kalıyor ve liste kendi kendiyle
+    // çelişiyor. Konum her zaman 1'den başlar ve menüdeki yeri gösterir.
+    // (Ürünler sayfasında da aynı yaklaşım; gerekçenin uzunu orada.)
+    var konum = 0;
 }
 
 @section Eylemler {
@@ -59,6 +66,7 @@ else
             <tbody class="y-siralanabilir" data-sira-url="/Kategori/SiraGuncelle">
                 @foreach (var item in Model)
                 {
+                    konum++;
                     urunSayilari.TryGetValue(item.Id, out int adet);
 
                     <tr data-id="@item.Id">
@@ -69,7 +77,7 @@ else
                                         title="Sürükleyerek sırala">
                                     <i class="fas fa-grip-vertical" aria-hidden="true"></i>
                                 </button>
-                                <span class="y-sira__no y-sayi">@item.SiraNo</span>
+                                <span class="y-sira__no y-sayi">@konum</span>
                             </div>
                         </td>
                         <td>

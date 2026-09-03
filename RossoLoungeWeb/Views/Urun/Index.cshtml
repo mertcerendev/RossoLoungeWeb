@@ -29,6 +29,23 @@
 
     // Silme sonrası bu adrese dönülüyor
     var donusAdres = Url.Action("Index") + s.SorguKur();
+
+    // "Sıra" sütununda gösterilen sayı KONUM — kayıttaki SiraNo değil.
+    //
+    // SiraNo bütün ürünlerde ortak bir sıralama anahtarı: Pizzalar 7-8,
+    // Tatlılar 13-14 diye gidiyor. Kategori seçilince ekranda 7'den
+    // başlayan bir liste görünüyordu; oysa o pizza menüde kendi
+    // bölümünün 1. sırasında.
+    //
+    // Numarayı veritabanında kategori başına 1'den başlatmak da bir
+    // seçenekti ama ANA SAYFAYI KIRIYOR: vitrindeki üç tabak
+    // HomeController'da OrderBy(SiraNo).Take(3) ile seçiliyor. Her
+    // kategori 1'den başlasaydı yedi ürün 1'e eşitlenir, "ilk üç"
+    // rastgeleye dönerdi. Konum zaten türetilebilir bir bilgi —
+    // saklamak, her ekleme/silme/kategori değişiminde eşitlenmesi
+    // gereken ikinci bir gerçek üretirdi.
+    var oncekiSayfalar = (s.Sayfa - 1) * s.Boyut;
+    var konum = 0;
 }
 
 @section Eylemler {
@@ -144,10 +161,11 @@ else
             </caption>
             <thead>
                 <tr>
-                    @* Sıra sütunu YALNIZCA sürüklenebilirken. Karışık listede
-                       gösterdiği ham SiraNo bir dizi olarak okunamıyor
-                       (3, 4, 1, 2 …): numaralar kategori içinde anlamlı.
-                       Kullanılamayan bir sütun yer kaplamasın. *@
+                    @* Sıra sütunu YALNIZCA sürüklenebilirken; orada konum
+                       tek bir kategorinin içinde sayıldığı için 1'den
+                       başlıyor ve menüdeki yeri birebir gösteriyor.
+                       Karışık listede böyle bir konum yok — kullanılamayan
+                       bir sütun yer kaplamasın. *@
                     @if (siralanabilir)
                     {
                         <th scope="col" class="y-tablo__dar">Sıra</th>
@@ -168,6 +186,7 @@ else
                    data-sira-url="@(siralanabilir ? "/Urun/SiraGuncelle" : null)">
                 @foreach (var item in Model.Kayitlar)
                 {
+                    konum++;
                     <tr data-id="@item.Id">
                         @if (siralanabilir)
                         {
@@ -178,7 +197,7 @@ else
                                             title="Sürükleyerek sırala">
                                         <i class="fas fa-grip-vertical" aria-hidden="true"></i>
                                     </button>
-                                    <span class="y-sira__no y-sayi">@item.SiraNo</span>
+                                    <span class="y-sira__no y-sayi">@(oncekiSayfalar + konum)</span>
                                 </div>
                             </td>
                         }
