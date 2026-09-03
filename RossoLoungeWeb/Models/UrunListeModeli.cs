@@ -20,6 +20,12 @@ namespace RossoLoungeWeb.Models
         /// <summary>Menüdeki tüm kalem sayısı — süzgeçten bağımsız.</summary>
         public int TumKayit { get; set; }
 
+        /// <summary>Ana sayfa vitrininde işaretli tabak sayısı.</summary>
+        public int VitrinSayisi { get; set; }
+
+        /// <summary>Vitrinin kaç tabak aldığı — başlıkta "2/3" diye yazıyor.</summary>
+        public int VitrinSiniri { get; set; } = 3;
+
         public int ToplamSayfa { get; set; }
         public bool OncekiVar => Suzgec.Sayfa > 1;
         public bool SonrakiVar => Suzgec.Sayfa < ToplamSayfa;
@@ -41,12 +47,13 @@ namespace RossoLoungeWeb.Models
         ///  - Fiyata veya ada göre sıralanmış bir listede sürükleme zaten
         ///    saçma: bıraktığın yer bir sonraki yüklemede kaybolur.
         ///
-        /// Arama açıkken de kapalı: eldeki satırlar kategorinin tamamı
-        /// değil, numara havuzu eksik dağıtılır.
+        /// Arama ve vitrin süzgeci açıkken de kapalı: eldeki satırlar
+        /// kategorinin tamamı değil, numara havuzu eksik dağıtılır.
         /// </summary>
         public bool SiralanabilirMi =>
             Suzgec.KategoriId.HasValue
             && Suzgec.Sirala == "menu"
+            && !Suzgec.Vitrin
             && string.IsNullOrWhiteSpace(Suzgec.Ara);
     }
 
@@ -59,6 +66,9 @@ namespace RossoLoungeWeb.Models
     {
         public int? KategoriId { get; set; }
         public string? Ara { get; set; }
+
+        /// <summary>Yalnızca vitrine işaretlenmiş tabaklar.</summary>
+        public bool Vitrin { get; set; }
 
         /// <summary>menu | ad | fiyat_artan | fiyat_azalan | yeni</summary>
         public string Sirala { get; set; } = "menu";
@@ -75,6 +85,7 @@ namespace RossoLoungeWeb.Models
             if (kat.HasValue) parcalar.Add("kategoriId=" + kat.Value);
 
             if (!string.IsNullOrWhiteSpace(Ara)) parcalar.Add("ara=" + Uri.EscapeDataString(Ara));
+            if (Vitrin) parcalar.Add("vitrin=true");
 
             parcalar.Add("sirala=" + Uri.EscapeDataString(sirala ?? Sirala));
             parcalar.Add("boyut=" + Boyut);
@@ -85,6 +96,6 @@ namespace RossoLoungeWeb.Models
             return parcalar.Count == 0 ? "" : "?" + string.Join("&", parcalar);
         }
 
-        public bool SuzgecAktif => KategoriId.HasValue || !string.IsNullOrWhiteSpace(Ara);
+        public bool SuzgecAktif => KategoriId.HasValue || !string.IsNullOrWhiteSpace(Ara) || Vitrin;
     }
 }

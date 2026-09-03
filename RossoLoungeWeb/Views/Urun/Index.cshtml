@@ -49,6 +49,15 @@
 }
 
 @section Eylemler {
+    @* Vitrin doluluğu: ana sayfada üç tabak gösteriliyor, kaçının
+       seçili olduğunu görmeden yönetmek zor. Rozet aynı zamanda
+       süzgeç kısayolu — hangileri olduğunu tek tıkla gösteriyor. *@
+    <a class="y-rozet @(Model.VitrinSayisi > 0 ? "y-rozet--basari" : null)"
+       href="@Url.Action("Index")?vitrin=true"
+       title="Ana sayfadaki vitrin üç tabak gösteriyor; boş kalan yer menü sırasından doluyor">
+        <i class="fas fa-star" aria-hidden="true"></i>
+        Vitrin @Model.VitrinSayisi/@Model.VitrinSiniri
+    </a>
     <span class="y-rozet y-rozet--sonuk">
         @if (s.SuzgecAktif)
         {
@@ -94,6 +103,14 @@
             <option value="fiyat_artan" selected="@(s.Sirala == "fiyat_artan")">Fiyat (düşük önce)</option>
             <option value="yeni" selected="@(s.Sirala == "yeni")">Son eklenen</option>
         </select>
+    </div>
+
+    <div class="y-suzgec__alan">
+        <label class="y-onay" for="vitrin">
+            <input type="checkbox" id="vitrin" name="vitrin" value="true"
+                   @(s.Vitrin ? "checked" : null)>
+            Yalnızca vitrindekiler
+        </label>
     </div>
 
     <div class="y-suzgec__eylemler">
@@ -187,7 +204,7 @@ else
                 @foreach (var item in Model.Kayitlar)
                 {
                     konum++;
-                    <tr data-id="@item.Id">
+                    <tr data-id="@item.Id" class="@(item.OneCikan ? "y-satir--dikkat" : null)">
                         @if (siralanabilir)
                         {
                             <td class="y-tablo__dar">
@@ -243,6 +260,22 @@ else
                         </td>
                         <td class="y-tablo__eylem">
                             <div class="y-eylemler">
+                                @* Vitrin işareti — tek tıkla açılıp kapanıyor.
+                                   İşaretliyken düğme hep görünür (satır hover'ı
+                                   beklenmiyor): seçili olanlar listede göze
+                                   çarpmalı. Sınır sunucuda, mesajıyla birlikte. *@
+                                <form method="post" action="/Urun/Vitrin/@item.Id">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="donus" value="@donusAdres">
+                                    <button type="submit"
+                                            class="y-hayalet @(item.OneCikan ? "y-hayalet--secili" : null)"
+                                            title="@(item.OneCikan ? "Vitrinden çıkar" : "Ana sayfadaki vitrine ekle")"
+                                            aria-pressed="@(item.OneCikan ? "true" : "false")"
+                                            aria-label="@item.Ad — vitrin işareti">
+                                        <i class="@(item.OneCikan ? "fas" : "far") fa-star" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+
                                 <a class="y-hayalet" href="/Urun/Duzenle/@item.Id"
                                    title="Düzenle" aria-label="@item.Ad ürününü düzenle">
                                     <i class="fas fa-pen" aria-hidden="true"></i>

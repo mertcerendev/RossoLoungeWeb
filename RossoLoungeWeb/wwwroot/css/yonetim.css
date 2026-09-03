@@ -523,6 +523,19 @@ textarea.y-alan__girdi {
     cursor: not-allowed;
 }
 
+/* Açık durumdaki işaret (vitrin yıldızı) */
+.y-hayalet--secili {
+    color: var(--y-bronz);
+}
+
+/* Seçili işaret satır hover'ını BEKLEMEZ: hangi tabakların vitrinde
+   olduğu listeye bakınca görünmeli, aranarak bulunmamalı.
+   :has() desteklenmezse satırın sol kenarındaki bronz çizgi
+   (y-satir--dikkat) ipucu olarak kalıyor. */
+.y-tablo tbody tr .y-eylemler:has(.y-hayalet--secili) {
+    opacity: 1;
+}
+
 /* =============================================================
    KABUK — kenar çubuğu + üst bar + içerik
    ============================================================= */

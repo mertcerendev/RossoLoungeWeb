@@ -104,6 +104,23 @@
         </p>
     </div>
 
+    @* VİTRİN İŞARETİ — ana sayfadaki "Bu haftanın seçkileri" bölümü.
+       Üç tabak alıyor (ızgara CSS'te üç sütun); sınır sunucuda.
+       Aynı işaret Ürünler listesinde tek tıkla da açılıp kapanıyor. *@
+    <div class="y-form__alan">
+        <label class="y-onay" for="oneCikan">
+            <input type="checkbox" id="oneCikan" name="OneCikan" value="true"
+                   @(Model.OneCikan ? "checked" : null) aria-describedby="vitrin-yardim">
+            Ana sayfada öne çıkar
+        </label>
+        <p class="y-form__yardim" id="vitrin-yardim">
+            Ana sayfadaki vitrin üç tabak gösteriyor. Üçten az
+            işaretlerseniz kalan yerler menü sırasına göre kendiliğinden
+            dolar. Seçili olanları Ürünler listesinin başındaki "Vitrin"
+            rozetinden görebilirsiniz.
+        </p>
+    </div>
+
     <div class="y-form__ayak">
         <button type="submit" class="y-dugme y-dugme--birincil">Ürünü ekle</button>
         <a class="y-dugme" href="/Urun/Index">Vazgeç</a>

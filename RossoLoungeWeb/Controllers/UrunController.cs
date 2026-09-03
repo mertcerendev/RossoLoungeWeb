@@ -27,6 +27,18 @@ namespace RossoLoungeWeb.Controllers
         private const long MaksimumBoyut = 5 * 1024 * 1024; // 5 MB
         private const string ResimKlasoruYolu = "/img/urunler/";
 
+        /// <summary>
+        /// Ana sayfa vitrininde kaç tabak gösterilebilir.
+        /// Sayı keyfî değil: ızgara CSS'te repeat(3, 1fr) ve ortadaki kart
+        /// bilerek aşağı kaydırılıyor. Dördüncü tabak ikinci satırda tek
+        /// başına kalır, ritim bozulur.
+        /// </summary>
+        private const int VitrinSiniri = 3;
+
+        /// <summary>Vitrinde işaretli tabak sayısı; <paramref name="haricId"/> sayılmaz.</summary>
+        private int VitrinDolulugu(int haricId = 0) =>
+            _context.Urunler.Count(u => u.OneCikan && u.Id != haricId);
+
         // Kategori açılır listesi her action'da tek tek kuruluyordu; tek yere alındı.
         private void KategorileriYukle(int? seciliId = null)
         {
@@ -172,6 +184,7 @@ namespace RossoLoungeWeb.Controllers
         public async Task<IActionResult> Index(
             int? kategoriId = null,
             string? ara = null,
+            bool vitrin = false,
             string sirala = "menu",
             int sayfa = 1,
             int boyut = 25)
@@ -189,12 +202,17 @@ namespace RossoLoungeWeb.Controllers
             {
                 KategoriId = kategoriId,
                 Ara = string.IsNullOrWhiteSpace(ara) ? null : ara.Trim(),
+                Vitrin = vitrin,
                 Sirala = sirala,
                 Sayfa = sayfa,
                 Boyut = boyut
             };
 
-            var model = new UrunListeModeli { Suzgec = suzgec };
+            var model = new UrunListeModeli
+            {
+                Suzgec = suzgec,
+                VitrinSiniri = VitrinSiniri
+            };
 
             // Süzgeç açılır listesi menü sırasında; ürün sayıları rozetlerde.
             model.Kategoriler = await _context.Kategoriler.OrderBy(k => k.SiraNo).ToListAsync();
@@ -211,11 +229,15 @@ namespace RossoLoungeWeb.Controllers
             }
 
             model.TumKayit = await _context.Urunler.CountAsync();
+            model.VitrinSayisi = await _context.Urunler.CountAsync(u => u.OneCikan);
 
             IQueryable<Urun> sorgu = _context.Urunler.Include(u => u.Kategori);
 
             if (kategoriId.HasValue)
                 sorgu = sorgu.Where(u => u.KategoriId == kategoriId.Value);
+
+            if (vitrin)
+                sorgu = sorgu.Where(u => u.OneCikan);
 
             if (suzgec.Ara != null)
             {
@@ -282,6 +304,13 @@ namespace RossoLoungeWeb.Controllers
             ModelState.Remove("Id");
             ModelState.Remove("Kategori");
 
+            // Vitrin üç tabak alıyor; dördüncüsü sessizce kaybolmasın.
+            if (urun.OneCikan && VitrinDolulugu() >= VitrinSiniri)
+            {
+                ModelState.AddModelError(nameof(Urun.OneCikan),
+                    $"Vitrinde zaten {VitrinSiniri} tabak var. Önce Ürünler listesinden birinin yıldızını kapatın.");
+            }
+
             if (ModelState.IsValid)
             {
                 if (ResimDosyasi != null)
@@ -340,6 +369,14 @@ namespace RossoLoungeWeb.Controllers
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             ModelState.Remove("Kategori");
 
+            // Yalnızca AÇILIRKEN bakılıyor: zaten işaretli bir ürünün
+            // adını değiştirmek sınıra takılmamalı (kendisi hariç sayılıyor).
+            if (gelenUrun.OneCikan && VitrinDolulugu(gelenUrun.Id) >= VitrinSiniri)
+            {
+                ModelState.AddModelError(nameof(Urun.OneCikan),
+                    $"Vitrinde zaten {VitrinSiniri} tabak var. Önce Ürünler listesinden birinin yıldızını kapatın.");
+            }
+
             if (ModelState.IsValid)
             {
                 var mevcutUrun = _context.Urunler.Find(gelenUrun.Id);
@@ -356,6 +393,7 @@ namespace RossoLoungeWeb.Controllers
                 mevcutUrun.FiyatTur = gelenUrun.FiyatTur;
                 mevcutUrun.FiyatBuyukTur = gelenUrun.FiyatBuyukTur;
                 mevcutUrun.KategoriId = gelenUrun.KategoriId;
+                mevcutUrun.OneCikan = gelenUrun.OneCikan;
 
                 // SIRAYA DOKUNULMUYOR. Form artık SiraNo göndermiyor; gövdeden
                 // gelmeyen alan modelde 0 olur ve buraya yazılsaydı ürün kendi
@@ -409,6 +447,47 @@ namespace RossoLoungeWeb.Controllers
             return View(gelenUrun);
         }
 
+
+        // --- VİTRİN İŞARETİ ---
+        /// <summary>
+        /// Ana sayfadaki vitrine ekler/çıkarır. Listeden tek tıkla
+        /// yapılıyor: üç tabağı seçmek için üç düzenleme formu açmak
+        /// gereksiz. Düzenleme formunda da aynı işaret var.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Vitrin(int id, string? donus = null)
+        {
+            var urun = _context.Urunler.Find(id);
+            if (urun == null)
+            {
+                TempData["Hata"] = "Ürün bulunamadı.";
+                return ListeyeDon(donus);
+            }
+
+            // Çıkarmak her zaman serbest; sınır yalnızca eklemede.
+            if (!urun.OneCikan && VitrinDolulugu(id) >= VitrinSiniri)
+            {
+                TempData["Hata"] = $"Vitrinde en fazla {VitrinSiniri} tabak olabilir. " +
+                                   "Yeni bir tabak eklemek için önce birinin yıldızını kapatın.";
+                return ListeyeDon(donus);
+            }
+
+            urun.OneCikan = !urun.OneCikan;
+
+            if (GuvenliKaydet("Vitrin işareti"))
+            {
+                TempData["Mesaj"] = urun.OneCikan
+                    ? $"'{urun.Ad}' ana sayfadaki vitrine eklendi."
+                    : $"'{urun.Ad}' vitrinden çıkarıldı.";
+            }
+            else
+            {
+                TempData["Hata"] = "İşaret kaydedilemedi. Lütfen tekrar deneyin.";
+            }
+
+            return ListeyeDon(donus);
+        }
 
         // --- SÜRÜKLE-BIRAK SIRALAMA ---
         // Gelen id dizisi, listedeki YENİ görsel sırayı temsil eder.

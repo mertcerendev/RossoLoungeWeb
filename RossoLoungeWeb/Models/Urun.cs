@@ -50,6 +50,20 @@ namespace RossoLoungeWeb.Models
         [Display(Name = "Görsel")]
         public string? ResimUrl { get; set; } // Resmin dosya yolu
 
+        /// <summary>
+        /// Ana sayfadaki vitrinde ("Bu haftanın seçkileri") gösterilsin mi?
+        ///
+        /// Öncesinde vitrin, SiraNo'su en küçük 3 ürünü alıyordu: seçim
+        /// yapmanın tek yolu o tabakları bütün menünün en tepesine
+        /// sürüklemekti — yani vitrin ile menü sırası aynı düğmeye bağlıydı.
+        /// Artık seçim ayrı ve açık.
+        ///
+        /// Vitrin ızgarası CSS'te repeat(3, 1fr): en fazla ÜÇ tabak.
+        /// Sınır UrunController'da uygulanıyor.
+        /// </summary>
+        [Display(Name = "Öne çıkan")]
+        public bool OneCikan { get; set; }
+
         // --- İLİŞKİ AYARLARI ---
 
         // Hangi kategoriye ait? (Foreign Key)

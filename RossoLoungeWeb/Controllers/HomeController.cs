@@ -45,12 +45,42 @@ namespace RossoLoungeWeb.Controllers
                                          .OrderByDescending(y => y.Tarih)
                                          .ToList();
 
-            // Öne çıkan ürünler sabit kodluydu; artık menünün ilk üç ürünü
-            // gösteriliyor, sıralamayı panelden SiraNo ile yönetebiliyoruz.
-            ViewBag.OneCikanlar = _context.Urunler
-                                          .OrderBy(u => u.SiraNo)
-                                          .Take(3)
-                                          .ToList();
+            /* VİTRİN SEÇİMİ — artık panelden işaretleniyor (Urun.OneCikan).
+               Önce sabit kodluydu, sonra "SiraNo'su en küçük 3 ürün" oldu:
+               ikisinde de vitrini değiştirmenin yolu tabağı bütün menünün
+               en tepesine sürüklemekti, yani vitrin ile menü sırası aynı
+               düğmeye bağlıydı.
+
+               Take(3): vitrin ızgarası CSS'te repeat(3, 1fr). Panel zaten
+               üçten fazlasını işaretletmiyor; bu, doğrudan veritabanına
+               dokunulursa düzenin bozulmamasını sağlayan ikinci kilit.
+
+               EKSİK KALAN YER MENÜ SIRASINDAN TAMAMLANIYOR. Izgara üç
+               sütun: tek tabak işaretlenirse yanında iki boş sütun kalır
+               ve bölüm bozuk görünür. Ayrıca sütun canlıya yeni
+               eklendiğinde hiçbir ürün işaretli olmaz — tamamlama
+               olmasaydı vitrin o an tamamen boşalırdı.
+               İşaretliler her zaman ÖNCE geliyor. */
+            const int vitrinYeri = 3;
+
+            var vitrin = _context.Urunler
+                                 .Where(u => u.OneCikan)
+                                 .OrderBy(u => u.SiraNo)
+                                 .Take(vitrinYeri)
+                                 .ToList();
+
+            if (vitrin.Count < vitrinYeri)
+            {
+                var secilenler = vitrin.Select(u => u.Id).ToList();
+
+                vitrin.AddRange(_context.Urunler
+                                        .Where(u => !secilenler.Contains(u.Id))
+                                        .OrderBy(u => u.SiraNo)
+                                        .Take(vitrinYeri - vitrin.Count)
+                                        .ToList());
+            }
+
+            ViewBag.OneCikanlar = vitrin;
 
             // Ana sayfadaki menü sergisi: kategoriler + ürünleri, panelden
             // yönetilen SiraNo düzeninde. Boş kategori sergide görünmesin.
