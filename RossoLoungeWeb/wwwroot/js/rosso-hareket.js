@@ -1406,10 +1406,37 @@
 
                 kap.style.width = Math.round(r.width) + 'px';
                 kap.style.left = Math.round(r.left) + 'px';
+
+                /* ALT SINIR da şart: ray yukarı kayınca r.top eksiye
+                   düşüyor ve sabit konumlu önizleme ekranın üstünde
+                   kalıp görünmez oluyordu. */
                 kap.style.top = Math.round(
-                    Math.min(r.top, window.innerHeight - yuk - 16)
+                    Math.max(16, Math.min(r.top, window.innerHeight - yuk - 16))
                 ) + 'px';
             }
+
+            /* Konum YALNIZCA mouseenter'da yazılıyordu. Fare satırın
+               üzerinde dururken sayfa kaydırılınca ray kayıyor, position
+               fixed önizleme ise yerinde kalıyordu — ölçüldü: 600px
+               kaydırmada rayla arasında 256px açıklık, önizleme
+               kategorilerin üstüne biniyor ya da ekrandan çıkıyordu.
+
+               Açıkken kaydırma ve yeniden boyutlandırmada tazeleniyor;
+               kapalıyken tek satır bile çalışmıyor. rAF ile karede en
+               fazla bir ölçüm yapılıyor. */
+            var bekleyenKare = 0;
+
+            function tazele() {
+                if (!kap.classList.contains('menu__onizleme--acik')) return;
+                if (bekleyenKare) return;
+                bekleyenKare = requestAnimationFrame(function () {
+                    bekleyenKare = 0;
+                    yerlestir();
+                });
+            }
+
+            window.addEventListener('scroll', tazele, { passive: true });
+            window.addEventListener('resize', tazele);
 
             kalemler.forEach(function (kalem) {
                 var kaynak = kalem.getAttribute('data-gorsel');
