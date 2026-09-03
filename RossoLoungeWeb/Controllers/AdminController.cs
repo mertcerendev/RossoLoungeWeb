@@ -919,24 +919,107 @@ namespace RossoLoungeWeb.Controllers
         }
 
         // --- MESAJLAR (GELEN KUTUSU) ---
-        public IActionResult Mesajlar()
+        /// <summary>
+        /// Süzülebilir, sıralanabilir, sayfalanabilir gelen kutusu.
+        ///
+        /// Eskiden bütün mesajlar tek sayfada basılıyordu ve arama
+        /// tarayıcıda satır gizliyordu: kayıtlar yine indiriliyor,
+        /// "arama" yalnızca ekrandakini süzüyordu.
+        ///
+        /// Varsayılan sekme "tumu" ve varsayılan sıra "okunmamis_once" —
+        /// yani açılış eski davranışı koruyor. "Okunmamış" sekmesini
+        /// varsayılan yapmadım: okunmamış yokken yönetici boş bir ekrana
+        /// düşerdi.
+        /// </summary>
+        public async Task<IActionResult> Mesajlar(
+            string durum = "tumu",
+            string? ara = null,
+            string sirala = "okunmamis_once",
+            int sayfa = 1,
+            int boyut = 25)
         {
-            // Okunmayanlar en üstte olsun
-            var mesajlar = _context.IletisimMesajlari
-                                   .OrderBy(m => m.OkunduMu)
-                                   .ThenByDescending(m => m.Tarih)
-                                   .ToList();
-            return View(mesajlar);
+            // Dışarıdan gelen değerler beyaz listeye çekiliyor: adres
+            // çubuğuna yazılan rastgele bir değer sorguyu bozmasın.
+            var gecerliDurumlar = new[] { "tumu", "okunmamis", "okundu" };
+            if (!gecerliDurumlar.Contains(durum)) durum = "tumu";
+
+            var gecerliSiralar = new[] { "okunmamis_once", "yeni", "eski", "ad" };
+            if (!gecerliSiralar.Contains(sirala)) sirala = "okunmamis_once";
+
+            // Tek durumlu sekmede "okunmamış önce" anlamsız: hepsi aynı
+            // durumda. Sessizce tarihe düşüyor.
+            if (sirala == "okunmamis_once" && durum != "tumu") sirala = "yeni";
+
+            if (boyut != 25 && boyut != 50 && boyut != 100) boyut = 25;
+            if (sayfa < 1) sayfa = 1;
+
+            var suzgec = new MesajSuzgeci
+            {
+                Durum = durum,
+                Ara = string.IsNullOrWhiteSpace(ara) ? null : ara.Trim(),
+                Sirala = sirala,
+                Sayfa = sayfa,
+                Boyut = boyut
+            };
+
+            var model = new MesajListeModeli { Suzgec = suzgec };
+
+            model.SayiTumu = await _context.IletisimMesajlari.CountAsync();
+            model.SayiOkunmamis = await _context.IletisimMesajlari.CountAsync(m => !m.OkunduMu);
+            model.SayiOkundu = model.SayiTumu - model.SayiOkunmamis;
+
+            // Kenar menüsündeki rozet ve üst bardaki zil
+            ViewData["OkunmamisMesaj"] = (int?)model.SayiOkunmamis;
+            ViewData["Bildirim"] = (int?)model.SayiOkunmamis;
+
+            IQueryable<Iletisim> sorgu = _context.IletisimMesajlari;
+
+            sorgu = durum switch
+            {
+                "okunmamis" => sorgu.Where(m => !m.OkunduMu),
+                "okundu" => sorgu.Where(m => m.OkunduMu),
+                _ => sorgu
+            };
+
+            if (suzgec.Ara != null)
+            {
+                var kalip = suzgec.Ara;
+                sorgu = sorgu.Where(m =>
+                    EF.Functions.Like(m.AdSoyad, "%" + kalip + "%") ||
+                    EF.Functions.Like(m.Email, "%" + kalip + "%") ||
+                    (m.Telefon != null && EF.Functions.Like(m.Telefon, "%" + kalip + "%")) ||
+                    EF.Functions.Like(m.Mesaj, "%" + kalip + "%"));
+            }
+
+            model.ToplamKayit = await sorgu.CountAsync();
+            model.ToplamSayfa = Math.Max(1, (int)Math.Ceiling(model.ToplamKayit / (double)boyut));
+            if (suzgec.Sayfa > model.ToplamSayfa) suzgec.Sayfa = model.ToplamSayfa;
+
+            sorgu = sirala switch
+            {
+                "yeni" => sorgu.OrderByDescending(m => m.Tarih),
+                "eski" => sorgu.OrderBy(m => m.Tarih),
+                "ad" => sorgu.OrderBy(m => m.AdSoyad).ThenByDescending(m => m.Tarih),
+                // Okunmamışlar üstte — gelen kutusunun asıl işi bu.
+                _ => sorgu.OrderBy(m => m.OkunduMu).ThenByDescending(m => m.Tarih)
+            };
+
+            model.Kayitlar = await sorgu
+                .Skip((suzgec.Sayfa - 1) * boyut)
+                .Take(boyut)
+                .ToListAsync();
+
+            return View(model);
         }
 
         // --- MESAJ OKU ---
-        public IActionResult MesajOku(int id)
+        public IActionResult MesajOku(int id, string? donus = null)
         {
             var mesaj = _context.IletisimMesajlari.Find(id);
             if (mesaj == null)
             {
                 TempData["Hata"] = "Mesaj bulunamadı.";
-                return RedirectToAction("Mesajlar");
+                return ListeyeDon(donus, "Mesajlar");
             }
 
             if (!mesaj.OkunduMu)
@@ -947,19 +1030,55 @@ namespace RossoLoungeWeb.Controllers
                 GuvenliKaydet("Mesajı okundu işaretleme");
             }
 
+            // Detaydan listeye dönerken hangi süzgeçten gelindiyse oraya
+            // dönülsün; adres görünümde gizli alanlara basılıyor.
+            ViewBag.Donus = !string.IsNullOrWhiteSpace(donus) && Url.IsLocalUrl(donus)
+                ? donus
+                : Url.Action("Mesajlar");
+
             return View(mesaj);
+        }
+
+        // --- MESAJI OKUNMADI İŞARETLE ---
+        /// <summary>
+        /// Mesajı tekrar "yeni" durumuna çeker.
+        ///
+        /// NEDEN VAR: bir mesajı açmak onu kalıcı olarak okundu yapıyordu.
+        /// Yarıda kalan bir işi tekrar işaretlemenin yolu yoktu; gelen
+        /// kutusundaki "yeni" vurgusu bir kez kaybolunca geri gelmiyordu.
+        /// Şema değişmiyor — OkunduMu zaten iki yönlü bir alan, yalnızca
+        /// tek yönde kullanılıyordu.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult MesajOkunmadi(int id, string? donus = null)
+        {
+            var mesaj = _context.IletisimMesajlari.Find(id);
+            if (mesaj == null)
+            {
+                TempData["Hata"] = "Mesaj bulunamadı.";
+                return ListeyeDon(donus, "Mesajlar");
+            }
+
+            mesaj.OkunduMu = false;
+            if (GuvenliKaydet("Mesajı okunmadı işaretleme"))
+                TempData["Mesaj"] = $"{mesaj.AdSoyad} kişisinden gelen mesaj tekrar 'yeni' olarak işaretlendi.";
+            else
+                TempData["Hata"] = "Mesaj işaretlenemedi. Lütfen tekrar deneyin.";
+
+            return ListeyeDon(donus, "Mesajlar");
         }
 
         // --- MESAJ SİL ---
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult MesajSil(int id)
+        public IActionResult MesajSil(int id, string? donus = null)
         {
             var mesaj = _context.IletisimMesajlari.Find(id);
             if (mesaj == null)
             {
                 TempData["Hata"] = "Silinecek mesaj bulunamadı.";
-                return RedirectToAction("Mesajlar");
+                return ListeyeDon(donus, "Mesajlar");
             }
 
             _context.IletisimMesajlari.Remove(mesaj);
@@ -968,7 +1087,7 @@ namespace RossoLoungeWeb.Controllers
             else
                 TempData["Hata"] = "Mesaj silinemedi. Lütfen tekrar deneyin.";
 
-            return RedirectToAction("Mesajlar");
+            return ListeyeDon(donus, "Mesajlar");
         }
 
         // --- YORUMLAR SAYFASI ---

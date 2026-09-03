@@ -2,18 +2,25 @@
 @*
     MESAJ DETAYI
     ===============================================================
-    Uç değişmedi: POST /Admin/MesajSil/{id}. Sayfanın açılması
-    mesajı okundu olarak işaretliyor (controller'da).
+    Uçlar: POST /Admin/MesajOkunmadi/{id}, POST /Admin/MesajSil/{id}.
+    Sayfanın açılması mesajı okundu olarak işaretliyor (controller'da).
+
+    DÖNÜŞ ADRESİ: gelen kutusundan hangi süzgeç/sayfa ile gelindiyse
+    oraya dönülüyor. Aksi hâlde 3. sayfadaki bir mesajı okuyan kişi
+    listenin başına düşüyor ve kaldığı yeri kaybediyordu.
+    Adres controller'da Url.IsLocalUrl'den geçiyor.
 *@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Baslik"] = "Mesaj";
     ViewData["AltBaslik"] = Model.AdSoyad;
     ViewData["Aktif"] = "mesajlar";
+
+    var donus = ViewBag.Donus as string ?? Url.Action("Mesajlar");
 }
 
 @section Eylemler {
-    <a class="y-dugme" href="/Admin/Mesajlar">
+    <a class="y-dugme" href="@donus">
         <i class="fas fa-arrow-left" aria-hidden="true"></i> Gelen kutusu
     </a>
 }
@@ -54,9 +61,20 @@
             <i class="fas fa-reply" aria-hidden="true"></i> Yanıtla
         </a>
 
+        @* Sayfayı açmak mesajı okundu yaptı. İş yarıda kaldıysa geri
+           alınabilsin: gelen kutusunda tekrar "yeni" olarak görünür. *@
+        <form method="post" action="/Admin/MesajOkunmadi/@Model.Id">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="donus" value="@donus">
+            <button type="submit" class="y-dugme">
+                <i class="fas fa-rotate-left" aria-hidden="true"></i> Okunmadı işaretle
+            </button>
+        </form>
+
         <form method="post" action="/Admin/MesajSil/@Model.Id"
               onsubmit="return confirm('Bu mesajı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
             @Html.AntiForgeryToken()
+            <input type="hidden" name="donus" value="@donus">
             <button type="submit" class="y-dugme y-dugme--tehlike">
                 <i class="fas fa-trash-can" aria-hidden="true"></i> Sil
             </button>
