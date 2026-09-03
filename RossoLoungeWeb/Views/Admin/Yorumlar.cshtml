@@ -1,67 +1,191 @@
-@model List<RossoLoungeWeb.Models.Yorum>
+@model RossoLoungeWeb.Models.YorumListeModeli
 @*
     YORUMLAR
     ===============================================================
-    Uçlar değişmedi: POST /Admin/YorumOnayla/{id}, /Admin/YorumSil/{id}.
+    Uçlar: POST /Admin/YorumOnayla/{id}, /Admin/YorumGizle/{id},
+    /Admin/YorumSil/{id} — üçü de `donus` ile geldiği süzgeç/sayfaya
+    dönüyor.
 
-    "Tamamını oku" eskiden Bootstrap modalıyla açılıyordu; yeni panel
-    Bootstrap yüklemiyor. Yerine native <dialog> var (yonetim.js) —
-    odak yönetimi ve Escape'i tarayıcı üstleniyor.
+    KALDIRMA ile SİLME farkı: kaldırmak yorumu siteden çeker ama kaydı
+    bırakır (geri alınabilir); silmek yok eder. Eskiden yayındaki bir
+    yorumu çıkarmanın tek yolu silmekti.
+
+    HACİM SORUNU: liste bütün yorumları tek sayfada basıyordu. Çözüm
+    sunucu tarafında sekme + süzgeç + sayfalama.
+
+    Üst bardaki istemci araması bu sayfada KAPALI
+    (ViewData["AramaHedefi"] verilmiyor): yalnızca o sayfadaki satırları
+    süzerdi, "arama sonuç vermedi" sanılırdı.
+
+    "Tamamını oku" native <dialog> ile (yonetim.js) — panel Bootstrap
+    yüklemiyor; odak yönetimi ve Escape tarayıcının işi.
 *@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Baslik"] = "Yorumlar";
     ViewData["AltBaslik"] = "Onayladıklarınız sitede yayınlanır";
     ViewData["Aktif"] = "yorumlar";
-    ViewData["AramaHedefi"] = "yorum-tablosu";
-    ViewData["AramaYerTutucu"] = "Ad veya yorum metninde ara";
 
-    var bekleyen = Model.Count(x => !x.OnaylandiMi);
-    ViewData["BekleyenYorum"] = (int?)bekleyen;
+    var s = Model.Suzgec;
+    var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+
+    // Onay/kaldırma/silme sonrası bu adrese dönülüyor
+    var donusAdres = Url.Action("Yorumlar") + s.SorguKur();
+
+    var sekmeler = new (string Deger, string Ad)[]
+    {
+        ("tumu", "Tümü"),
+        ("bekleyen", "Onay bekleyen"),
+        ("yayinda", "Yayında")
+    };
 }
 
 @section Eylemler {
-    <span class="y-rozet y-rozet--sonuk">
-        Toplam <span data-tablo-sayac>@Model.Count</span>
-    </span>
-    @if (bekleyen > 0)
+    @if (Model.YayindakiOrtalama.HasValue)
     {
-        <span class="y-rozet y-rozet--uyari">@bekleyen onay bekliyor</span>
+        <span class="y-rozet y-rozet--sonuk" title="Yayındaki yorumların ortalaması — sitede görünen puan">
+            <i class="fas fa-star" aria-hidden="true"></i>
+            @Model.YayindakiOrtalama.Value.ToString("0.0", tr) ortalama
+        </span>
+    }
+    @if (Model.SayiBekleyen > 0 && s.Durum != "bekleyen")
+    {
+        <a class="y-dugme" href="@Url.Action("Yorumlar")?durum=bekleyen">
+            <i class="fas fa-clock" aria-hidden="true"></i> @Model.SayiBekleyen onay bekliyor
+        </a>
     }
 }
 
-@if (Model.Count == 0)
+@* ---------- Sekmeler ---------- *@
+<nav class="y-sekmeler" aria-label="Yorum görünümü">
+    @foreach (var sekme in sekmeler)
+    {
+        var aktif = s.Durum == sekme.Deger;
+        <a class="y-sekme @(aktif ? "y-sekme--aktif" : null)"
+           href="@Url.Action("Yorumlar")@s.SorguKur(sayfa: 1, sirala: "", durum: sekme.Deger)"
+           aria-current="@(aktif ? "page" : null)">
+            @sekme.Ad
+            <span class="y-sekme__sayi">@Model.SayiGetir(sekme.Deger)</span>
+        </a>
+    }
+</nav>
+
+@* ---------- Süzgeç çubuğu ---------- *@
+<form class="y-suzgec y-suzgec--genis" method="get" action="@Url.Action("Yorumlar")">
+    <input type="hidden" name="durum" value="@s.Durum">
+    <input type="hidden" name="boyut" value="@s.Boyut">
+
+    <div class="y-suzgec__alan y-suzgec__alan--genis">
+        <label class="y-suzgec__etiket" for="ara">Ara</label>
+        <input class="y-girdi" type="search" id="ara" name="ara" value="@s.Ara"
+               placeholder="Ad veya yorum metni" autocomplete="off">
+    </div>
+
+    @* Puan süzgeci: düşük puanlı yorumları bulmak bu sayfanın asıl
+       işlerinden biri — 120 yorum içinde tek tek aranmamalı. *@
+    <div class="y-suzgec__alan">
+        <label class="y-suzgec__etiket" for="puan">Puan</label>
+        <select class="y-secim" id="puan" name="puan">
+            <option value="">Tümü</option>
+            @for (int p = 5; p >= 1; p--)
+            {
+                <option value="@p" selected="@(s.Puan == p)">@p puan</option>
+            }
+        </select>
+    </div>
+
+    <div class="y-suzgec__alan">
+        <label class="y-suzgec__etiket" for="sirala">Sırala</label>
+        <select class="y-secim" id="sirala" name="sirala">
+            @if (s.Durum == "tumu")
+            {
+                <option value="bekleyen_once" selected="@(s.Sirala == "bekleyen_once")">Onay bekleyenler önce</option>
+            }
+            <option value="yeni" selected="@(s.Sirala == "yeni")">Tarihe göre (yeni önce)</option>
+            <option value="eski" selected="@(s.Sirala == "eski")">Tarihe göre (eski önce)</option>
+            <option value="puan_azalan" selected="@(s.Sirala == "puan_azalan")">Puan (yüksek önce)</option>
+            <option value="puan_artan" selected="@(s.Sirala == "puan_artan")">Puan (düşük önce)</option>
+        </select>
+    </div>
+
+    <div class="y-suzgec__eylemler">
+        <button type="submit" class="y-dugme y-dugme--birincil">Uygula</button>
+        @if (s.SuzgecAktif)
+        {
+            <a class="y-dugme" href="@Url.Action("Yorumlar")?durum=@s.Durum">Temizle</a>
+        }
+    </div>
+</form>
+
+@if (Model.Kayitlar.Count == 0)
 {
     <div class="y-bos">
         <i class="y-bos__im fas fa-star-half-stroke" aria-hidden="true"></i>
-        <h2 class="y-bos__baslik">Henüz yorum yok</h2>
-        <p class="y-bos__alt">Ziyaretçilerin siteden bıraktığı yorumlar burada listelenir.</p>
+        <h2 class="y-bos__baslik">
+            @(s.SuzgecAktif ? "Süzgece uyan yorum yok" : "Bu görünümde yorum yok")
+        </h2>
+        <p class="y-bos__alt">
+            @if (s.SuzgecAktif)
+            {
+                <text>Aramayı veya puan seçimini değiştirip tekrar deneyin.</text>
+            }
+            else if (s.Durum == "bekleyen")
+            {
+                <text>Onay bekleyen yorum kalmadı — hepsi yanıtlanmış.</text>
+            }
+            else
+            {
+                <text>Ziyaretçilerin siteden bıraktığı yorumlar burada listelenir.</text>
+            }
+        </p>
+        @if (s.SuzgecAktif)
+        {
+            <p class="y-bos__eylem">
+                <a class="y-dugme" href="@Url.Action("Yorumlar")?durum=@s.Durum">Süzgeci temizle</a>
+            </p>
+        }
     </div>
 }
 else
 {
     <div class="y-tablo-sarmal">
         <table class="y-tablo" id="yorum-tablosu">
-            <caption class="y-gizli">Müşteri yorumları</caption>
+            <caption class="y-gizli">Müşteri yorumları — @Model.ToplamKayit kayıt</caption>
             <thead>
                 <tr>
                     <th scope="col">Misafir</th>
                     <th scope="col">Yorum</th>
-                    <th scope="col">Puan</th>
-                    <th scope="col">Tarih</th>
-                    <th scope="col">Durum</th>
+                    <th scope="col" class="y-tablo__dar">Puan</th>
+                    <th scope="col" class="y-tablo__dar">Tarih</th>
+                    <th scope="col" class="y-tablo__dar">Durum</th>
                     <th scope="col" class="y-tablo__eylem"><span class="y-gizli">İşlemler</span></th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var item in Model)
+                @foreach (var item in Model.Kayitlar)
                 {
                     <tr class="@(item.OnaylandiMi ? null : "y-satir--dikkat")">
                         <td class="y-tablo__ad">@item.AdSoyad</td>
+
                         <td class="y-tablo__not">
-                            @(item.Mesaj.Length > 70 ? item.Mesaj.Substring(0, 70) + "…" : item.Mesaj)
+                            @if (item.Mesaj.Length > 70)
+                            {
+                                @* Kısaltılmış metin tıklanabilir: göz ikonunu
+                                   aramaya gerek kalmasın. *@
+                                <button type="button" class="y-metin-bag"
+                                        data-metin-goster
+                                        data-baslik="@item.AdSoyad"
+                                        data-govde="@item.Mesaj">
+                                    @item.Mesaj.Substring(0, 70)…
+                                </button>
+                            }
+                            else
+                            {
+                                @item.Mesaj
+                            }
                         </td>
-                        <td>
+
+                        <td class="y-tablo__dar">
                             <span class="y-gizli">5 üzerinden @item.Puan puan</span>
                             @* Ziyaretçi tarafındaki ince çizik diline sadık:
                                panelde de yıldız yok, dolu/boş çizikler var. *@
@@ -72,8 +196,10 @@ else
                                 }
                             </span>
                         </td>
-                        <td class="y-sayi">@item.Tarih.ToString("dd.MM.yyyy")</td>
-                        <td>
+
+                        <td class="y-tablo__dar y-sayi">@item.Tarih.ToString("dd.MM.yyyy")</td>
+
+                        <td class="y-tablo__dar">
                             @if (item.OnaylandiMi)
                             {
                                 <span class="y-rozet y-rozet--basari">Yayında</span>
@@ -83,6 +209,7 @@ else
                                 <span class="y-rozet y-rozet--uyari">Bekliyor</span>
                             }
                         </td>
+
                         <td class="y-tablo__eylem">
                             <div class="y-eylemler">
                                 <button type="button" class="y-hayalet"
@@ -94,10 +221,25 @@ else
                                     <i class="fas fa-eye" aria-hidden="true"></i>
                                 </button>
 
-                                @if (!item.OnaylandiMi)
+                                @if (item.OnaylandiMi)
+                                {
+                                    @* Kaldırma geri alınabilir olduğu için onay
+                                       sorusu yok; silmede var. *@
+                                    <form method="post" action="/Admin/YorumGizle/@item.Id">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="donus" value="@donusAdres">
+                                        <button type="submit" class="y-hayalet"
+                                                title="Siteden kaldır (kayıt silinmez)"
+                                                aria-label="@item.AdSoyad adlı ziyaretçinin yorumunu siteden kaldır">
+                                            <i class="fas fa-eye-slash" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                }
+                                else
                                 {
                                     <form method="post" action="/Admin/YorumOnayla/@item.Id">
                                         @Html.AntiForgeryToken()
+                                        <input type="hidden" name="donus" value="@donusAdres">
                                         <button type="submit" class="y-hayalet"
                                                 title="Yayınla"
                                                 aria-label="@item.AdSoyad adlı ziyaretçinin yorumunu yayınla">
@@ -106,9 +248,12 @@ else
                                     </form>
                                 }
 
+                                @* Onay metnine ad gömülmüyor: kesme işareti taşıyan
+                                   bir ad JS dizesini kırar. *@
                                 <form method="post" action="/Admin/YorumSil/@item.Id"
                                       onsubmit="return confirm('Bu yorumu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
                                     @Html.AntiForgeryToken()
+                                    <input type="hidden" name="donus" value="@donusAdres">
                                     <button type="submit" class="y-hayalet y-hayalet--tehlike"
                                             title="Sil"
                                             aria-label="@item.AdSoyad adlı ziyaretçinin yorumunu sil">
@@ -122,6 +267,53 @@ else
             </tbody>
         </table>
     </div>
+
+    @* ---------- Sayfalama ---------- *@
+    <nav class="y-sayfalama" aria-label="Sayfalar">
+        <p class="y-sayfalama__bilgi">
+            @(((s.Sayfa - 1) * s.Boyut) + 1)–@Math.Min(s.Sayfa * s.Boyut, Model.ToplamKayit)
+            / @Model.ToplamKayit yorum
+        </p>
+
+        <div class="y-sayfalama__gezinme">
+            @if (Model.OncekiVar)
+            {
+                <a class="y-dugme y-dugme--minik" href="@Url.Action("Yorumlar")@s.SorguKur(sayfa: s.Sayfa - 1)" rel="prev">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i> Önceki
+                </a>
+            }
+            else
+            {
+                <span class="y-dugme y-dugme--minik" aria-disabled="true">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i> Önceki
+                </span>
+            }
+
+            <span class="y-sayfalama__sayi y-sayi">@s.Sayfa / @Model.ToplamSayfa</span>
+
+            @if (Model.SonrakiVar)
+            {
+                <a class="y-dugme y-dugme--minik" href="@Url.Action("Yorumlar")@s.SorguKur(sayfa: s.Sayfa + 1)" rel="next">
+                    Sonraki <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </a>
+            }
+            else
+            {
+                <span class="y-dugme y-dugme--minik" aria-disabled="true">
+                    Sonraki <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </span>
+            }
+        </div>
+
+        <div class="y-sayfalama__boyut">
+            <span class="y-suzgec__etiket">Sayfa başına</span>
+            @foreach (var b in new[] { 25, 50, 100 })
+            {
+                <a class="y-boyut @(s.Boyut == b ? "y-boyut--aktif" : null)"
+                   href="@Url.Action("Yorumlar")@(s.SorguKur(sayfa: 1).Replace("boyut=" + s.Boyut, "boyut=" + b))">@b</a>
+            }
+        </div>
+    </nav>
 }
 
 @await Html.PartialAsync("_YonetimMetinKutusu")

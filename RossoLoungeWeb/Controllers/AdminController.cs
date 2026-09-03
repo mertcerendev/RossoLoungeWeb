@@ -665,12 +665,12 @@ namespace RossoLoungeWeb.Controllers
         /// <c>Url.IsLocalUrl</c> şart: adres dışarıdan (formdan) geliyor,
         /// denetlenmezse açık yönlendirme (open redirect) açığı olur.
         /// </summary>
-        private IActionResult ListeyeDon(string? donus)
+        private IActionResult ListeyeDon(string? donus, string yedekEylem = "Rezervasyonlar")
         {
             if (!string.IsNullOrWhiteSpace(donus) && Url.IsLocalUrl(donus))
                 return Redirect(donus);
 
-            return RedirectToAction("Rezervasyonlar");
+            return RedirectToAction(yedekEylem);
         }
 
         [HttpPost]
@@ -972,26 +972,122 @@ namespace RossoLoungeWeb.Controllers
         }
 
         // --- YORUMLAR SAYFASI ---
-        public IActionResult Yorumlar()
+        /// <summary>
+        /// Süzülebilir, sıralanabilir, sayfalanabilir yorum listesi.
+        ///
+        /// Eskiden bütün yorumlar tek sayfada basılıyordu ve arama
+        /// tarayıcıda satır gizliyordu: kayıtlar yine indiriliyor,
+        /// "arama" yalnızca ekrandakini süzüyordu.
+        ///
+        /// Varsayılan sekme "tumu" ve varsayılan sıra "bekleyen_once" —
+        /// yani sayfa açılışta eski davranışı koruyor (onay bekleyenler
+        /// üstte). "Bekleyen" sekmesini varsayılan yapmadım: bekleyen
+        /// yokken yönetici boş bir ekrana düşerdi.
+        /// </summary>
+        public async Task<IActionResult> Yorumlar(
+            string durum = "tumu",
+            string? ara = null,
+            int? puan = null,
+            string sirala = "bekleyen_once",
+            int sayfa = 1,
+            int boyut = 25)
         {
-            // Onay bekleyenler en üstte olsun
-            var yorumlar = _context.Yorumlar
-                                   .OrderBy(y => y.OnaylandiMi)
-                                   .ThenByDescending(y => y.Tarih)
-                                   .ToList();
-            return View(yorumlar);
+            // Dışarıdan gelen değerler beyaz listeye çekiliyor: adres
+            // çubuğuna yazılan rastgele bir değer sorguyu bozmasın.
+            var gecerliDurumlar = new[] { "tumu", "bekleyen", "yayinda" };
+            if (!gecerliDurumlar.Contains(durum)) durum = "tumu";
+
+            var gecerliSiralar = new[] { "bekleyen_once", "yeni", "eski", "puan_azalan", "puan_artan" };
+            if (!gecerliSiralar.Contains(sirala)) sirala = "bekleyen_once";
+
+            // Tek durumlu sekmede "bekleyen önce" sıralaması anlamsız:
+            // hepsi aynı durumda. Sessizce tarihe düşüyor.
+            if (sirala == "bekleyen_once" && durum != "tumu") sirala = "yeni";
+
+            if (puan is < 1 or > 5) puan = null;
+            if (boyut != 25 && boyut != 50 && boyut != 100) boyut = 25;
+            if (sayfa < 1) sayfa = 1;
+
+            var suzgec = new YorumSuzgeci
+            {
+                Durum = durum,
+                Ara = string.IsNullOrWhiteSpace(ara) ? null : ara.Trim(),
+                Puan = puan,
+                Sirala = sirala,
+                Sayfa = sayfa,
+                Boyut = boyut
+            };
+
+            var model = new YorumListeModeli { Suzgec = suzgec };
+
+            model.SayiTumu = await _context.Yorumlar.CountAsync();
+            model.SayiBekleyen = await _context.Yorumlar.CountAsync(y => !y.OnaylandiMi);
+            model.SayiYayinda = model.SayiTumu - model.SayiBekleyen;
+
+            // Sitedeki puan ortalaması yalnızca ONAYLI yorumlardan
+            // hesaplanıyor (HomeController); panelde başka bir sayı
+            // göstermek kafa karıştırırdı.
+            if (model.SayiYayinda > 0)
+            {
+                model.YayindakiOrtalama = await _context.Yorumlar
+                    .Where(y => y.OnaylandiMi)
+                    .AverageAsync(y => (double)y.Puan);
+            }
+
+            // Kenar menüsündeki rozet
+            ViewData["BekleyenYorum"] = (int?)model.SayiBekleyen;
+
+            IQueryable<Yorum> sorgu = _context.Yorumlar;
+
+            sorgu = durum switch
+            {
+                "bekleyen" => sorgu.Where(y => !y.OnaylandiMi),
+                "yayinda" => sorgu.Where(y => y.OnaylandiMi),
+                _ => sorgu
+            };
+
+            if (suzgec.Ara != null)
+            {
+                var kalip = suzgec.Ara;
+                sorgu = sorgu.Where(y =>
+                    EF.Functions.Like(y.AdSoyad, "%" + kalip + "%") ||
+                    EF.Functions.Like(y.Mesaj, "%" + kalip + "%"));
+            }
+
+            if (puan.HasValue) sorgu = sorgu.Where(y => y.Puan == puan.Value);
+
+            model.ToplamKayit = await sorgu.CountAsync();
+            model.ToplamSayfa = Math.Max(1, (int)Math.Ceiling(model.ToplamKayit / (double)boyut));
+            if (suzgec.Sayfa > model.ToplamSayfa) suzgec.Sayfa = model.ToplamSayfa;
+
+            sorgu = sirala switch
+            {
+                "yeni" => sorgu.OrderByDescending(y => y.Tarih),
+                "eski" => sorgu.OrderBy(y => y.Tarih),
+                "puan_azalan" => sorgu.OrderByDescending(y => y.Puan).ThenByDescending(y => y.Tarih),
+                "puan_artan" => sorgu.OrderBy(y => y.Puan).ThenByDescending(y => y.Tarih),
+                // Onay bekleyenler üstte — sayfanın asıl işi bu.
+                _ => sorgu.OrderBy(y => y.OnaylandiMi).ThenByDescending(y => y.Tarih)
+            };
+
+            model.Kayitlar = await sorgu
+                .Skip((suzgec.Sayfa - 1) * boyut)
+                .Take(boyut)
+                .ToListAsync();
+
+            return View(model);
         }
 
-        // --- YORUM ONAYLA ---
+        // --- YORUM YAYINA AL ---
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult YorumOnayla(int id)
+        public IActionResult YorumOnayla(int id, string? donus = null)
         {
             var yorum = _context.Yorumlar.Find(id);
             if (yorum == null)
             {
                 TempData["Hata"] = "Onaylanacak yorum bulunamadı.";
-                return RedirectToAction("Yorumlar");
+                return ListeyeDon(donus, "Yorumlar");
             }
 
             yorum.OnaylandiMi = true; // Yayına al
@@ -1000,19 +1096,49 @@ namespace RossoLoungeWeb.Controllers
             else
                 TempData["Hata"] = "Yorum onaylanamadı. Lütfen tekrar deneyin.";
 
-            return RedirectToAction("Yorumlar");
+            return ListeyeDon(donus, "Yorumlar");
+        }
+
+        // --- YORUM YAYINDAN KALDIR ---
+        /// <summary>
+        /// Yayındaki bir yorumu tekrar bekleyene çeker.
+        ///
+        /// NEDEN VAR: yayına alınmış bir yorumu siteden çıkarmanın tek yolu
+        /// SİLMEKTİ; silinen yorumdan geriye iz kalmıyordu. Rezervasyonlarda
+        /// iptal/silme için kurulan ayrımın aynısı: kaldırmak geri
+        /// alınabilir, silmek değil. Şema değişmiyor — OnaylandiMi zaten
+        /// iki yönlü bir alan, yalnızca tek yönde kullanılıyordu.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult YorumGizle(int id, string? donus = null)
+        {
+            var yorum = _context.Yorumlar.Find(id);
+            if (yorum == null)
+            {
+                TempData["Hata"] = "Yorum bulunamadı.";
+                return ListeyeDon(donus, "Yorumlar");
+            }
+
+            yorum.OnaylandiMi = false;
+            if (GuvenliKaydet("Yorum yayından kaldırma"))
+                TempData["Mesaj"] = $"{yorum.AdSoyad} adlı ziyaretçinin yorumu siteden kaldırıldı. Kayıt duruyor, tekrar yayınlayabilirsiniz.";
+            else
+                TempData["Hata"] = "Yorum kaldırılamadı. Lütfen tekrar deneyin.";
+
+            return ListeyeDon(donus, "Yorumlar");
         }
 
         // --- YORUM SİL ---
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult YorumSil(int id)
+        public IActionResult YorumSil(int id, string? donus = null)
         {
             var yorum = _context.Yorumlar.Find(id);
             if (yorum == null)
             {
                 TempData["Hata"] = "Silinecek yorum bulunamadı.";
-                return RedirectToAction("Yorumlar");
+                return ListeyeDon(donus, "Yorumlar");
             }
 
             _context.Yorumlar.Remove(yorum);
@@ -1021,7 +1147,7 @@ namespace RossoLoungeWeb.Controllers
             else
                 TempData["Hata"] = "Yorum silinemedi. Lütfen tekrar deneyin.";
 
-            return RedirectToAction("Yorumlar");
+            return ListeyeDon(donus, "Yorumlar");
         }
     }
 }
