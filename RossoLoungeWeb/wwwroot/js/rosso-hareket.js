@@ -1400,18 +1400,36 @@
                konuyordu ama ray ekranı neredeyse dolduruyor; önizleme
                yukarı kırpılıp kategorilerin yarısını örtüyor, kaza gibi
                duruyordu. Şimdi sütunun tamamı bilinçli olarak değişiyor. */
+            /* ÜST SINIR = rayın yapışkan durduğu yükseklik.
+
+               Ray `position: sticky` ve sabit başlığın hemen altında
+               duruyor. Sayfa sonunda ray konteynerin dibine takılıp
+               yukarı kayıyor, r.top eksiye düşüyor; önizleme onu takip
+               edince ekranın üstüne çıkıyordu. Önce düz 16px sınır
+               konmuştu ama o da başlığın üstüne biniyordu (ölçüldü:
+               önizleme 26px'te, başlık 0–93px arası).
+
+               Rayın kendi `top` değeri kullanılınca önizleme sayfa
+               sonunda da diğer kaydırma konumlarındaki yerinde kalıyor.
+               Medya sorgusuyla değişebildiği için resize'da yeniden
+               okunuyor; kaydırma sırasında stil okuması yapılmıyor. */
+            var ustSinir = 16;
+
+            function sinirOku() {
+                var t = parseFloat(window.getComputedStyle(ray).top);
+                ustSinir = isNaN(t) ? 16 : t;
+            }
+
+            sinirOku();
+
             function yerlestir() {
                 var r = ray.getBoundingClientRect();
                 var yuk = kap.offsetHeight || 272;
 
                 kap.style.width = Math.round(r.width) + 'px';
                 kap.style.left = Math.round(r.left) + 'px';
-
-                /* ALT SINIR da şart: ray yukarı kayınca r.top eksiye
-                   düşüyor ve sabit konumlu önizleme ekranın üstünde
-                   kalıp görünmez oluyordu. */
                 kap.style.top = Math.round(
-                    Math.max(16, Math.min(r.top, window.innerHeight - yuk - 16))
+                    Math.max(ustSinir, Math.min(r.top, window.innerHeight - yuk - 16))
                 ) + 'px';
             }
 
@@ -1436,7 +1454,10 @@
             }
 
             window.addEventListener('scroll', tazele, { passive: true });
-            window.addEventListener('resize', tazele);
+            window.addEventListener('resize', function () {
+                sinirOku();
+                tazele();
+            });
 
             kalemler.forEach(function (kalem) {
                 var kaynak = kalem.getAttribute('data-gorsel');
