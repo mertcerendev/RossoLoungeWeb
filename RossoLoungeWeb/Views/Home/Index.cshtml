@@ -1,352 +1,771 @@
 ﻿@model List<RossoLoungeWeb.Models.Yorum>
 @{
-    Layout = null;
+    ViewData["Baslik"] = "Rosso Lounge Bistro | Bandırma";
+    ViewData["Aciklama"] = "Rosso Lounge Bistro — Bandırma'da modern atmosfer, taze lezzetler ve imza kokteyller. Online masa rezervasyonu yapın.";
+
+    // Girişi aşağıdaki .sahne-perde üstleniyor; _Layout'un geçiş perdesi
+    // bu sayfada KAPALI başlamasın (ikisi üst üste binerdi).
+    ViewData["Giris"] = "sinematik";
+
+    // Öne çıkan ürünler HomeController.Index'ten geliyor (SiraNo'ya göre ilk 3).
+    var oneCikanlar = ViewBag.OneCikanlar as List<RossoLoungeWeb.Models.Urun> ?? new List<RossoLoungeWeb.Models.Urun>();
+    var yorumlar = Model ?? new List<RossoLoungeWeb.Models.Yorum>();
+
+    // Kültür Program.cs'te InvariantCulture'a sabitlendi (form verisi için).
+    // Ekranda gösterilen fiyat/tarih Türkçe olsun diye kültürü açıkça belirtiyoruz.
+    var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+    var yil = RossoLoungeWeb.Services.TurkiyeSaati.Simdi.Year;
+
+    // GALERİ SERGİSİ — kareler tek kaynaktan geliyor.
+    // Görseller veritabanına taşındığında YALNIZCA bu atama değişir
+    // (ör. ViewBag.Galeri as List<Galeri>); aşağıdaki @foreach bloğu
+    // ve tüm animasyon kancaları aynen çalışmaya devam eder.
+    //
+    // ÇIKARILANLAR — burası bar değil, restoran:
+    //   bar.jpg      → içki rafı ve bar tezgâhı
+    //   paylasim.jpg → kadrajın solunda yarım içilmiş bira bardağı
+    //   ic-mekan.jpg → solunda aydınlatmalı şarap dolabı; o şerit
+    //                  kesilip salon.jpg olarak kaydedildi
+    // Hakkımızda'daki aksam-masa.jpg bilerek DURUYOR: kaldırılmıştı,
+    // istek üzerine geri alındı.
+    // Yerlerine mekânın KENDİ fotoğrafları geldi (img/urunler'den
+    // kopyalandı, kaynak dosyalara dokunulmadı): firindan.jpg, kahve.jpg.
+    var galeriKareleri = new[]
+    {
+        new { Gorsel = "/img/site/salon.jpg",    Etiket = "Salon",         Alt = "Pirinç paravanlı salon, hazırlanmış masalar",                 Genis = true  },
+        new { Gorsel = "/img/site/firindan.jpg", Etiket = "Fırından",      Alt = "Koyu mermer tabakta, parmesanla servis edilen fırın makarnası", Genis = false },
+        new { Gorsel = "/img/site/bahce.jpg",    Etiket = "Deniz Terası",  Alt = "Deniz manzaralı, tenteli açık hava terası",                   Genis = true  },
+        new { Gorsel = "/img/site/sef.jpg",      Etiket = "Mutfak",        Alt = "Şefimiz servis öncesi malzemeleri hazırlarken",               Genis = false },
+        new { Gorsel = "/img/site/sunum.jpg",    Etiket = "Sunum",         Alt = "Tepeden çekilmiş, tabakta sunulan ana yemekler",              Genis = false },
+        new { Gorsel = "/img/site/kahve.jpg",    Etiket = "Kahve",         Alt = "Altın yaldızlı fincanda Türk kahvesi ve porselen demlik",     Genis = false },
+        new { Gorsel = "/img/site/sofra.jpg",    Etiket = "Akşam Sofrası", Alt = "Mermer masada paylaşılan tabaklar; makarna, pizza ve salata", Genis = true  }
+    };
 }
 
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rosso Lounge Bistro</title>
-    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/style.css">
-    <style>
-        /* Fiyat Stilleri (Index için) */
-        .price-container {
-            border-top: 1px solid #444;
-            padding-top: 10px;
-            margin-top: 10px;
-        }
+    @* ---- Sinematik perde: sayaç dolar, ardından iki panel yırtılır ---- *@
+    <div class="sahne-perde" aria-hidden="true">
+        <div class="sahne-perde__marka">ROSSO <span>LOUNGE</span></div>
+        <div class="sahne-perde__sayac">000</div>
+    </div>
+    <div class="sahne-perde__panel sahne-perde__panel--ust" aria-hidden="true"></div>
+    <div class="sahne-perde__panel sahne-perde__panel--alt" aria-hidden="true"></div>
 
-        .price {
-            color: #e74c3c;
-            font-weight: bold;
-            font-size: 1.2rem;
-            display: block;
-        }
-
-        .price-label {
-            color: #aaa;
-            font-size: 0.85rem;
-            font-weight: normal;
-            margin-right: 5px;
-        }
-
-        .menu-card {
-            background: #2a2a2a;
-            border-radius: 10px;
-            overflow: hidden;
-            transition: transform 0.3s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-            .menu-card:hover {
-                transform: translateY(-5px);
-            }
-
-            .menu-card img {
-                width: 100%;
-                height: 250px;
-                object-fit: cover;
-            }
-
-        .menu-info {
-            padding: 1.5rem;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-            .menu-info h3 {
-                color: #fff;
-                font-size: 1.3rem;
-                margin-bottom: 0.5rem;
-            }
-
-            .menu-info p {
-                color: #ccc;
-                font-size: 0.9rem;
-                font-weight: 300;
-                min-height: 40px;
-            }
-    </style>
-</head>
-
-<body>
+    @* Controller'lar rezervasyon/mesaj/yorum sonucunu TempData'ya yazıyordu
+       ama ziyaretçi sitesinde hiçbir yerde okunmuyordu — form gönderen
+       kullanıcı sessizlikle karşılaşıyordu. Toast bileşeni script.js'e bağlı
+       (otomatik kapanma + kapat düğmesi). *@
     @if (TempData["Mesaj"] != null)
     {
-        <script> window.onload = function() { alert("@Html.Raw(TempData["Mesaj"]?.ToString())"); }; </script>
+        <div class="toast-bildirim basarili" role="status">
+            <svg class="toast-ikon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+            <div>@TempData["Mesaj"]</div>
+            <button type="button" class="toast-kapat" aria-label="Bildirimi kapat">&times;</button>
+        </div>
     }
     @if (TempData["Hata"] != null)
     {
-        <script> window.onload = function() { alert("Hata: @Html.Raw(TempData["Hata"]?.ToString())"); }; </script>
+        <div class="toast-bildirim hata" role="alert">
+            <svg class="toast-ikon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3.5 22 20H2Z"/><path d="M12 9.5v4.5"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg>
+            <div>@TempData["Hata"]</div>
+            <button type="button" class="toast-kapat" aria-label="Bildirimi kapat">&times;</button>
+        </div>
     }
 
-    <header id="navbar">
-        <div class="container nav-container">
-            <a href="#home" class="logo">ROSSO <span>LOUNGE</span></a>
-            <nav>
-                <ul class="nav-links">
-                    <li><a href="#home" class="active">Ana Sayfa</a></li>
-                    <li><a href="#about">Hakkımızda</a></li>
-                    <li><a href="#menu">Menü</a></li>
-                    <li><a href="#gallery">Galeri</a></li>
-                    <li><a href="#reviews">Yorumlar</a></li>
-                    <li><a href="#contact">İletişim</a></li>
-                    <li class="mobile-only-reserve-btn"><a href="#rezervasyon" class="btn-reserve">Rezervasyon Yap</a></li>
-                </ul>
-            </nav>
-            <a href="#rezervasyon" class="btn-reserve desktop-only-reserve-btn">Rezervasyon Yap</a>
-            <div class="hamburger"><i class="fas fa-bars"></i></div>
-        </div>
-    </header>
 
-    <section id="home" class="hero">
-        <div class="hero-content">
-            <h1>Lezzetin ve Konforun Buluşma Noktası</h1>
-            <p>Rosso Lounge Bistro'da unutulmaz anlar yaşayın.</p>
-            <a href="#menu" class="btn-main">Menüyü Keşfet</a>
-        </div>
-    </section>
 
-    <section id="about" class="section-padding">
-        <div class="container">
-            <h2 class="section-title">Biz Kimiz?</h2>
-            <div class="about-content">
-                <div class="about-text">
-                    <p>Rosso Lounge Bistro olarak, misafirlerimize sadece yemek değil, bir deneyim sunuyoruz. Modern atmosferimiz ve özel imza kokteyllerimiz ile Bandırma'nın en keyifli buluşma noktasıyız.</p>
-                    <ul class="features">
-                        <li><i class="fas fa-check-circle"></i> Taze ve Organik Malzemeler</li>
-                        <li><i class="fas fa-check-circle"></i> Profesyonel Şefler</li>
-                        <li><i class="fas fa-check-circle"></i> Canlı Müzik Etkinlikleri</li>
-                    </ul>
+    <main id="icerik">
+        <section id="home" class="hero">
+            <div class="hero__zemin" aria-hidden="true"></div>
+            <div class="hero__perde" aria-hidden="true"></div>
+
+            <div class="hero__ic">
+                <p class="hero__ustbaslik">Bandırma · Marmara kıyısında</p>
+
+                <h1 class="hero__baslik">
+                    Lezzetin ve konforun
+                    <em>buluşma noktası</em>
+                </h1>
+
+                <p class="hero__alt">
+                    Sıcak bir ışık, iyi bir sohbet ve hak ettiği tabaklar.
+                </p>
+
+                <div class="hero__eylemler">
+                    <a href="#rezervasyon" class="btn btn--sampanya">Masa Ayırt</a>
+                    <a href="/menu" class="btn btn--hat">Menüyü Keşfet</a>
                 </div>
-                <div class="about-image">
-                    <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Bistro İç Mekan">
-                </div>
+
+                @* Açık/kapalı rozeti kaldırıldı; saat tek başına ortada.
+                   Durum bilgisi iletişim bölümünde duruyor. *@
+                <p class="hero__durum">
+                    <span class="hero__saat">Her gün 11.30 – 00.00</span>
+                </p>
             </div>
-        </div>
-    </section>
 
-    <section id="menu" class="section-padding bg-dark">
-        <div class="container">
-            <h2 class="section-title text-light">Öne Çıkan Lezzetler</h2>
+            <a href="#hakkimizda" class="hero__kaydir" aria-label="Aşağı kaydır"></a>
+        </section>
 
-            <div class="row g-4 justify-content-center">
-                <div class="col-lg-4 col-md-6 col-12">
-                    <div class="menu-card">
-                        <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Burger">
-                        <div class="menu-info">
-                            <div>
-                                <h3>Rosso Burger</h3>
-                                <p>Özel sos, karamelize soğan, çedar peyniri.</p>
-                            </div>
-                            <div class="price-container mt-3">
-                                <div class="text-center"><span class="price">320₺</span></div>
-                            </div>
-                        </div>
+        @* ============================================================
+           HAKKIMIZDA
+           Razor notu: bu blok olduğu gibi Views/Home/_Hakkinda.cshtml
+           dosyasına taşınabilir ve Index'ten
+           @await Html.PartialAsync("_Hakkinda") ile çağrılabilir.
+           Dışarıdan veri almıyor, bağımsız bir partial.
+           ============================================================ *@
+        <section id="hakkimizda" class="hakkinda">
+            <div class="kap hakkinda__izgara">
+
+                @* --- Asimetrik görsel kompozisyon: iki çerçeve hafifçe binişik --- *@
+                <div class="hakkinda__gorseller">
+                    <figure class="hakkinda__cerceve hakkinda__cerceve--genis" data-parallax="-14">
+                        <img class="hakkinda__foto"
+                             src="/img/site/aksam-masa.jpg"
+                             alt="Akşam ışığında hazırlanmış masa, kadehler ve tabaklar"
+                             loading="eager" decoding="async" width="1800" height="1200">
+                    </figure>
+
+                    <figure class="hakkinda__cerceve hakkinda__cerceve--dar" data-parallax="16">
+                        <img class="hakkinda__foto"
+                             src="/img/site/sef.jpg"
+                             alt="Şefimiz servis öncesi malzemeleri hazırlarken"
+                             loading="lazy" width="1200" height="1800">
+                    </figure>
+
+                    <span class="hakkinda__yil" aria-hidden="true">
+                        <em>2019</em>
+                        <span>o günden beri</span>
+                    </span>
+                </div>
+
+                @* --- Metin --- *@
+                <div class="hakkinda__metin">
+                    <p class="hakkinda__ustbaslik">Hakkımızda</p>
+
+                    <h2 class="hakkinda__baslik" data-kelime-acilis>
+                        Sıradanlığın ötesinde <em>bir gastronomi</em>
+                    </h2>
+
+                    <div class="hakkinda__govde">
+                        <p>
+                            Rosso Lounge Bistro, Marmara'nın kıyısında bir akşamın nasıl
+                            geçmesi gerektiğine dair sessiz bir iddiadır. Burada tabak,
+                            sohbetin önüne geçmez; onu tamamlar.
+                        </p>
+                        <p>
+                            Sebzeler her sabah yerel üreticiden gelir, ateş gün boyu
+                            yanar, ışık akşama doğru yavaşça alçalır. Aceleye yer yoktur —
+                            ne mutfakta, ne masada.
+                        </p>
                     </div>
-                </div>
 
-                <div class="col-lg-4 col-md-6 col-12">
-                    <div class="menu-card">
-                        <img src="https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Pizza">
-                        <div class="menu-info">
-                            <div>
-                                <h3>İtalyan Pizza</h3>
-                                <p>Mozzarella, fesleğen, ince hamur.</p>
-                            </div>
-                            <div class="price-container mt-3">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div><span class="price-label">Orta:</span><span class="price">290₺</span></div>
-                                    <div class="text-end"><span class="price-label">Büyük:</span><span class="price">350₺</span></div>
-                                </div>
-                            </div>
+                    <dl class="hakkinda__olcut">
+                        <div>
+                            <dt>@(ViewBag.ToplamUrun ?? 0)</dt>
+                            <dd>menüde lezzet</dd>
                         </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-4 col-md-6 col-12">
-                    <div class="menu-card">
-                        <img src="https://images.unsplash.com/photo-1579306194872-64d3b7bac4c2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60" alt="Tatlı">
-                        <div class="menu-info">
-                            <div>
-                                <h3>San Sebastian</h3>
-                                <p>Belçika çikolatası sosu ile.</p>
-                            </div>
-                            <div class="price-container mt-3">
-                                <div class="text-center"><span class="price">180₺</span></div>
-                            </div>
+                        <div>
+                            <dt>@(ViewBag.OrtalamaPuan ?? "—")</dt>
+                            <dd>misafir puanı</dd>
                         </div>
-                    </div>
+                        <div>
+                            <dt>12.5</dt>
+                            <dd>saat kesintisiz servis</dd>
+                        </div>
+                    </dl>
                 </div>
             </div>
 
-            <div class="text-center" style="margin-top: 2rem;">
-                <a href="/Home/Menu" class="btn-outline">Tüm Menüyü Gör</a>
-            </div>
-        </div>
-    </section>
+            @* --- İmza alıntısı --- *@
+            <figure class="hakkinda__alinti">
+                <blockquote>
+                    <p>Bir masa, sadece yemek yenen yer değildir; akşamın nerede başladığıdır.</p>
+                </blockquote>
+                <figcaption>Rosso Lounge Bistro — Bandırma</figcaption>
+            </figure>
+        </section>
 
-    <section id="gallery" class="section-padding">
-        <div class="container">
-            <div class="text-center"><h2 class="section-title">Mekan & Atmosfer</h2><p style="margin-bottom: 3rem; color: #666;">Sizi bekleyen ayrıcalıklı ortam.</p></div>
-            <div class="gallery-grid">
-                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=60" alt="Mekan"></div>
-                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1514362545857-3bc16549766b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=60" alt="Kokteyl"></div>
-                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1559339352-11d035aa65de?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=60" alt="Bahçe"></div>
-                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=60" alt="Sunum"></div>
-                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1514933651103-005eec06c04b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=60" alt="Bar"></div>
-                <div class="gallery-item"><img src="https://images.unsplash.com/photo-1522337660859-02fbefca4702?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=60" alt="Detay"></div>
-            </div>
-        </div>
-    </section>
+        @* ============================================================
+           VİTRİN — ana sayfada yalnızca seçilmiş birkaç tabak.
+           Tam menü /menu sayfasında; ana sayfa bitmez bir listeye
+           dönüşmesin diye burada sadece 3 ürün gösteriliyor.
+           Seçim panelden yönetiliyor: SiraNo'su en küçük 3 ürün gelir.
+           Razor notu: Views/Home/_Vitrin.cshtml partial'ına taşınabilir.
+           ============================================================ *@
+        @{
+            var vitrin = ViewBag.OneCikanlar as List<RossoLoungeWeb.Models.Urun>
+                         ?? new List<RossoLoungeWeb.Models.Urun>();
+            var vitrinYedek = "/img/site/sunum.jpg";
+        }
 
-    <section id="reviews" class="section-padding bg-dark">
-        <div class="container">
-            <h2 class="section-title text-light">Müşterilerimiz Ne Dedi?</h2>
+        <section id="menu" class="vitrin">
+            <div class="kap">
+                <header class="vitrin__bas">
+                    <p class="vitrin__ustbaslik">Mutfaktan</p>
+                    <h2 class="vitrin__baslik">Bu haftanın <em>seçkileri</em></h2>
+                    <p class="vitrin__alt">
+                        Şefimizin öne çıkardığı birkaç tabak. Menünün tamamı için sayfayı ziyaret edin.
+                    </p>
+                </header>
 
-            <div id="reviewsCarousel" class="carousel slide" data-bs-ride="carousel" style="margin-bottom: 50px;">
-                <div class="carousel-inner">
-                    @if (Model != null && Model.Count > 0)
-                    {
-                        var yorumlar = Model.ToList();
-                        for (int i = 0; i < yorumlar.Count; i += 2)
+                @if (vitrin.Count > 0)
+                {
+                    <div class="vitrin__izgara">
+                        @foreach (var urun in vitrin)
                         {
-                            <div class="carousel-item @(i == 0 ? "active" : "")">
-                                <div class="row justify-content-center">
-                                    @for (int j = 0; j < 2; j++)
+                            <article class="vitrin__kart">
+                                <div class="vitrin__gorsel">
+                                    <img src="@UrunGorseli.Yolu(urun.ResimUrl, vitrinYedek)"
+                                         alt="@urun.Ad" loading="lazy" width="800" height="1000">
+                                </div>
+
+                                <div class="vitrin__govde">
+                                    <h3 class="vitrin__ad">@urun.Ad</h3>
+                                    @if (!string.IsNullOrWhiteSpace(urun.Aciklama))
                                     {
-                                        if (i + j < yorumlar.Count)
-                                        {
-                                            var y = yorumlar[i + j];
-                                            <div class="col-md-5 col-12 mb-3">
-                                                <div class="review-card">
-                                                    <div class="stars">@for (int s = 0; s < y.Puan; s++) {
-                                                    <i class="fas fa-star"></i>
-                                                }
-            </div>
-                                                <p>"@y.Mesaj"</p>
-                                                <div class="review-info"><h5>- @y.AdSoyad</h5><small>@y.Tarih.ToString("dd.MM.yyyy")</small></div>
-                                            </div>
-                                        </div>
+                                        <p class="vitrin__aciklama">@urun.Aciklama</p>
                                     }
-                                }
-                            </div>
-                        </div>
-                    }
+                                    @* İki fiyat varken hangisinin ne olduğu yazmalı;
+                                       menü sayfasındaki gösterimle aynı dil. *@
+                                    <p class="vitrin__fiyat">
+                                        @if (urun.FiyatBuyuk.HasValue)
+                                        {
+                                            <span class="vitrin__olcu">
+                                                <span class="vitrin__olcu-ad">@(string.IsNullOrEmpty(urun.FiyatTur) ? "Orta" : urun.FiyatTur)</span>
+                                                @urun.Fiyat.ToString("N0")<span class="vitrin__para">₺</span>
+                                            </span>
+                                            <span class="vitrin__olcu">
+                                                <span class="vitrin__olcu-ad">@(string.IsNullOrEmpty(urun.FiyatBuyukTur) ? "Büyük" : urun.FiyatBuyukTur)</span>
+                                                @urun.FiyatBuyuk.Value.ToString("N0")<span class="vitrin__para">₺</span>
+                                            </span>
                                         }
                                         else
+                                        {
+                                            <span class="vitrin__olcu">
+                                                @urun.Fiyat.ToString("N0")<span class="vitrin__para">₺</span>
+                                            </span>
+                                        }
+                                    </p>
+                                </div>
+                            </article>
+                        }
+                    </div>
+
+                    <div class="vitrin__eylem">
+                        <a href="/menu" class="btn btn--sampanya">Tüm Menüyü Gör</a>
+                        <p class="vitrin__ipucu">@(ViewBag.ToplamUrun ?? 0) tabak, @(ViewBag.KategoriSayisi ?? 0) kategori</p>
+                    </div>
+                }
+                else
+                {
+                    <p class="vitrin__bos">Menü yakında burada olacak.</p>
+                }
+            </div>
+        </section>
+
+        @* =========================================================
+           GALERİ SERGİSİ
+           Dikey kaydırma bu bölümde yatay akışa dönüşür (GSAP ScrollTrigger
+           pin). JS/GSAP yoksa .galeri--pinli sınıfı hiç eklenmez ve ray
+           doğal bir yatay kaydırıcı olarak kalır — içerik her koşulda erişilir.
+           ========================================================= *@
+        <section id="galeri" class="galeri" aria-labelledby="galeri-baslik">
+            <div class="galeri__sahne">
+                <div class="galeri__ray">
+                    <header class="galeri__giris">
+                        <p class="galeri__ustbaslik">Galeri</p>
+                        <h2 class="galeri__baslik" id="galeri-baslik">Mekân &amp; <em>Atmosfer</em></h2>
+                        <p class="galeri__alt">Işığı, masaları ve deniz terasıyla sizi bekleyen ortamdan kareler. Kaydırdıkça sergi yanınızdan akar.</p>
+                        <p class="galeri__ipucu">
+                            <span class="galeri__ipucu-cizgi" aria-hidden="true"></span>
+                            Kaydırarak gezin
+                        </p>
+                    </header>
+
+@{ var galeriSira = 0; }
+@foreach (var kare in galeriKareleri)
+{
+    galeriSira++;
+                    <button type="button"
+                            class="galeri__kare@(kare.Genis ? " galeri__kare--genis" : "")"
+                            data-galeri-no="@galeriSira.ToString("00")"
+                            data-galeri-etiket="@kare.Etiket"
+                            aria-label="Tam ekranda aç: @kare.Etiket">
+                        <span class="galeri__cerceve">
+                            <img class="galeri__foto" src="@kare.Gorsel" alt="@kare.Alt" loading="lazy" draggable="false">
+                        </span>
+                        <span class="galeri__ayak">
+                            <span class="galeri__no">@galeriSira.ToString("00")</span>
+                            <span class="galeri__etiket">@kare.Etiket</span>
+                        </span>
+                    </button>
+}
+                </div>
+
+                <div class="galeri__ilerleme" aria-hidden="true">
+                    <span class="galeri__ilerleme-dolgu"></span>
+                </div>
+            </div>
+        </section>
+
+        @* =========================================================
+           ZİYARETÇİ DEFTERİ
+           Karusel değil: tek yorum ekranın merkezinde, tipografi odaklı.
+           Yapraklar @foreach ile üretiliyor — kaynak Model'deki onaylı
+           yorum listesi, blok başka hiçbir şeye bağlı değil.
+
+           JS devralmazsa (.defter--sahnede yoksa) yapraklar alt alta
+           okunur bir liste olarak kalır; sürükleme/ilerleme gizlenir.
+           ========================================================= *@
+        <section id="yorumlar" class="defter" aria-labelledby="defter-baslik">
+            <div class="kap">
+                <header class="defter__bas">
+                    <p class="defter__ustbaslik">Misafirlerimiz</p>
+                    <h2 class="defter__baslik" id="defter-baslik">Ziyaretçi <em>Defteri</em></h2>
+                    <p class="defter__alt">Yorumlar onaylandıktan sonra yayınlanır; hepsi gerçek misafirlerimizden.</p>
+                </header>
+            </div>
+
+            @if (yorumlar.Count > 0)
+            {
+                <div class="defter__sergi">
+                    <div class="defter__sahne kap" role="group"
+                         aria-roledescription="yorum sergisi" aria-label="Misafir yorumları"
+                         tabindex="0">
+@{ var yorumSira = 0; }
+@foreach (var y in yorumlar)
+{
+    yorumSira++;
+    // Yorum uzunlukları çok değişken; tek bir dev punto uzun metinde
+    // ekranı taşırıyor. Punto metnin uzunluğuna göre kademeleniyor.
+    var uzunluk = (y.Mesaj ?? string.Empty).Length;
+    var boyut = uzunluk <= 130 ? "defter__soz--dev"
+              : uzunluk <= 320 ? "defter__soz--orta"
+                               : "defter__soz--sik";
+                        <article class="defter__yaprak" data-defter-sira="@yorumSira">
+                            <p class="defter__isaret" aria-hidden="true">&ldquo;</p>
+
+                            <blockquote class="defter__soz @boyut">
+                                <p class="defter__metin">@y.Mesaj</p>
+                            </blockquote>
+
+                            <footer class="defter__imza">
+                                <p class="defter__ad">@y.AdSoyad</p>
+                                <p class="defter__ayrinti">
+                                    <span class="defter__puan" role="img" aria-label="5 üzerinden @y.Puan puan">
+                                        @for (int p = 1; p <= 5; p++)
+                                        {
+                                            <span class="defter__cizik@(p <= y.Puan ? " defter__cizik--dolu" : "")" aria-hidden="true"></span>
+                                        }
+                                    </span>
+                                    <span class="defter__tarih">@y.Tarih.ToString("MMMM yyyy", tr)</span>
+                                </p>
+                            </footer>
+                        </article>
+}
+                    </div>
+
+                    @if (yorumlar.Count > 1)
                     {
-                        <div class="text-center text-light w-100 p-4" style="background:#2a2a2a; border-radius:10px;">
-                            <i class="fas fa-comments fa-3x mb-3" style="color:#444;"></i>
-                            <p>Henüz yorum yapılmamış. İlk yorumu siz yapın!</p>
-                        </div>
+                        @* Kenar bölgeleri: masaüstünde görünmez, imleç üstlerine
+                           gelince sıvı imleç "Geri/İleri" etiketine dönüşüyor.
+                           Gerçek <button> oldukları için klavye ve dokunmatik
+                           kullanıcıları da geçiş yapabiliyor. *@
+                        <button type="button" class="defter__yon defter__yon--geri" aria-label="Önceki yorum">
+                            <span class="defter__yon-yazi" aria-hidden="true">Geri</span>
+                        </button>
+                        <button type="button" class="defter__yon defter__yon--ileri" aria-label="Sonraki yorum">
+                            <span class="defter__yon-yazi" aria-hidden="true">İleri</span>
+                        </button>
                     }
                 </div>
 
-                @if (Model != null && Model.Count > 2)
+                @if (yorumlar.Count > 1)
                 {
-                    <button class="carousel-control-prev" type="button" data-bs-target="#reviewsCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon"></span></button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#reviewsCarousel" data-bs-slide="next"><span class="carousel-control-next-icon"></span></button>
-                }
-            </div>
-
-            <div class="review-form-container mt-5" style="max-width: 700px; margin: 0 auto;">
-                <div class="card bg-dark text-white border-secondary shadow-lg" style="border-radius: 15px; overflow: hidden; border: 1px solid #333;">
-                    <div class="card-header text-center py-4" style="background: #1f1f1f; border-bottom: 1px solid #333;">
-                        <h3 class="mb-1" style="color: #e74c3c; letter-spacing: 1px;">Deneyiminizi Paylaşın</h3>
-                        <small style="color: #ccc; font-size: 0.9rem;">Görüşleriniz bizim için çok değerli.</small>
-                    </div>
-                    <div class="card-body p-4 p-md-5">
-                        <form action="/Home/YorumYap" method="post">
-                            <div class="row g-4">
-                                <div class="col-md-6">
-                                    <div class="input-group modern-input-group">
-                                        <span class="input-group-text border-0" style="background-color: #2c2c2c; color: #aaa;"><i class="fas fa-user"></i></span>
-                                        <input type="text" name="AdSoyad" class="form-control border-0 shadow-none" placeholder="Adınız Soyadınız" required style="background-color: #2c2c2c; color: #fff; padding: 12px;">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="input-group modern-input-group">
-                                        <span class="input-group-text border-0" style="background-color: #2c2c2c; color: #aaa;"><i class="fas fa-star"></i></span>
-                                        <select name="Puan" class="form-select border-0 shadow-none" required style="background-color: #2c2c2c; color: #fff; padding: 12px; cursor: pointer;">
-                                            <option value="" disabled selected style="color: #aaa;">Puanınız...</option>
-                                            <option value="5" style="color: #000;">⭐⭐⭐⭐⭐ (Mükemmel)</option>
-                                            <option value="4" style="color: #000;">⭐⭐⭐⭐ (Çok İyi)</option>
-                                            <option value="3" style="color: #000;">⭐⭐⭐ (İyi)</option>
-                                            <option value="2" style="color: #000;">⭐⭐ (Orta)</option>
-                                            <option value="1" style="color: #000;">⭐ (Geliştirilmeli)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="input-group modern-input-group">
-                                        <span class="input-group-text border-0" style="background-color: #2c2c2c; color: #aaa; align-items: flex-start; padding-top: 15px;"><i class="fas fa-pen"></i></span>
-                                        <textarea name="Mesaj" class="form-control border-0 shadow-none" placeholder="Yorumunuzu buraya yazın..." required rows="4" style="background-color: #2c2c2c; color: #fff; padding: 12px; resize: none;"></textarea>
-                                    </div>
-                                </div>
-                                <div class="col-12 text-center mt-2"><button type="submit" class="btn btn-danger w-100 py-3 fw-bold text-uppercase shadow" style="background-color: #e74c3c; border: none; border-radius: 10px;">Yorumu Gönder</button></div>
+                    <div class="kap">
+                        <div class="defter__ayak">
+                            <p class="defter__sayac">
+                                <span class="defter__su" aria-live="polite">01</span>
+                                <span class="defter__bolu" aria-hidden="true">/</span>
+                                <span class="defter__toplam">@yorumlar.Count.ToString("00")</span>
+                            </p>
+                            <div class="defter__ilerleme" aria-hidden="true">
+                                <span class="defter__ilerleme-dolgu"></span>
                             </div>
-                        </form>
+                            <p class="defter__ipucu" aria-hidden="true">Sürükleyin</p>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="kap">
+                    <div class="defter__bos">
+                        <p class="defter__isaret" aria-hidden="true">&ldquo;</p>
+                        <p class="defter__bos-baslik">Defter henüz boş</p>
+                        <p class="defter__bos-alt">İlk satırı siz yazın — deneyiminiz bizden sonra gelecek misafirlere yol gösterir.</p>
+                    </div>
+                </div>
+            }
+
+            <div class="kap">
+                @* ---- Çağrı: formu açan tek satırlık minimal buton ----
+                   JS yoksa gizli kalır, çünkü o durumda panel zaten
+                   akışın içinde açık duruyor. *@
+                <p class="paylas-cagri">
+                    <button type="button" class="paylas-ac" id="paylas-ac" aria-haspopup="dialog" hidden>
+                        <span class="paylas-ac__yazi">Deneyiminizi paylaşın</span>
+                        <span class="paylas-ac__cizgi" aria-hidden="true"></span>
+                    </button>
+                </p>
+            </div>
+
+        </section>
+
+        @* =========================================================
+           KONSİYER — iletişim
+           Asimetrik bölünme: solda devasa başlık + mekân bilgileri,
+           sağda form. Bilgi satırları kaydırmada maskeyle sırayla
+           beliriyor (.kn-maske, yalnızca html.rosso-kinetik altında
+           gizli — GSAP düşerse hepsi açık gelir).
+
+           İKİ FORM KORUNDU: rezervasyon ve mesaj sekmeli panelde.
+           Sunucu tarafı değişmedi — action, name'ler, token, id'ler
+           (#reservation-form, #datePicker, #phoneInput) aynı.
+           ========================================================= *@
+        <section id="iletisim" class="konsiyer" aria-labelledby="konsiyer-baslik">
+            <div class="kap konsiyer__izgara">
+
+                <div class="konsiyer__sol" data-ritim-sahibi>
+                    <p class="konsiyer__ustbaslik kn-maske">İletişim</p>
+                    <h2 class="konsiyer__baslik" id="konsiyer-baslik" data-kelime-acilis>Bize <em>Ulaşın</em></h2>
+                    <p class="konsiyer__alt kn-maske">Masanızı ayırtın ya da aklınıza takılanı sorun — aynı gün dönüş yapıyoruz.</p>
+
+                    <dl class="konsiyer__bilgi">
+                        <div class="konsiyer__satir kn-maske">
+                            <dt class="konsiyer__etiket">Adres</dt>
+                            <dd class="konsiyer__deger">
+                                @* Ayrı "Yol tarifi al" butonu yerine adresin kendisi
+                                   bağlantı; aynı yere gidiyor. *@
+                                <a class="konsiyer__adres" target="_blank" rel="noopener"
+                                   href="https://www.google.com/maps/dir/?api=1&amp;destination=Rosso+lounge+bistro+Bandırma"
+                                   aria-label="Yol tarifi al: Yeni Mahalle, 21002 Sokak No: 3B, Bandırma">
+                                    Yeni Mahalle, 21002 Sokak No: 3B<br>
+                                    10200 Bandırma / Balıkesir
+                                </a>
+                            </dd>
+                        </div>
+
+                        <div class="konsiyer__satir kn-maske">
+                            <dt class="konsiyer__etiket">Rezervasyon hattı</dt>
+                            <dd class="konsiyer__deger">
+                                <a class="konsiyer__telefon" href="tel:+902667121313">+90 266 712 13 13</a>
+                            </dd>
+                        </div>
+
+                        <div class="konsiyer__satir kn-maske">
+                            <dt class="konsiyer__etiket">Çalışma saatleri</dt>
+                            <dd class="konsiyer__deger">
+                                Her gün 11.30 – 00.00
+                            </dd>
+                        </div>
+
+                        <div class="konsiyer__satir kn-maske">
+                            <dt class="konsiyer__etiket">E-posta</dt>
+                            <dd class="konsiyer__deger">
+                                <a href="mailto:info@@rossolounge.com">info@@rossolounge.com</a>
+                            </dd>
+                        </div>
+                    </dl>
+
+                    @* Canlı saat + durum ışığı.
+                       Sunucu Türkiye saatiyle ilk değeri basıyor, böylece JS
+                       çalışmasa da doğru görünüyor. script.js aynı data-*
+                       niteliklerini okuyup Europe/Istanbul saatiyle her dakika
+                       tazeliyor — ziyaretçinin saat dilimi ne olursa olsun
+                       mekânın saati gösteriliyor. *@
+                    <div class="saat-isik saat-isik--@ViewBag.SaatDurum kn-maske"
+                         data-acilis="@ViewBag.Acilis" data-kapanis="@ViewBag.Kapanis"
+                         data-mola-bas="@ViewBag.MolaBas" data-mola-bit="@ViewBag.MolaBit">
+                        <span class="saat-isik__nokta" aria-hidden="true"></span>
+                        <time class="saat-isik__saat">@ViewBag.SaatSimdi</time>
+                        <span class="saat-isik__metin">
+                            @(ViewBag.SaatDurum switch { "acik" => "Şu an açık", "mola" => "Molada", _ => "Şu an kapalı" })
+                        </span>
+                    </div>
+
+                    @* Monokrom harita: renkli gömülü harita koyu dili bozuyordu.
+                       Filtre + obsidyen perde ile sahneye uyduruldu; perde
+                       üstüne gelince/odaklanınca açılıyor. *@
+                    <figure class="harita kn-maske">
+                        <iframe class="harita__cerceve" title="Rosso Lounge Bistro konumu"
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d319.6543230992864!2d27.936944127683113!3d40.34053662812616!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14b5d3bd385d1797%3A0x887916a4f8a71e73!2sRosso%20lounge%20bistro!5e0!3m2!1str!2str!4v1763491907694!5m2!1str!2str"
+                                loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+                        <figcaption class="harita__perde">
+                            <span class="harita__yer">Bandırma · Marmara kıyısı</span>
+                            <span class="harita__ipucu">Kullanmak için tıklayın</span>
+                        </figcaption>
+                    </figure>
+
+                    <div class="sosyal-satir konsiyer__sosyal kn-maske">
+                        <a href="https://www.instagram.com/rosso.lounge.bistro/" target="_blank" rel="noopener" aria-label="Instagram sayfamız">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
+                        </a>
+                        <a href="https://www.facebook.com/rossolounge" target="_blank" rel="noopener" aria-label="Facebook sayfamız">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-8h2.7l.4-3.1h-3.1V7.9c0-.9.25-1.5 1.55-1.5H16.7V3.6c-.3-.04-1.3-.13-2.47-.13-2.44 0-4.11 1.49-4.11 4.23V9.9H7.4V13h2.72v8Z"/></svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="konsiyer__sag">
+                    <div class="form-panel" id="rezervasyon">
+                        <div class="form-sekmeler" role="tablist" aria-label="İletişim biçimi">
+                            <button type="button" class="form-sekme aktif" role="tab" id="sekme-rezervasyon"
+                                    aria-selected="true" aria-controls="panel-rezervasyon">
+                                Masa Ayırt
+                            </button>
+                            <button type="button" class="form-sekme" role="tab" id="sekme-mesaj"
+                                    aria-selected="false" aria-controls="panel-mesaj" tabindex="-1">
+                                Mesaj Gönder
+                            </button>
+                        </div>
+
+                        <div class="form-govde" role="tabpanel" id="panel-rezervasyon" aria-labelledby="sekme-rezervasyon" tabindex="0">
+                            <p class="konsiyer__form-alt">Özel günleriniz veya akşam yemeğiniz için yerinizi şimdiden ayırtın.</p>
+
+                            <form id="reservation-form" class="konsiyer__form" method="post" action="/Home/RezervasyonYap">
+                                @Html.AntiForgeryToken()
+
+                                <div class="alan">
+                                    <input class="alan__girdi" type="text" id="rez-ad" name="AdSoyad"
+                                           placeholder=" " autocomplete="name" maxlength="100" required>
+                                    <label class="alan__etiket" for="rez-ad">Ad Soyad</label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
+                                </div>
+
+                                <div class="alan">
+                                    <input class="alan__girdi" type="tel" id="phoneInput" name="Telefon"
+                                           placeholder=" " autocomplete="tel" inputmode="numeric" maxlength="10"
+                                           aria-describedby="telefon-yardim" required>
+                                    <label class="alan__etiket" for="phoneInput">Telefon</label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
+                                    <small class="alan__yardim" id="telefon-yardim">Başında sıfır olmadan 10 hane</small>
+                                </div>
+
+                                <div class="alan">
+                                    <input class="alan__girdi" type="text" id="datePicker" name="Tarih"
+                                           placeholder=" " required>
+                                    <label class="alan__etiket" for="datePicker">Tarih ve Saat</label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
+                                </div>
+
+                                <div class="alan">
+                                    <input class="alan__girdi" type="number" id="rez-kisi" name="KisiSayisi"
+                                           placeholder=" " min="1" max="100" required>
+                                    <label class="alan__etiket" for="rez-kisi">Kişi Sayısı</label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
+                                </div>
+
+                                <div class="alan alan--tam alan--govde">
+                                    <textarea class="alan__girdi" id="rez-not" name="Not" rows="3"
+                                              placeholder=" " maxlength="500"></textarea>
+                                    <label class="alan__etiket" for="rez-not">Özel notunuz <span class="alan__istege-bagli">(opsiyonel)</span></label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
+                                </div>
+
+                                <button type="submit" class="konsiyer__gonder alan--tam">Rezervasyonu Tamamla</button>
+                            </form>
+                        </div>
+
+                        <div class="form-govde" role="tabpanel" id="panel-mesaj" aria-labelledby="sekme-mesaj" tabindex="0" hidden>
+                            <p class="konsiyer__form-alt">Soru, öneri veya özel organizasyon talepleriniz için yazın.</p>
+
+                            <form class="konsiyer__form" method="post" action="/Home/IletisimGonder">
+                                @Html.AntiForgeryToken()
+
+                                <div class="alan">
+                                    <input class="alan__girdi" type="text" id="iletisim-ad" name="AdSoyad"
+                                           placeholder=" " autocomplete="name" maxlength="100" required>
+                                    <label class="alan__etiket" for="iletisim-ad">Ad Soyad</label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
+                                </div>
+
+                                <div class="alan">
+                                    <input class="alan__girdi" type="email" id="iletisim-eposta" name="Email"
+                                           placeholder=" " autocomplete="email" maxlength="150" required>
+                                    <label class="alan__etiket" for="iletisim-eposta">E-Posta</label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
+                                </div>
+
+                                <div class="alan alan--tam">
+                                    <input class="alan__girdi" type="tel" id="iletisim-telefon" name="Telefon"
+                                           placeholder=" " autocomplete="tel" maxlength="25">
+                                    <label class="alan__etiket" for="iletisim-telefon">Telefon <span class="alan__istege-bagli">(opsiyonel)</span></label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
+                                </div>
+
+                                <div class="alan alan--tam alan--govde">
+                                    <textarea class="alan__girdi" id="iletisim-mesaj" name="Mesaj" rows="5"
+                                              placeholder=" " minlength="5" maxlength="2000" required></textarea>
+                                    <label class="alan__etiket" for="iletisim-mesaj">Mesajınız</label>
+                                    <span class="alan__cizgi" aria-hidden="true"></span>
+                                </div>
+
+                                <button type="submit" class="konsiyer__gonder alan--tam">Mesajı Gönder</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    @* İMZA — footer'dan buraya taşındı.
+                       Haritanın sağındaki boşlukta beliriyor. Dar sütun
+                       olduğu için iki söz alt alta; her söz kendi içinde
+                       kenardan kenara yayılıyor.
+                       Ekran okuyucu harf harf okumasın diye kap gizli,
+                       ad görsel-gizli metinle veriliyor. *@
+                    <p class="gorsel-gizli">Rosso Lounge</p>
+                    <div class="imza" id="imza" aria-hidden="true">
+                        @foreach (var soz in new[] { "ROSSO", "LOUNGE" })
+                        {
+                            <span class="imza__soz">
+                                @foreach (var harf in soz)
+                                {
+                                    <span class="imza__harf"><span>@harf</span></span>
+                                }
+                            </span>
+                        }
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section id="contact" class="section-padding">
-        <div class="container">
-            <h2 class="section-title">İletişim & Adres</h2>
-            <div class="contact-top-wrapper">
-                <div class="contact-details">
-                    <h3>Bize Ulaşın</h3>
-                    <div class="info-item"><i class="fas fa-map-marker-alt"></i><div><strong>Adres:</strong><p>Yeni Mahalle, 21002 Sokak, No: 3B<br>10200 Bandırma/Balıkesir</p></div></div>
-                    <a href="tel:+902667121313" class="info-item-link"><div class="info-item"><i class="fas fa-phone"></i><div><strong>Telefon:</strong><p>+90 266 712 13 13</p></div></div></a>
-                    <div class="info-item"><i class="fas fa-clock"></i><div><strong>Çalışma Saatleri:</strong><p>Her Gün: 11:30 - 00:00</p></div></div>
-                    <a href="mailto:info@rossolounge.com" class="info-item-link"><div class="info-item"><i class="fas fa-envelope"></i><div><strong>E-Posta:</strong><p>info@rossolounge.com</p></div></div></a>
-                    <div class="social-links">
-                        <a href="https://www.instagram.com/rosso.lounge.bistro/" target="_blank"><i class="fab fa-instagram"></i></a>
-                        <a href="https://www.facebook.com/rossolounge" target="_blank"><i class="fab fa-facebook"></i></a>
-                    </div>
+    </main>
+
+@* Yorum gönderme paneli — BİLEREK <main> DIŞINDA.
+   #tamekran ile aynı sebep: finale perdesi için main'e verilen
+   "z-index: 1" bir yığılma bağlamı yaratıyor, panelin 9999'u o
+   bağlamın İÇİNDE yorumlanıyor ve navbar (900, main'in kardeşi)
+   panelin üstüne biniyordu. Ölçüldü: panelin y=30 noktasında
+   REZERVASYON düğmesi, y=60'ta navbar vardı; formun üst kısmı
+   navbarın altında kalıyordu.
+
+   JS devralırsa (.paylas--katman) panel sağdan kayan bir off-canvas
+   katmana dönüşür. Devralmazsa akışın içinde normal bir form olarak
+   durur — hiçbir koşulda erişilmez hâle gelmez.
+*@
+            <div class="paylas" id="paylas">
+                <div class="paylas__zemin" aria-hidden="true"></div>
+
+                <div class="paylas__panel" id="paylas-panel" tabindex="-1"
+                     data-lenis-prevent aria-labelledby="paylas-baslik">
+                    <button type="button" class="paylas__kapat" aria-label="Formu kapat" hidden>
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+
+                    <p class="paylas__ustbaslik">Ziyaretçi defteri</p>
+                    <h3 class="paylas__baslik" id="paylas-baslik">Deneyiminizi <em>yazın</em></h3>
+                    <p class="paylas__alt">Birkaç cümle yeter. Yorumunuz onaylandıktan sonra defterde yerini alır.</p>
+
+                    <form class="paylas__form" method="post" action="/Home/YorumYap">
+                        @Html.AntiForgeryToken()
+
+                        @* placeholder=" " şart: yüzen etiket :placeholder-shown
+                           ile "alan boş mu" sorusunu yanıtlıyor. Etiket girdiden
+                           SONRA geliyor ki + kardeş seçicisi çalışsın. *@
+                        <div class="alan">
+                            <input class="alan__girdi" type="text" id="paylas-ad" name="AdSoyad"
+                                   placeholder=" " autocomplete="name" maxlength="100" required>
+                            <label class="alan__etiket" for="paylas-ad">Ad Soyad</label>
+                            <span class="alan__cizgi" aria-hidden="true"></span>
+                        </div>
+
+                        @* Puan: 5→1 sırasıyla yazılıp CSS'te row-reverse ile
+                           çevriliyor. Böylece "seçilen ve altındakiler dolu"
+                           kuralı ~ kardeş seçicisiyle JS'siz çalışıyor. *@
+                        <fieldset class="puan">
+                            <legend class="puan__baslik">Puanınız</legend>
+
+                            <div class="puan__sira">
+                                @for (int p = 5; p >= 1; p--)
+                                {
+                                    <input class="puan__radyo" type="radio" name="Puan"
+                                           id="paylas-puan-@p" value="@p" required>
+                                    <label class="puan__isaret" for="paylas-puan-@p">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                            <path d="M12 1.8 22.2 12 12 22.2 1.8 12Z" />
+                                        </svg>
+                                        <span class="gorsel-gizli">@p puan</span>
+                                    </label>
+                                }
+                            </div>
+
+                            <p class="puan__yazi" aria-live="polite"></p>
+                        </fieldset>
+
+                        <div class="alan alan--govde">
+                            <textarea class="alan__girdi" id="paylas-mesaj" name="Mesaj" rows="4"
+                                      placeholder=" " maxlength="1000" required></textarea>
+                            <label class="alan__etiket" for="paylas-mesaj">Yorumunuz</label>
+                            <span class="alan__cizgi" aria-hidden="true"></span>
+                            <span class="alan__sayac" aria-hidden="true"></span>
+                        </div>
+
+                        <button type="submit" class="paylas__gonder">Yorumu Gönder</button>
+                    </form>
                 </div>
-                <div class="map-container"><iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d319.6543230992864!2d27.936944127683113!3d40.34053662812616!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14b5d3bd385d1797%3A0x887916a4f8a71e73!2sRosso%20lounge%20bistro!5e0!3m2!1str!2str!4v1763491907694!5m2!1str!2str" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe></div>
             </div>
 
-            <div class="reservation-container" id="rezervasyon" style="margin-top: 60px;">
-                <div class="form-header">
-                    <h3>Masa Rezervasyonu</h3>
-                    <p>Özel günleriniz veya akşam yemeğiniz için yerinizi şimdiden ayırtın.</p>
-                </div>
-                <form id="reservation-form" class="reservation-form-horizontal" method="post" action="/Home/RezervasyonYap">
-                    <div class="form-group"><input type="text" name="AdSoyad" placeholder="Adınız Soyadınız" required></div>
-                    <div class="form-group"><input type="tel" id="phoneInput" name="Telefon" placeholder="5XX XXX XX XX (Başında 0 olmadan)" required><small style="color: #aaa; font-size: 0.8rem; display: block; margin-top: 5px;">Lütfen başında '0' olmadan giriniz.</small></div>
-                    <div class="form-group"><input type="text" id="datePicker" name="Tarih" placeholder="Tarih ve Saat Seçiniz" required></div>
-                    <div class="form-group"><input type="number" name="KisiSayisi" placeholder="Kişi Sayısı" min="1" required></div>
-                    <div class="form-group full-width"><textarea name="Not" placeholder="Özel notunuz var mı? (Doğum günü, alerji vb.)" rows="3"></textarea></div>
-                    <button type="submit" class="btn-main" style="width: 100%; margin-top: 10px;">Rezervasyon Yap</button>
-                </form>
+@* Tam ekran görüntüleyici — çerçeve, tıklanan karenin üstünden GSAP ile büyür.
+
+   BİLEREK <main> DIŞINDA: finale perdesi için main'e
+   "position: relative; z-index: 1" veriliyor ve bu bir yığılma bağlamı
+   yaratıyor. Katman main içinde kalırsa z-index: 9999 o bağlamın İÇİNDE
+   yorumlanıyor, navbar (z-index: 900, main'in kardeşi) fotoğrafın üstüne
+   biniyor: kapatma düğmesi görünmez oluyor ve tıklamalar navbara gidip
+   sayfayı başka bölüme atıyor. Ölçüldü ve ekran görüntüsüyle doğrulandı.
+*@
+        <div class="tamekran" id="tamekran" role="dialog" aria-modal="true" aria-label="Görsel önizleme" hidden>
+            <div class="tamekran__zemin"></div>
+
+            <div class="tamekran__cerceve">
+                <img class="tamekran__foto" src="" alt="">
+            </div>
+
+            <div class="tamekran__ayak">
+                <span class="tamekran__no"></span>
+                <span class="tamekran__etiket"></span>
+            </div>
+
+            <button type="button" class="tamekran__kapat" aria-label="Kapat">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <button type="button" class="tamekran__ok tamekran__ok--onceki" aria-label="Önceki görsel">
+                <span aria-hidden="true">&#10094;</span>
+            </button>
+            <button type="button" class="tamekran__ok tamekran__ok--sonraki" aria-label="Sonraki görsel">
+                <span aria-hidden="true">&#10095;</span>
+            </button>
+        </div>
+
+    @* Footer artık yalnızca iki satır: telif + geliştirici imzası.
+       Devasa ROSSO LOUNGE yazısı iletişim bölümüne, haritanın sağına
+       taşındı. Bu yüzden eski "sabit footer perdesi" (fixed konum +
+       .finale-bosluk yer ayırma) kaldırıldı — iki satır için gereksizdi
+       ve main'e verdiği z-index bağlamı katmanları hapsediyordu. *@
+    <footer class="finale" id="finale">
+        <div class="kap finale__ic">
+
+
+            <div class="finale__alt">
+                <p class="finale__telif">&copy; @yil Rosso Lounge Bistro</p>
+
+                <div class="footer-signature">Software &amp; Design by <span class="developer-name">Mert CEREN</span></div>
             </div>
         </div>
-    </section>
-
-    <footer>
-        <p>© 2025 Rosso Lounge Bistro. Tüm hakları saklıdır.</p>
-        <div class="footer-signature">Software & Design by <span class="developer-name">Mert CEREN</span></div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/tr.js"></script>
-    <script src="~/js/script.js"></script>
-</body>
-</html>
+@section Scriptler {
+    @* Yalnızca rezervasyon formunun tarih seçicisi için *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script defer src="https://npmcdn.com/flatpickr/dist/l10n/tr.js"></script>
+}

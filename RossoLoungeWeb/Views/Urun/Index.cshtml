@@ -1,327 +1,355 @@
-﻿@model List<RossoLoungeWeb.Models.Urun>
+@model RossoLoungeWeb.Models.UrunListeModeli
+@*
+    ÜRÜNLER
+    ===============================================================
+    Uçlar: GET /Urun/Index (süzgeç adres çubuğunda),
+    POST /Urun/SiraGuncelle, POST /Urun/Sil/{id}.
+
+    HACİM SORUNU: liste bütün kalemleri tek sayfada basıyordu
+    (canlıda 100+). Çözüm sunucu tarafında süzgeç + sıralama +
+    sayfalama. Tarayıcıda gizlemek sorunu çözmezdi; kayıtlar yine
+    indirilirdi.
+
+    Üst bardaki istemci araması bu sayfada KAPALI
+    (ViewData["AramaHedefi"] verilmiyor): yalnızca o sayfadaki
+    satırları süzerdi, "arama sonuç vermedi" sanılırdı. Arama
+    süzgeç çubuğunda ve sunucuda.
+
+    SÜRÜKLE-BIRAK yalnızca tek kategori seçiliyken ve menü
+    sırasındayken açık — gerekçe UrunListeModeli.SiralanabilirMi'de.
+*@
 @{
-    Layout = null;
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Baslik"] = "Ürünler";
+    ViewData["AltBaslik"] = "Menü kalemlerini yönetin ve sıralayın";
+    ViewData["Aktif"] = "urunler";
+
+    var s = Model.Suzgec;
+    var siralanabilir = Model.SiralanabilirMi;
+
+    // Silme sonrası bu adrese dönülüyor
+    var donusAdres = Url.Action("Index") + s.SorguKur();
+
+    // "Sıra" sütununda gösterilen sayı KONUM — kayıttaki SiraNo değil.
+    //
+    // SiraNo bütün ürünlerde ortak bir sıralama anahtarı: Pizzalar 7-8,
+    // Tatlılar 13-14 diye gidiyor. Kategori seçilince ekranda 7'den
+    // başlayan bir liste görünüyordu; oysa o pizza menüde kendi
+    // bölümünün 1. sırasında.
+    //
+    // Numarayı veritabanında kategori başına 1'den başlatmak da bir
+    // seçenekti ama ANA SAYFAYI KIRIYOR: vitrindeki üç tabak
+    // HomeController'da OrderBy(SiraNo).Take(3) ile seçiliyor. Her
+    // kategori 1'den başlasaydı yedi ürün 1'e eşitlenir, "ilk üç"
+    // rastgeleye dönerdi. Konum zaten türetilebilir bir bilgi —
+    // saklamak, her ekleme/silme/kategori değişiminde eşitlenmesi
+    // gereken ikinci bir gerçek üretirdi.
+    var oncekiSayfalar = (s.Sayfa - 1) * s.Boyut;
+    var konum = 0;
 }
 
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <title>Ürün Yönetimi</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* Genel Stiller */
-        body {
-            background-color: #f3f4f6;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            height: 100vh;
-            background: #1a1a1a;
-            color: white;
-            padding: 20px;
-            position: fixed;
-            width: 250px;
-            top: 0;
-            left: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 40px;
-            display: block;
-            color: white;
-            text-decoration: none;
-        }
-
-            .logo span {
-                color: #e74c3c;
-            }
-
-        .menu-item {
-            display: block;
-            padding: 12px 15px;
-            color: #bbb;
-            text-decoration: none;
-            margin-bottom: 5px;
-            border-radius: 8px;
-            transition: 0.3s;
-        }
-
-            .menu-item:hover, .menu-item.active {
-                background: #e74c3c;
-                color: white;
-            }
-
-        .content {
-            margin-left: 250px;
-            padding: 40px;
-        }
-
-        /* Kart ve Tablo */
-        .custom-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            overflow: hidden;
-            border: none;
-        }
-
-        .card-header-custom {
-            background: white;
-            padding: 25px;
-            border-bottom: 1px solid #f0f0f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .table-custom thead th {
-            background-color: #f8f9fa;
-            color: #6c757d;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            border: none;
-            padding: 15px 20px;
-        }
-
-        .table-custom tbody td {
-            padding: 15px 20px;
-            vertical-align: middle;
-            border-bottom: 1px solid #f0f0f0;
-            color: #333;
-        }
-
-        .table-custom tbody tr:hover {
-            background-color: #fffbfb;
-        }
-
-        /* Resim Kutusu */
-        .product-img-box {
-            width: 60px;
-            height: 60px;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            background-color: #eee;
-        }
-
-        .product-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Etiketler */
-        .badge-category {
-            background-color: #e0f2fe;
-            color: #0284c7;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .price-tag {
-            font-weight: bold;
-            color: #e74c3c;
-            font-size: 1.1rem;
-        }
-
-        /* Sıra No Rozeti (YENİ) */
-        .badge-rank {
-            background-color: #333;
-            color: #fff;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-
-        /* Aksiyon Butonları */
-        .btn-action {
-            width: 35px;
-            height: 35px;
-            border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.3s;
-            border: none;
-        }
-
-        .btn-edit {
-            background: #e0f2fe;
-            color: #0ea5e9;
-        }
-
-            .btn-edit:hover {
-                background: #0ea5e9;
-                color: white;
-            }
-
-        .btn-delete {
-            background: #fee2e2;
-            color: #ef4444;
-        }
-
-            .btn-delete:hover {
-                background: #ef4444;
-                color: white;
-            }
-
-        @@media (max-width: 768px) {
-            .sidebar
-
+@section Eylemler {
+    @* Vitrin doluluğu: ana sayfada üç tabak gösteriliyor, kaçının
+       seçili olduğunu görmeden yönetmek zor. Rozet aynı zamanda
+       süzgeç kısayolu — hangileri olduğunu tek tıkla gösteriyor. *@
+    <a class="y-rozet @(Model.VitrinSayisi > 0 ? "y-rozet--basari" : null)"
+       href="@Url.Action("Index")?vitrin=true"
+       title="Ana sayfadaki vitrin üç tabak gösteriyor; boş kalan yer menü sırasından doluyor">
+        <i class="fas fa-star" aria-hidden="true"></i>
+        Vitrin @Model.VitrinSayisi/@Model.VitrinSiniri
+    </a>
+    <span class="y-rozet y-rozet--sonuk">
+        @if (s.SuzgecAktif)
         {
-            width: 100%;
-            height: auto;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            <text>@Model.ToplamKayit / @Model.TumKayit kalem</text>
         }
+        else
+        {
+            <text>@Model.TumKayit kalem</text>
+        }
+    </span>
+    <a class="y-dugme y-dugme--birincil" href="/Urun/Ekle">
+        <i class="fas fa-plus" aria-hidden="true"></i> Yeni Ürün
+    </a>
+}
 
-        .content {
-            margin-left: 0;
-            padding: 15px;
-        }
+@* ---------- Süzgeç çubuğu ---------- *@
+<form class="y-suzgec y-suzgec--genis" method="get" action="@Url.Action("Index")">
+    <input type="hidden" name="boyut" value="@s.Boyut">
 
-        .menu-item {
-            width: 100%;
-            text-align: center;
-        }
-
-        }
-    </style>
-</head>
-<body>
-    <div class="sidebar">
-        <a href="#" class="logo">ROSSO <span>PANEL</span></a>
-        <a href="/Admin/Index" class="menu-item"><i class="fas fa-home me-2"></i> Özet</a>
-        <a href="/Admin/Rezervasyonlar" class="menu-item"><i class="fas fa-calendar-check me-2"></i> Rezervasyonlar</a>
-        <a href="/Kategori/Index" class="menu-item"><i class="fas fa-list me-2"></i> Kategoriler</a>
-        <a href="/Urun/Index" class="menu-item active"><i class="fas fa-utensils me-2"></i> Ürünler</a>
-        <a href="/Admin/Yorumlar" class="menu-item"><i class="fas fa-comments me-2"></i> Yorumlar</a>
-        <a href="/Admin/MailAyarlari" class="menu-item"><i class="fas fa-envelope me-2"></i> Mail Ayarları</a>
-        <a href="/Admin/Profil" class="menu-item"><i class="fas fa-user-cog me-2"></i> Ayarlar</a>
-        <a href="/" target="_blank" class="menu-item"><i class="fas fa-globe me-2"></i> Siteye Git</a>
-        <a href="/Admin/CikisYap" class="menu-item bg-dark mt-3"><i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap</a>
+    <div class="y-suzgec__alan y-suzgec__alan--genis">
+        <label class="y-suzgec__etiket" for="ara">Ara</label>
+        <input class="y-girdi" type="search" id="ara" name="ara" value="@s.Ara"
+               placeholder="Ürün adı veya açıklama" autocomplete="off">
     </div>
 
-    <div class="content">
-
-        <div class="card border-0 shadow-sm p-3 mb-4 rounded-4">
-            <form method="get" action="/Urun/Index" class="row g-2 align-items-center">
-                <div class="col-auto"><i class="fas fa-filter text-secondary"></i></div>
-                <div class="col-auto">
-                    <select name="kategoriId" class="form-select border-0 bg-light fw-bold" onchange="this.form.submit()">
-                        <option value="">Tümü (Filtrele)</option>
-                        @if (ViewBag.Kategoriler != null)
-                        {
-                            foreach (var k in (SelectList)ViewBag.Kategoriler)
-                            {
-                                if (ViewBag.SeciliKategoriId != null && k.Value == ViewBag.SeciliKategoriId.ToString())
-                                {
-                                    <option value="@k.Value" selected>@k.Text</option>
-                                }
-                                else
-                                {
-                                    <option value="@k.Value">@k.Text</option>
-                                }
-                            }
-                        }
-                    </select>
-                </div>
-                @if (ViewBag.SeciliKategoriId != null)
-                {
-                    <div class="col-auto"><a href="/Urun/Index" class="text-danger text-decoration-none small fw-bold">Filtreyi Temizle</a></div>
-                }
-            </form>
-        </div>
-
-        <div class="custom-card">
-            <div class="card-header-custom">
-                <div>
-                    <h4 class="m-0 fw-bold text-dark">Menü Ürünleri</h4>
-                    <p class="text-muted small m-0">Toplam @Model.Count ürün listeleniyor.</p>
-                </div>
-                <a href="/Urun/Ekle" class="btn btn-dark px-4 py-2 rounded-pill">
-                    <i class="fas fa-plus me-2"></i> Yeni Ürün
-                </a>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-custom m-0">
-                    <thead>
-                        <tr>
-                            <th class="text-center" style="width: 80px;">Sıra No</th>
-                            <th style="width: 100px;">Resim</th>
-                            <th>Ürün Adı</th>
-                            <th>Kategori</th>
-                            <th>Fiyat</th>
-                            <th class="text-end">İşlem</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td class="text-center">
-                                    <div class="badge-rank mx-auto">@item.SiraNo</div>
-                                </td>
-
-                                <td>
-                                    <div class="product-img-box">
-                                        @if (!string.IsNullOrEmpty(item.ResimUrl))
-                                        {
-                                            <img src="@item.ResimUrl" class="product-img" />
-                                        }
-                                        else
-                                        {
-
-                                            <img src="https://placehold.co/100" class="product-img" />
-                                        }
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="fw-bold">@item.Ad</div>
-                                    <div class="text-muted small">@(item.Aciklama != null && item.Aciklama.Length > 30 ? item.Aciklama.Substring(0, 30) + "..." : item.Aciklama)</div>
-                                </td>
-                                <td><span class="badge-category">@item.Kategori.Ad</span></td>
-                                <td>
-                                    <span class="price-tag">@item.Fiyat.ToString("N2") ₺</span>
-                                    @if (item.FiyatBuyuk != null)
-                                    {
-                                        <br>
-                                        <small class="text-muted">Büyük: @item.FiyatBuyuk</small>
-     }
-                                </td>
-                                <td class="text-end">
-                                    <a href="/Urun/Duzenle/@item.Id" class="btn-action btn-edit me-2" title="Düzenle"><i class="fas fa-pen"></i></a>
-                                    <form action="/Urun/Sil/@item.Id" method="post" style="display:inline;" onsubmit="return confirm('Silinsin mi?');">
-                                        <button class="btn-action btn-delete" title="Sil"><i class="fas fa-trash-alt"></i></button>
-                                    </form>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-            @if (Model.Count == 0)
+    <div class="y-suzgec__alan">
+        <label class="y-suzgec__etiket" for="kategoriId">Kategori</label>
+        <select class="y-secim" id="kategoriId" name="kategoriId">
+            <option value="">Tüm kategoriler</option>
+            @foreach (var k in Model.Kategoriler)
             {
-                <div class="p-5 text-center text-muted">Ürün bulunamadı.</div>
+                <option value="@k.Id" selected="@(s.KategoriId == k.Id)">@k.Ad</option>
+            }
+        </select>
+    </div>
+
+    <div class="y-suzgec__alan">
+        <label class="y-suzgec__etiket" for="sirala">Sırala</label>
+        <select class="y-secim" id="sirala" name="sirala">
+            <option value="menu" selected="@(s.Sirala == "menu")">Menü sırası</option>
+            <option value="ad" selected="@(s.Sirala == "ad")">Ada göre (A–Z)</option>
+            <option value="fiyat_azalan" selected="@(s.Sirala == "fiyat_azalan")">Fiyat (yüksek önce)</option>
+            <option value="fiyat_artan" selected="@(s.Sirala == "fiyat_artan")">Fiyat (düşük önce)</option>
+            <option value="yeni" selected="@(s.Sirala == "yeni")">Son eklenen</option>
+        </select>
+    </div>
+
+    <div class="y-suzgec__alan">
+        <label class="y-onay" for="vitrin">
+            <input type="checkbox" id="vitrin" name="vitrin" value="true"
+                   @(s.Vitrin ? "checked" : null)>
+            Yalnızca vitrindekiler
+        </label>
+    </div>
+
+    <div class="y-suzgec__eylemler">
+        <button type="submit" class="y-dugme y-dugme--birincil">Uygula</button>
+        @if (s.SuzgecAktif)
+        {
+            <a class="y-dugme" href="@Url.Action("Index")">Temizle</a>
+        }
+    </div>
+</form>
+
+@if (Model.Kayitlar.Count == 0)
+{
+    <div class="y-bos">
+        <i class="y-bos__im fas fa-utensils" aria-hidden="true"></i>
+        <h2 class="y-bos__baslik">
+            @(s.SuzgecAktif ? "Süzgece uyan ürün yok" : "Menüde henüz ürün yok")
+        </h2>
+        <p class="y-bos__alt">
+            @if (s.SuzgecAktif)
+            {
+                <text>Aramayı veya kategori seçimini değiştirip tekrar deneyin.</text>
+            }
+            else
+            {
+                <text>Eklediğiniz kalemler menüde kategorilerinin altında görünür.</text>
+            }
+        </p>
+        <p class="y-bos__eylem">
+            @if (s.SuzgecAktif)
+            {
+                <a class="y-dugme" href="@Url.Action("Index")">Süzgeci temizle</a>
+            }
+            else
+            {
+                <a class="y-dugme y-dugme--birincil" href="/Urun/Ekle">Yeni ürün ekle</a>
+            }
+        </p>
+    </div>
+}
+else
+{
+    @* Sıralama açıkken durum satırı ve gizli token gerekiyor (yonetim.js). *@
+    @if (siralanabilir)
+    {
+        <p class="y-sira-durum" role="status" aria-live="polite"></p>
+        <div hidden>@Html.AntiForgeryToken()</div>
+    }
+    else
+    {
+        <p class="y-ipucu">
+            <i class="fas fa-circle-info" aria-hidden="true"></i>
+            Sıralamayı değiştirmek için tek bir kategori seçin ve "Menü sırası"nda kalın —
+            menüde ürünler kendi kategorilerinin içinde sıralanıyor.
+        </p>
+    }
+
+    <div class="y-tablo-sarmal">
+        <table class="y-tablo" id="urun-tablosu">
+            <caption class="y-gizli">
+                Menüdeki ürünler.
+                @(siralanabilir
+                    ? "Sıralama tutamakla sürüklenerek ya da ok tuşlarıyla değiştirilir."
+                    : "Sıralamak için tek bir kategori seçin.")
+            </caption>
+            <thead>
+                <tr>
+                    @* Sıra sütunu YALNIZCA sürüklenebilirken; orada konum
+                       tek bir kategorinin içinde sayıldığı için 1'den
+                       başlıyor ve menüdeki yeri birebir gösteriyor.
+                       Karışık listede böyle bir konum yok — kullanılamayan
+                       bir sütun yer kaplamasın. *@
+                    @if (siralanabilir)
+                    {
+                        <th scope="col" class="y-tablo__dar">Sıra</th>
+                    }
+                    @* Bu sütuna y-tablo__dar (width:1%) VERİLMİYOR: hücre 34px'e
+                       inince .yonetim img { max-width:100% } küçük resmi
+                       hücrenin iç genişliğine kırpıyor — 44px'lik görsel
+                       2px kalıyordu (ölçüldü). Tablo bu sütunu içeriğine
+                       göre zaten dar tutuyor. *@
+                    <th scope="col"><span class="y-gizli">Görsel</span></th>
+                    <th scope="col">Ürün</th>
+                    <th scope="col">Kategori</th>
+                    <th scope="col" class="y-tablo__dar">Fiyat</th>
+                    <th scope="col" class="y-tablo__eylem"><span class="y-gizli">İşlemler</span></th>
+                </tr>
+            </thead>
+            <tbody class="@(siralanabilir ? "y-siralanabilir" : null)"
+                   data-sira-url="@(siralanabilir ? "/Urun/SiraGuncelle" : null)">
+                @foreach (var item in Model.Kayitlar)
+                {
+                    konum++;
+                    <tr data-id="@item.Id" class="@(item.OneCikan ? "y-satir--dikkat" : null)">
+                        @if (siralanabilir)
+                        {
+                            <td class="y-tablo__dar">
+                                <div class="y-sira">
+                                    <button type="button" class="y-sira__tut"
+                                            aria-label="@item.Ad sırasını değiştir. Sürükleyin veya yukarı/aşağı ok tuşlarını kullanın."
+                                            title="Sürükleyerek sırala">
+                                        <i class="fas fa-grip-vertical" aria-hidden="true"></i>
+                                    </button>
+                                    <span class="y-sira__no y-sayi">@(oncekiSayfalar + konum)</span>
+                                </div>
+                            </td>
+                        }
+                        <td>
+                            @if (!UrunGorseli.Gecerli(item.ResimUrl))
+                            {
+                                <span class="y-gorsel y-gorsel--bos" title="Görsel yok">
+                                    <i class="fas fa-image" aria-hidden="true"></i>
+                                    <span class="y-gizli">@item.Ad için görsel yok</span>
+                                </span>
+                            }
+                            else
+                            {
+                                <img class="y-gorsel" src="@item.ResimUrl" alt="@item.Ad ürün görseli" loading="lazy">
+                            }
+                        </td>
+                        <td>
+                            <span class="y-tablo__ad">@item.Ad</span>
+                            @if (!string.IsNullOrEmpty(item.Aciklama))
+                            {
+                                <span class="y-tablo__ikincil">
+                                    @(item.Aciklama.Length > 48 ? item.Aciklama.Substring(0, 48) + "…" : item.Aciklama)
+                                </span>
+                            }
+                        </td>
+                        <td>
+                            @* Rozet aynı zamanda kısayol: o kategoriyi süzer,
+                               böylece sürükleyerek sıralama da açılır. *@
+                            <a class="y-rozet y-rozet--sonuk"
+                               href="@Url.Action("Index")@s.SorguKur(sayfa: 1, kategoriId: item.KategoriId)">
+                                @item.Kategori?.Ad
+                            </a>
+                        </td>
+                        <td class="y-tablo__dar">
+                            <span class="y-fiyat y-sayi">@item.Fiyat.ToString("N2") ₺</span>
+                            @if (item.FiyatBuyuk != null)
+                            {
+                                <span class="y-tablo__ikincil y-sayi">
+                                    @(string.IsNullOrWhiteSpace(item.FiyatBuyukTur) ? "Büyük" : item.FiyatBuyukTur):
+                                    @item.FiyatBuyuk.Value.ToString("N2") ₺
+                                </span>
+                            }
+                        </td>
+                        <td class="y-tablo__eylem">
+                            <div class="y-eylemler">
+                                @* Vitrin işareti — tek tıkla açılıp kapanıyor.
+                                   İşaretliyken düğme hep görünür (satır hover'ı
+                                   beklenmiyor): seçili olanlar listede göze
+                                   çarpmalı. Sınır sunucuda, mesajıyla birlikte. *@
+                                <form method="post" action="/Urun/Vitrin/@item.Id">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="donus" value="@donusAdres">
+                                    <button type="submit"
+                                            class="y-hayalet @(item.OneCikan ? "y-hayalet--secili" : null)"
+                                            title="@(item.OneCikan ? "Vitrinden çıkar" : "Ana sayfadaki vitrine ekle")"
+                                            aria-pressed="@(item.OneCikan ? "true" : "false")"
+                                            aria-label="@item.Ad — vitrin işareti">
+                                        <i class="@(item.OneCikan ? "fas" : "far") fa-star" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+
+                                <a class="y-hayalet" href="/Urun/Duzenle/@item.Id"
+                                   title="Düzenle" aria-label="@item.Ad ürününü düzenle">
+                                    <i class="fas fa-pen" aria-hidden="true"></i>
+                                </a>
+
+                                @* Onay metnine ad gömülmüyor: kesme işareti taşıyan bir
+                                   ürün adı ("Şef'in Burger'i") JS dizesini kırar. *@
+                                <form method="post" action="/Urun/Sil/@item.Id"
+                                      onsubmit="return confirm('Bu ürünü silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="donus" value="@donusAdres">
+                                    <button type="submit" class="y-hayalet y-hayalet--tehlike"
+                                            title="Sil" aria-label="@item.Ad ürününü sil">
+                                        <i class="fas fa-trash-can" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @* ---------- Sayfalama ---------- *@
+    <nav class="y-sayfalama" aria-label="Sayfalar">
+        <p class="y-sayfalama__bilgi">
+            @(((s.Sayfa - 1) * s.Boyut) + 1)–@Math.Min(s.Sayfa * s.Boyut, Model.ToplamKayit)
+            / @Model.ToplamKayit kalem
+        </p>
+
+        <div class="y-sayfalama__gezinme">
+            @if (Model.OncekiVar)
+            {
+                <a class="y-dugme y-dugme--minik" href="@Url.Action("Index")@s.SorguKur(sayfa: s.Sayfa - 1)" rel="prev">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i> Önceki
+                </a>
+            }
+            else
+            {
+                <span class="y-dugme y-dugme--minik" aria-disabled="true">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i> Önceki
+                </span>
+            }
+
+            <span class="y-sayfalama__sayi y-sayi">@s.Sayfa / @Model.ToplamSayfa</span>
+
+            @if (Model.SonrakiVar)
+            {
+                <a class="y-dugme y-dugme--minik" href="@Url.Action("Index")@s.SorguKur(sayfa: s.Sayfa + 1)" rel="next">
+                    Sonraki <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </a>
+            }
+            else
+            {
+                <span class="y-dugme y-dugme--minik" aria-disabled="true">
+                    Sonraki <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </span>
             }
         </div>
-    </div>
-</body>
-</html>
+
+        <div class="y-sayfalama__boyut">
+            <span class="y-suzgec__etiket">Sayfa başına</span>
+            @foreach (var b in new[] { 25, 50, 100 })
+            {
+                <a class="y-boyut @(s.Boyut == b ? "y-boyut--aktif" : null)"
+                   href="@Url.Action("Index")@(s.SorguKur(sayfa: 1).Replace("boyut=" + s.Boyut, "boyut=" + b))">@b</a>
+            }
+        </div>
+    </nav>
+}
+
+@* Koşulsuz: @@section koşul içinde tanımlanamaz. Sürükleme kapalıyken
+   sayfada .y-siralanabilir hiç olmuyor, yonetim.js de erken çıkıyor. *@
+@section Kutuphaneler {
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+}

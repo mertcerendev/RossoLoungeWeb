@@ -1,0 +1,172 @@
+@model RossoLoungeWeb.Models.AyarlarModeli
+@*
+    AYARLAR
+    ===============================================================
+    Uçlar değişmedi: POST /Admin/ProfilGuncelle ve
+    POST /Admin/MailAyarlariGuncelle.
+
+    TEK SAYFA, İKİ BÖLÜM. Önceden /Admin/Profil ve /Admin/MailAyarlari
+    diye iki ayrı sayfaydı ve her birinin başlığında diğerine giden bir
+    düğme vardı — menüdeki tek "Ayarlar" öğesi ikisini de kastediyordu.
+    İkisi de aynı sorunun parçası: panele nasıl giriliyor, şifre
+    sıfırlama e-postası nereden gönderiliyor.
+
+    Formlar AYRI: uçları ve doğrulama kuralları farklı, biri
+    kaydedilirken diğerinin alanları gönderilmemeli. Her bölümün kendi
+    kaydetme düğmesi kendi altında.
+
+    ŞİFRELER: ne hesap şifresi ne SMTP şifresi tarayıcıya basılıyor.
+    İkisi de boş açılır; boş bırakılırsa mevcut değer korunur.
+*@
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Baslik"] = "Ayarlar";
+    ViewData["AltBaslik"] = "Panel hesabı ve e-posta gönderimi";
+    ViewData["Aktif"] = "ayarlar";
+}
+
+@* Doğrudan görünüm dönen hata yolları için (başarı mesajları TempData
+   ile layout'tan geliyor). *@
+@if (ViewBag.Hata != null)
+{
+    <div class="y-ozet y-ozet--sayfa" role="alert">
+        <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+        <div>@ViewBag.Hata</div>
+    </div>
+}
+@await Html.PartialAsync("_YonetimDogrulama")
+
+@* ================= 1) PANEL HESABI ================= *@
+<form class="y-form" method="post" action="/Admin/ProfilGuncelle">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="Id" value="@Model.Hesap.Id">
+
+    <header class="y-form__bas">
+        <h2 class="y-kart__baslik">Panel hesabı</h2>
+        <p class="y-form__yardim">Panele bu bilgilerle giriyorsunuz.</p>
+    </header>
+
+    <div class="y-form__izgara">
+        <div class="y-form__alan">
+            <label class="y-form__etiket" for="kullaniciAdi">
+                Kullanıcı adı <span class="y-zorunlu" aria-hidden="true">*</span>
+            </label>
+            <input class="y-girdi" type="text" id="kullaniciAdi" name="KullaniciAdi"
+                   value="@Model.Hesap.KullaniciAdi" autocomplete="username" maxlength="50" required>
+        </div>
+
+        <div class="y-form__alan">
+            <label class="y-form__etiket" for="eposta">
+                E-posta <span class="y-zorunlu" aria-hidden="true">*</span>
+            </label>
+            <input class="y-girdi" type="email" id="eposta" name="Eposta"
+                   value="@Model.Hesap.Eposta" autocomplete="email" maxlength="150"
+                   required aria-describedby="eposta-yardim">
+            <p class="y-form__yardim" id="eposta-yardim">Şifrenizi unutursanız sıfırlama bağlantısı buraya gelir.</p>
+        </div>
+    </div>
+
+    <div class="y-form__alan">
+        <label class="y-form__etiket" for="yeniSifre">Yeni şifre</label>
+
+        <div class="y-alan">
+            <input class="y-girdi" type="password" id="yeniSifre" name="Sifre"
+                   placeholder="Değiştirmek için yazın…" autocomplete="new-password"
+                   aria-describedby="sifre-yardim">
+            <button type="button" class="y-alan__eylem" data-sifre-gor
+                    aria-controls="yeniSifre" aria-label="Şifreyi göster">
+                <i class="fas fa-eye" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <p class="y-form__yardim" id="sifre-yardim">
+            En az 8 karakter; büyük harf, küçük harf ve rakam içermeli.
+            Boş bırakırsanız mevcut şifreniz değişmez.
+        </p>
+    </div>
+
+    <div class="y-form__ayak">
+        <button type="submit" class="y-dugme y-dugme--birincil">Hesabı güncelle</button>
+    </div>
+</form>
+
+@* ================= 2) E-POSTA GÖNDERİMİ ================= *@
+<form class="y-form" method="post" action="/Admin/MailAyarlariGuncelle">
+    @Html.AntiForgeryToken()
+
+    <header class="y-form__bas">
+        <h2 class="y-kart__baslik">E-posta gönderimi</h2>
+        <p class="y-form__yardim">
+            Şifre sıfırlama e-postası bu hesaptan gönderilir. Boş bırakılırsa
+            "Şifremi unuttum" çalışmaz.
+        </p>
+    </header>
+
+    <div class="y-form__izgara">
+        <div class="y-form__alan">
+            <label class="y-form__etiket" for="gonderenMail">
+                Gönderen e-posta <span class="y-zorunlu" aria-hidden="true">*</span>
+            </label>
+            <input class="y-girdi" type="email" id="gonderenMail" name="GonderenMail"
+                   value="@Model.Mail.GonderenMail" autocomplete="email"
+                   maxlength="150" required>
+        </div>
+
+        <div class="y-form__alan">
+            <label class="y-form__etiket" for="gonderenSifre">
+                Uygulama şifresi
+                @if (!Model.MailSifresiKayitli)
+                {
+                    <span class="y-zorunlu" aria-hidden="true">*</span>
+                }
+            </label>
+
+            @* value YOK — bkz. dosya başındaki not. required de yok:
+               kayıtlı şifre varken boş bırakmak "değiştirme" demek. *@
+            <div class="y-alan">
+                <input class="y-girdi" type="password" id="gonderenSifre" name="GonderenSifre"
+                       autocomplete="new-password"
+                       placeholder="@(Model.MailSifresiKayitli ? "Değiştirmek için yazın…" : "16 haneli uygulama şifresi")"
+                       aria-describedby="mail-sifre-yardim">
+                <button type="button" class="y-alan__eylem" data-sifre-gor
+                        aria-controls="gonderenSifre" aria-label="Şifreyi göster">
+                    <i class="fas fa-eye" aria-hidden="true"></i>
+                </button>
+            </div>
+
+            <p class="y-form__yardim" id="mail-sifre-yardim">
+                Gmail'de normal hesap şifresi değil, 16 haneli <strong>uygulama şifresi</strong>.
+                @if (Model.MailSifresiKayitli)
+                {
+                    <text>Kayıtlı bir şifre var; boş bırakırsanız değişmez.</text>
+                }
+            </p>
+        </div>
+    </div>
+
+    <div class="y-form__izgara">
+        <div class="y-form__alan">
+            <label class="y-form__etiket" for="smtpSunucu">
+                SMTP sunucu <span class="y-zorunlu" aria-hidden="true">*</span>
+            </label>
+            <input class="y-girdi" type="text" id="smtpSunucu" name="SmtpSunucu"
+                   value="@Model.Mail.SmtpSunucu" maxlength="100" required
+                   aria-describedby="sunucu-yardim">
+            <p class="y-form__yardim" id="sunucu-yardim">Gmail için smtp.gmail.com</p>
+        </div>
+
+        <div class="y-form__alan">
+            <label class="y-form__etiket" for="smtpPort">
+                Port <span class="y-zorunlu" aria-hidden="true">*</span>
+            </label>
+            <input class="y-girdi y-girdi--sayi" type="number" id="smtpPort" name="SmtpPort"
+                   value="@Model.Mail.SmtpPort" min="1" max="65535" required
+                   aria-describedby="port-yardim">
+            <p class="y-form__yardim" id="port-yardim">Gmail için 587</p>
+        </div>
+    </div>
+
+    <div class="y-form__ayak">
+        <button type="submit" class="y-dugme y-dugme--birincil">Gönderim ayarlarını kaydet</button>
+    </div>
+</form>

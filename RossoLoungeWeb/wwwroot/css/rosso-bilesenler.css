@@ -1,0 +1,3472 @@
+/* =============================================================
+   ROSSO LOUNGE — NAVBAR + HERO
+   rosso-tema.css'ten SONRA yüklenir. BEM.
+   ============================================================= */
+
+/* =============================================================
+   NAVBAR
+   ============================================================= */
+.nav {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline: 0;
+    z-index: var(--k-nav);
+    padding-block: var(--b5);
+    border-block-end: 1px solid transparent;
+    transition: padding-block var(--h2) var(--egri),
+                background var(--h2) var(--egri),
+                border-color var(--h2) var(--egri),
+                /* .nav--gizli için: imza görünürken header çekiliyor */
+                transform var(--h2) var(--egri),
+                opacity var(--h2) var(--egri);
+}
+
+.nav--sabit {
+    padding-block: var(--b3);
+    background: rgba(8, 8, 10, 0.72);
+    border-block-end-color: var(--cizgi);
+    -webkit-backdrop-filter: blur(16px) saturate(1.1);
+    backdrop-filter: blur(16px) saturate(1.1);
+}
+
+.nav__ic {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--b6);
+}
+
+.nav__marka {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-family: var(--f-serif);
+    font-size: var(--t-lg);
+    font-weight: 400;
+    letter-spacing: 0.22em;
+    color: var(--metin);
+    white-space: nowrap;
+}
+
+    .nav__marka span {
+        color: var(--sampanya);
+    }
+
+.nav__menu {
+    display: flex;
+    align-items: center;
+    gap: clamp(1.25rem, 2.4vw, 2.5rem);
+}
+
+.nav__link {
+    position: relative;
+    display: inline-block;
+    padding-block: var(--b2);
+    color: var(--metin-2);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    transition: color var(--h1) var(--egri);
+}
+
+    /* Görünmez dokunma katmanı: altı çizgiyi kaydırmadan hedefi 44px+ yapar */
+    .nav__link::before {
+        content: "";
+        position: absolute;
+        inset-inline: 0;
+        inset-block: -5px;
+    }
+
+    .nav__link::after {
+        content: "";
+        position: absolute;
+        inset-inline-start: 0;
+        inset-block-end: 0;
+        width: 0;
+        height: 1px;
+        background: var(--sampanya);
+        transition: width var(--h2) var(--egri);
+    }
+
+    .nav__link:hover,
+    .nav__link--aktif {
+        color: var(--metin);
+    }
+
+        .nav__link:hover::after,
+        .nav__link--aktif::after {
+            width: 100%;
+        }
+
+.nav__eylem {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding-inline: var(--b5);
+    border: 1px solid var(--cizgi-2);
+    border-radius: 999px;
+    color: var(--metin);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: background var(--h2) var(--egri),
+                border-color var(--h2) var(--egri),
+                color var(--h2) var(--egri);
+}
+
+    .nav__eylem:hover {
+        background: var(--sampanya);
+        border-color: var(--sampanya);
+        color: var(--obsidyen);
+    }
+
+.nav__mobil {
+    display: none;
+}
+
+.nav__hamburger {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--dokunma);
+    height: var(--dokunma);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.nav__cizgi {
+    position: relative;
+    display: block;
+    width: 22px;
+    height: 1px;
+    background: var(--metin);
+}
+
+    .nav__cizgi::before,
+    .nav__cizgi::after {
+        content: "";
+        position: absolute;
+        inset-inline: 0;
+        height: 1px;
+        background: var(--metin);
+    }
+
+    .nav__cizgi::before {
+        inset-block-start: -7px;
+    }
+
+    .nav__cizgi::after {
+        inset-block-start: 7px;
+    }
+
+.nav-perde {
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--k-menu) - 1);
+    background: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--h2) var(--egri), visibility 0s linear var(--h2);
+}
+
+.nav-perde--acik {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity var(--h2) var(--egri);
+}
+
+@media (max-width: 960px) {
+    .nav__hamburger {
+        display: inline-flex;
+    }
+
+    .nav__menu {
+        position: fixed;
+        inset-block-start: 0;
+        inset-inline-end: 0;
+        z-index: var(--k-menu);
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        gap: var(--b6);
+        width: min(340px, 86vw);
+        height: 100dvh;
+        padding: var(--b9) var(--b7);
+        background: var(--antrasit);
+        border-inline-start: 1px solid var(--cizgi);
+        transform: translateX(100%);
+        visibility: hidden;
+        transition: transform var(--h2) var(--egri-sert), visibility 0s linear var(--h2);
+    }
+
+    .nav__menu--acik {
+        transform: none;
+        visibility: visible;
+        transition: transform var(--h2) var(--egri-sert);
+    }
+
+    .nav__link {
+        font-size: var(--t-sm);
+    }
+
+    .nav__eylem--masaustu {
+        display: none;
+    }
+
+    .nav__mobil {
+        display: block;
+        margin-block-start: var(--b4);
+    }
+}
+
+/* =============================================================
+   HERO
+   ============================================================= */
+.hero {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 100svh;
+    /* Dolgu da yüksekliğe göre esner; sabit 128px kısa ekranlarda
+       içeriği aşağı itip butonları ekran dışına taşıyordu. */
+    padding-block: clamp(4.5rem, 11vh, 8rem) clamp(3.5rem, 8vh, 6rem);
+    overflow: hidden;
+    text-align: center;
+}
+
+/* Arka plan ayrı katman: parallax ve fare hareketi burada çalışır.
+   Metin asla ölçeklenmez → okunabilirlik bozulmaz. */
+.hero__zemin {
+    position: absolute;
+    inset: -8%;
+    z-index: var(--k-zemin);
+    /* hero-lounge.jpg KALDIRILDI: içki rafı ve bar tezgâhıydı.
+       Burası bar değil, restoran — açılış ekranı da salonu göstersin.
+
+       salon.jpg, ic-mekan.jpg'nin SOL ŞERİDİ KESİLMİŞ hâli: orada
+       aydınlatmalı bir şarap dolabı vardı ve kadrajın soluna
+       düşüyordu. Kesince yalnızca masalar, sandalyeler ve pirinç
+       paravan kalıyor.
+
+       (hero-lounge.jpg, bar.jpg ve ic-mekan.jpg dosyaları
+       wwwroot/img/site/ içinde duruyor ama hiçbir yerden referans
+       verilmiyor — silmek isterseniz güvenle silinebilirler.) */
+    background-image: url('/img/site/salon.jpg');
+    background-size: cover;
+    background-position: center;
+    will-change: transform;
+}
+
+.hero__perde {
+    position: absolute;
+    inset: 0;
+    z-index: var(--k-zemin);
+    background:
+        radial-gradient(120% 85% at 50% 45%, rgba(8, 8, 10, 0.28) 0%, rgba(8, 8, 10, 0.86) 72%),
+        linear-gradient(180deg, rgba(8, 8, 10, 0.78) 0%, rgba(8, 8, 10, 0.18) 38%, rgba(8, 8, 10, 0.95) 100%);
+}
+
+.hero__ic {
+    position: relative;
+    z-index: var(--k-icerik);
+    width: 100%;
+    max-width: 64rem;
+    margin-inline: auto;
+    padding-inline: var(--kap-yan);
+}
+
+.hero__ustbaslik {
+    margin-block-end: clamp(0.75rem, 2vh, 2rem);
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: var(--harf-genis);
+    text-transform: uppercase;
+}
+
+.hero__baslik {
+    margin-block-end: clamp(1rem, 2.5vh, 2rem);
+    /* Boyut hem genişlik hem YÜKSEKLİK ile sınırlı.
+       Önce yalnızca vw'ye bağlıydı: 1366x768 gibi geniş-kısa ekranlarda
+       başlık 123px'e çıkıp içeriği 32px taşırıyor, butonları kesiyordu. */
+    font-size: min(clamp(2.5rem, 1.35rem + 5.6vw, 7.5rem), 15vh);
+    font-weight: 300;
+    line-height: var(--satir-sik);
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+}
+
+    .hero__baslik em {
+        display: block;
+        font-style: italic;
+        color: var(--sampanya);
+    }
+
+.hero__alt {
+    max-width: 40ch;
+    margin-inline: auto;
+    color: var(--metin-2);
+    font-size: var(--t-lg);
+    font-weight: 300;
+    line-height: var(--satir-genis);
+}
+
+.hero__eylemler {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--b4);
+    margin-block-start: clamp(1.5rem, 4vh, 3rem);
+}
+
+.hero__durum {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--b4);
+    margin-block-start: clamp(1.25rem, 3.5vh, 3rem);
+    padding-block-start: clamp(0.75rem, 2vh, 1.5rem);
+    border-block-start: 1px solid var(--cizgi);
+}
+
+.hero__saat {
+    color: var(--metin-3);
+    font-size: var(--t-sm);
+    letter-spacing: 0.05em;
+}
+
+.hero__kaydir {
+    position: absolute;
+    inset-block-end: var(--b6);
+    inset-inline-start: 50%;
+    z-index: var(--k-icerik);
+    display: grid;
+    place-items: center;
+    width: var(--dokunma);
+    height: var(--dokunma);
+    margin-inline-start: calc(var(--dokunma) / -2);
+    color: var(--titanyum-sonuk);
+    transition: color var(--h1) var(--egri);
+}
+
+    .hero__kaydir:hover {
+        color: var(--sampanya);
+    }
+
+    .hero__kaydir::after {
+        content: "";
+        width: 1px;
+        height: 34px;
+        background: linear-gradient(to bottom, var(--titanyum-sonuk), transparent);
+        animation: hero-iz 2.6s var(--egri) infinite;
+    }
+
+@keyframes hero-iz {
+    0% { transform: scaleY(0); transform-origin: top; }
+    45% { transform: scaleY(1); transform-origin: top; }
+    55% { transform: scaleY(1); transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+}
+
+/* =============================================================
+   BUTON
+   ============================================================= */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 13rem;
+    min-height: 56px;
+    padding-inline: var(--b6);
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: var(--t-xs);
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background var(--h2) var(--egri), border-color var(--h2) var(--egri),
+                color var(--h2) var(--egri), transform var(--h2) var(--egri);
+}
+
+.btn--sampanya {
+    background: var(--sampanya);
+    border-color: var(--sampanya);
+    color: var(--obsidyen);
+}
+
+    .btn--sampanya:hover {
+        background: transparent;
+        color: var(--sampanya);
+        transform: translateY(-2px);
+    }
+
+.btn--hat {
+    background: transparent;
+    border-color: var(--cizgi-2);
+    color: var(--metin);
+}
+
+    .btn--hat:hover {
+        border-color: var(--sampanya);
+        color: var(--sampanya);
+        transform: translateY(-2px);
+    }
+
+/* =============================================================
+   DURUM ROZETİ
+   ============================================================= */
+.rozet {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--b2);
+    padding: var(--b1) var(--b4);
+    border-radius: 999px;
+    font-size: var(--t-xs);
+    letter-spacing: 0.08em;
+}
+
+.rozet--acik {
+    background: rgba(120, 190, 150, 0.12);
+    border: 1px solid rgba(143, 220, 172, 0.24);
+    color: #8fdcac;
+}
+
+.rozet--kapali {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--cizgi);
+    color: var(--metin-2);
+}
+
+.rozet__nokta {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.rozet--acik .rozet__nokta {
+    animation: rozet-nabiz 2.6s var(--egri) infinite;
+}
+
+@keyframes rozet-nabiz {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(1.45); }
+}
+
+/* =============================================================
+   HAKKIMIZDA
+   -------------------------------------------------------------
+   Parallax mekaniği: .hakkinda__cerceve sabit kalır (overflow:hidden),
+   içindeki .hakkinda__foto çerçeveden %28 daha uzundur ve GSAP onu
+   yPercent ile kaydırır. Bu yüzden foto asla boşluk göstermez.
+   İki çerçeve data-parallax'ta zıt işaretli değer taşır → ters yönde akar.
+   ============================================================= */
+.hakkinda {
+    position: relative;
+    padding-block: var(--bolum);
+    background: var(--obsidyen);
+}
+
+.hakkinda__izgara {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(2.5rem, 7vw, 7rem);
+    align-items: center;
+}
+
+/* --- Görsel kompozisyon --- */
+.hakkinda__gorseller {
+    position: relative;
+    /* Dar çerçevenin taşan kısmına yer aç */
+    padding-block-end: clamp(3rem, 9vw, 7rem);
+    padding-inline-end: clamp(2rem, 7vw, 5.5rem);
+}
+
+.hakkinda__cerceve {
+    position: relative;
+    overflow: hidden;
+    margin: 0;
+    background: var(--antrasit-2);
+}
+
+/* Geniş yatay çerçeve */
+.hakkinda__cerceve--genis {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+}
+
+/* Dar dikey çerçeve — geniş olanın üzerine biner */
+.hakkinda__cerceve--dar {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    width: clamp(9rem, 34%, 15rem);
+    aspect-ratio: 2 / 3;
+    /* Sınır yok; ayrım obsidyen bir hâle ile veriliyor */
+    box-shadow: 0 0 0 clamp(6px, 1.2vw, 14px) var(--obsidyen),
+                var(--rs-golge, 0 30px 70px rgba(0, 0, 0, 0.55));
+}
+
+.hakkinda__foto {
+    position: absolute;
+    inset-block-start: -14%;
+    inset-inline: 0;
+    width: 100%;
+    height: 128%; /* parallax payı: %28 fazla yükseklik */
+    object-fit: cover;
+    will-change: transform;
+}
+
+/* Kuruluş yılı — çerçevelerin arasında süzülür */
+.hakkinda__yil {
+    /* Geniş çerçevenin sol alt köşesine kararlı biçimde biner —
+       önce boşlukta asılı duruyor, kompozisyondan kopuk görünüyordu. */
+    position: absolute;
+    inset-block-end: clamp(2.5rem, 8vw, 6rem);
+    inset-inline-start: 0;
+    transform: translateX(-18%);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--b4) var(--b5);
+    background: var(--obsidyen);
+    color: var(--sampanya);
+    text-align: center;
+}
+
+    .hakkinda__yil em {
+        font-family: var(--f-serif);
+        font-size: var(--t-xl);
+        font-style: normal;
+        font-weight: 400;
+        letter-spacing: 0.08em;
+        line-height: 1;
+    }
+
+    .hakkinda__yil span {
+        color: var(--metin-3);
+        font-size: 0.6875rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+    }
+
+/* --- Metin --- */
+.hakkinda__ustbaslik {
+    margin-block-end: var(--b5);
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: var(--harf-genis);
+    text-transform: uppercase;
+}
+
+.hakkinda__baslik {
+    margin-block-end: var(--b6);
+    font-size: clamp(2rem, 1.2rem + 2.6vw, 3.75rem);
+    font-weight: 300;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+}
+
+    .hakkinda__baslik em {
+        font-style: italic;
+        color: var(--sampanya);
+    }
+
+/* SplitText kelime kabı — maskeleme buradan geliyor */
+.kelime-kap {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+}
+
+.hakkinda__govde {
+    display: flex;
+    flex-direction: column;
+    gap: var(--b4);
+    max-width: 46ch;
+    color: var(--metin-2);
+    font-size: var(--t-md);
+    line-height: var(--satir-genis);
+}
+
+.hakkinda__olcut {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    margin-block: var(--b7) 0;
+    padding-block-start: var(--b5);
+    border-block-start: 1px solid var(--cizgi);
+}
+
+    .hakkinda__olcut dt {
+        font-family: var(--f-serif);
+        font-size: var(--t-xl);
+        font-weight: 400;
+        color: var(--sampanya);
+        line-height: 1;
+    }
+
+    .hakkinda__olcut dd {
+        margin: var(--b2) 0 0;
+        color: var(--metin-3);
+        font-size: 0.75rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+
+/* --- İmza alıntısı --- */
+.hakkinda__alinti {
+    max-width: 44rem;
+    margin: clamp(4rem, 11vw, 9rem) auto 0;
+    padding-inline: var(--kap-yan);
+    text-align: center;
+}
+
+    .hakkinda__alinti blockquote {
+        margin: 0;
+    }
+
+    .hakkinda__alinti p {
+        margin: 0;
+        font-family: var(--f-serif);
+        font-size: clamp(1.5rem, 0.95rem + 1.9vw, 2.75rem);
+        font-style: italic;
+        font-weight: 300;
+        line-height: 1.34;
+        letter-spacing: -0.015em;
+        text-wrap: balance; /* öksüz satır bırakmadan dengeli sarsın */
+        /* Bronz → şampanya geçişi: metnin kendisi metalik görünür */
+        background: linear-gradient(100deg, var(--bronz) 0%, var(--sampanya) 45%, var(--bronz) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .hakkinda__alinti figcaption {
+        margin-block-start: var(--b5);
+        color: var(--metin-3);
+        font-size: 0.6875rem;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+    }
+
+    /* İnce ayraç çizgisi */
+    .hakkinda__alinti::before {
+        content: "";
+        display: block;
+        width: 1px;
+        height: clamp(2.5rem, 6vh, 4.5rem);
+        margin: 0 auto var(--b6);
+        background: linear-gradient(to bottom, transparent, var(--bronz));
+    }
+
+@media (max-width: 900px) {
+    .hakkinda__izgara {
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(2.5rem, 8vw, 4rem);
+    }
+
+    .hakkinda__gorseller {
+        /* width:100% şart: margin-inline:auto ızgara öğesinin stretch
+           davranışını iptal edip shrink-to-fit yapıyor. Geniş çerçevenin
+           tek çocuğu absolute olduğu için içsel genişliği yok ve
+           0x0'a çöküyordu. */
+        width: 100%;
+        max-width: 34rem;
+        margin-inline: auto;
+    }
+}
+
+/* Kinetik başlangıç durumları — yalnızca html.rosso-kinetik altında */
+.rosso-kinetik .hakkinda__govde,
+.rosso-kinetik .hakkinda__olcut,
+.rosso-kinetik .hakkinda__yil,
+.rosso-kinetik .hakkinda__alinti {
+    opacity: 0;
+}
+
+.rosso-kinetik .hakkinda__cerceve {
+    clip-path: inset(0 0 100% 0);
+}
+
+/* =============================================================
+   KARTA — TAM MENÜ SAYFASI  (Views/Home/Menu.cshtml)
+   -------------------------------------------------------------
+   Eski kurulum tek sütunda satır satır aşağı iniyordu: her tabak
+   bir "satır", aralarında 1px çizgi, 100+ üründe metrelerce
+   kaydırma. Yerine EDİTORYAL bir kurgu geldi:
+
+     sol %26  → yapışkan ray: arama + kategoriler + canlı sayaç
+     sağ      → kategori odaları, her biri 2–3 kolonluk
+                tipografik ızgara
+
+   Üç kural tasarımın belkemiği:
+     1) Kalemler ARASINDA çizgi, kutu, gölge YOK. Ayrımı yalnızca
+        boşluk ve tipografi kuruyor. Tek hairline, kategori
+        başlığından sağ kenara uzanan rubrika çizgisi — o da
+        "aralarda" değil, bölüm ayracı.
+     2) Sayfada yemek fotoğrafı YOK. Görsel yalnızca üzerine
+        gelince özel imleçte açılıyor (data-cursor-image). Ekrana
+        bu sayede kat kat fazla ürün sığıyor.
+     3) Fiyat sağa dayalı, ad serif, açıklama küçük ve soluk sans.
+   ============================================================= */
+.menu {
+    position: relative;
+    padding-block: var(--bolum);
+    background: var(--antrasit);
+}
+
+/* Ayrı sayfa: sabit navbarın altından başlaması gerekiyor.
+   Kap da bilerek geniş — sağdaki ızgara büyük ekranda üç kolona
+   ancak bu genişlikte çıkıyor (1280'de iki, 1600+'da üç). */
+.menu--karta {
+    --ray-ust: 104px;
+    padding-block-start: clamp(7rem, 14vh, 11rem);
+    background: var(--obsidyen);
+}
+
+    /* 1560px ölçülerek seçildi: 1440'ta ızgara iki kolon (ad + fiyat
+       rahat nefes alıyor), ~1580px üstünde üç kolona çıkıyor. 1460'ta
+       en geniş ekranda bile üçe çıkmıyordu. */
+    .menu--karta > .kap {
+        max-width: 1560px;
+    }
+
+/* --- Sayfa başlığı --- */
+.menu__bas {
+    max-width: 46rem;
+    margin-block-end: clamp(2.5rem, 5vw, 4rem);
+}
+
+.menu__ustbaslik {
+    margin-block-end: var(--b4);
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: var(--harf-genis);
+    text-transform: uppercase;
+}
+
+.menu__baslik {
+    margin-block-end: var(--b4);
+    font-family: var(--f-serif);
+    font-size: clamp(2rem, 1.2rem + 2.6vw, 3.75rem);
+    font-weight: 300;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+    color: var(--metin);
+}
+
+    .menu__baslik em {
+        font-style: italic;
+        color: var(--sampanya);
+    }
+
+.menu__alt {
+    max-width: 46ch;
+    color: var(--metin-2);
+    font-size: var(--t-sm);
+    line-height: var(--satir-genis);
+}
+
+/* =============================================================
+   ASİMETRİK BÖLÜNMÜŞ DÜZEN
+   ============================================================= */
+.menu__duzen {
+    display: grid;
+    grid-template-columns: minmax(0, 26%) minmax(0, 1fr);
+    gap: clamp(2rem, 4vw, 4.5rem);
+    /* align-items: start ŞART. Varsayılan stretch'te ray kutusu
+       satır yüksekliği kadar uzuyor, sticky hiç tetiklenmiyor. */
+    align-items: start;
+}
+
+.menu__ray {
+    position: sticky;
+    inset-block-start: var(--ray-ust);
+    /* Çok kategoride ray ekranı taşmasın; kendi içinde kaysın. */
+    max-height: calc(100vh - var(--ray-ust) - 2rem);
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+    .menu__ray::-webkit-scrollbar {
+        display: none;
+    }
+
+/* --- Sıvı arama: yalnızca bir alt çizgi --- */
+.menu__ara {
+    display: flex;
+    align-items: center;
+    gap: var(--b3);
+    padding-block-end: var(--b3);
+    border-block-end: 1px solid var(--cizgi-2);
+    color: var(--titanyum-sonuk);
+    transition: border-color var(--h2) var(--egri), color var(--h2) var(--egri);
+}
+
+    .menu__ara:focus-within {
+        border-color: var(--sampanya);
+        color: var(--sampanya);
+    }
+
+.menu__ara-ikon {
+    flex: 0 0 auto;
+}
+
+.menu__ara-alan {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 22px;
+    margin: 0;
+    padding: 0;
+    appearance: none;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--metin);
+    font-family: var(--f-sans);
+    font-size: var(--t-sm);
+    font-weight: 300;
+    letter-spacing: 0.02em;
+}
+
+    .menu__ara-alan::placeholder {
+        color: var(--titanyum-sonuk);
+        opacity: 1;
+    }
+
+    .menu__ara-alan:focus {
+        outline: none;
+    }
+
+    /* Tarayıcının kendi "temizle" çarpısı bu tipografiye uymuyor;
+       Escape tuşu ve boşaltma zaten JS'te bağlı. */
+    .menu__ara-alan::-webkit-search-cancel-button,
+    .menu__ara-alan::-webkit-search-decoration {
+        appearance: none;
+    }
+
+/* --- Kategori rayı --- */
+.menu__rubrik {
+    margin-block: clamp(1.75rem, 3vw, 2.5rem) var(--b3);
+    color: var(--titanyum-sonuk);
+    font-size: 0.625rem;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+}
+
+.menu__sekmeler {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+    .menu__sekmeler li {
+        margin: 0;
+        padding: 0;
+    }
+
+        .menu__sekmeler li::marker {
+            content: "";
+        }
+
+.menu__sekme {
+    display: flex;
+    align-items: center;
+    gap: var(--b3);
+    width: 100%;
+    padding: 0.5rem 0;
+    background: none;
+    border: 0;
+    color: var(--metin-2);
+    font-family: var(--f-sans);
+    text-align: left;
+    cursor: pointer;
+    transition: color var(--h2) var(--egri);
+}
+
+    /* Aktif işaret: kısa şampanya çizgisi. Yuvası HER ZAMAN ayrılıyor
+       (18px), yalnızca scaleX değişiyor — aksi hâlde seçim değişince
+       satırlar yana zıplıyordu. */
+    .menu__sekme::before {
+        content: "";
+        flex: 0 0 18px;
+        height: 1px;
+        background: var(--sampanya);
+        transform: scaleX(0);
+        transform-origin: left center;
+        transition: transform var(--h2) var(--egri);
+    }
+
+    .menu__sekme:hover {
+        color: var(--metin);
+    }
+
+    .menu__sekme:focus-visible {
+        outline: 1px solid var(--sampanya);
+        outline-offset: 4px;
+    }
+
+.menu__sekme-ad {
+    flex: 1 1 auto;
+    font-size: var(--t-sm);
+    font-weight: 400;
+    letter-spacing: 0.01em;
+}
+
+.menu__sekme-adet {
+    flex: 0 0 auto;
+    color: var(--titanyum-sonuk);
+    font-size: 0.6875rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.menu__sekme--aktif {
+    color: var(--sampanya);
+}
+
+    .menu__sekme--aktif::before {
+        transform: scaleX(1);
+    }
+
+    .menu__sekme--aktif .menu__sekme-adet {
+        color: var(--sampanya);
+    }
+
+.menu__sayac {
+    margin-block-start: clamp(1.5rem, 3vw, 2.25rem);
+    padding-block-start: var(--b4);
+    border-block-start: 1px solid var(--cizgi);
+    color: var(--titanyum-sonuk);
+    font-size: 0.625rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.menu__sayac-adet {
+    color: var(--sampanya);
+    font-variant-numeric: tabular-nums;
+}
+
+/* =============================================================
+   ODALAR — kategori blokları
+   ============================================================= */
+.menu__oda {
+    margin-block-end: clamp(2.5rem, 4.5vw, 4rem);
+}
+
+    .menu__oda:last-of-type {
+        margin-block-end: 0;
+    }
+
+    .menu__oda[hidden] {
+        display: none;
+    }
+
+.menu__oda-bas {
+    display: flex;
+    align-items: baseline;
+    gap: var(--b4);
+    margin: 0 0 clamp(1.5rem, 3vw, 2.25rem);
+}
+
+/* Rubrika çizgisi: başlıktan sağ kenara uzanan tek saç teli.
+   Bölüm ayracı — kalemlerin ARASINA çizgi girmiyor. */
+.menu__oda-bas::after {
+    content: "";
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--cizgi-2);
+    transform: translateY(-0.4em);
+}
+
+.menu__oda-no {
+    flex: 0 0 auto;
+    color: var(--bronz);
+    font-family: var(--f-sans);
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    font-variant-numeric: tabular-nums;
+}
+
+.menu__oda-ad {
+    flex: 0 1 auto;
+    font-family: var(--f-serif);
+    font-style: italic;
+    font-size: clamp(1.5rem, 1.1rem + 1.05vw, 2.25rem);
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--sampanya);
+}
+
+/* --- Tipografik çoklu kolon --- */
+.menu__izgara {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17.5rem, 1fr));
+    column-gap: clamp(2rem, 3.4vw, 3.5rem);
+    row-gap: clamp(1.5rem, 2.4vw, 2.25rem);
+}
+
+.menu__kalem {
+    /* Kutu yok, kenarlık yok, gölge yok. Bilerek.
+
+       Fiyat sütunu İKİ SATIRA yayılıyor. Önce ad+fiyat bir flex
+       satırdaydı: iki fiyatlı üründe (Orta/Büyük) fiyat kutusu satırı
+       iki katına çıkarıyor, açıklama aşağı itiliyor ve aynı ızgara
+       satırındaki kalemler tırtıklı duruyordu. Ölçüldü — açıklama
+       31px aşağıda kalıyordu. */
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--b4);
+    break-inside: avoid;
+}
+
+    .menu__kalem[hidden] {
+        display: none;
+    }
+
+.menu__ad {
+    grid-area: 1 / 1 / 2 / 2;
+    min-width: 0;
+    margin: 0;
+    font-family: var(--f-serif);
+    font-size: clamp(1.0625rem, 0.95rem + 0.34vw, 1.3125rem);
+    font-weight: 400;
+    line-height: 1.24;
+    letter-spacing: -0.005em;
+    color: var(--metin);
+    transition: color var(--h2) var(--egri);
+}
+
+.menu__kalem:hover .menu__ad {
+    color: var(--sampanya);
+}
+
+.menu__fiyatlar {
+    grid-area: 1 / 2 / 2 / 3;
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.15rem;
+    margin: 0;
+    text-align: right;
+}
+
+.menu__fiyat {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--b2);
+    white-space: nowrap;
+}
+
+.menu__fiyat-tur {
+    color: var(--titanyum-sonuk);
+    font-family: var(--f-sans);
+    font-size: 0.625rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.menu__tutar {
+    font-family: var(--f-serif);
+    font-size: 1.0625rem;
+    color: var(--metin-2);
+    font-variant-numeric: tabular-nums;
+    transition: color var(--h2) var(--egri);
+}
+
+.menu__kalem:hover .menu__tutar {
+    color: var(--metin);
+}
+
+.menu__para {
+    margin-inline-start: 0.08em;
+    color: var(--sampanya);
+    font-size: 0.78em;
+}
+
+/* Açıklama İKİ SÜTUNU birden alıyor: fiyat yalnızca 1. satırda.
+   Aksi hâlde üç kolonlu ızgarada (~292px) fiyat sütunu payını
+   alınca açıklamaya 175px kalıyor ve tek cümle üç satıra düşüyordu. */
+.menu__not {
+    grid-area: 2 / 1 / 3 / 3;
+    max-width: 44ch;
+    margin: 0.4rem 0 0;
+    color: var(--metin-3);
+    font-family: var(--f-sans);
+    font-size: 0.75rem;
+    font-weight: 300;
+    line-height: 1.62;
+    transition: color var(--h2) var(--egri);
+}
+
+.menu__kalem:hover .menu__not {
+    color: var(--metin-2);
+}
+
+/* Çift fiyat (Orta/Büyük) iki satır kaplıyor; açıklama sol sütunda
+   kalıp fiyatın altına girmiyor. */
+.menu__kalem--cift .menu__fiyatlar {
+    grid-area: 1 / 2 / 3 / 3;
+}
+
+.menu__kalem--cift .menu__not {
+    grid-area: 2 / 1 / 3 / 2;
+}
+
+.menu__bos {
+    padding-block: var(--b8);
+    color: var(--metin-3);
+    text-align: center;
+}
+
+.menu__geri {
+    display: flex;
+    justify-content: center;
+    margin-block-start: clamp(3rem, 7vw, 5rem);
+}
+
+/* =============================================================
+   DAR EKRAN — ray yatay şeride dönüyor
+
+   Şerit BİLEREK yapışkan değil. Denendi ve bırakıldı: yapışması
+   için ya .menu__ray'in de yapışması (arama + şerit = ~85px, 64px
+   navbarın altında telefonda ekranın beşte biri) ya da ray
+   kutularının display:contents ile kaldırılması gerekiyordu —
+   ikincisi kinetik açılışı ve GSAP'in tuttuğu kutuyu bozuyor.
+   Kategori seçilince liste zaten başa hizalanıyor (akisaDon),
+   şeride dönmek için kaydırmak gerekmiyor.
+   ============================================================= */
+@media (max-width: 1024px) {
+    .menu__duzen {
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(1.25rem, 3vw, 2rem);
+    }
+
+    .menu__ray {
+        position: static;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .menu__rubrik {
+        display: none;
+    }
+
+    .menu__sekmeler {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: var(--b5);
+        margin-block-start: var(--b5);
+        overflow-x: auto;
+    }
+
+        .menu__sekmeler::-webkit-scrollbar {
+            display: none;
+        }
+
+    .menu__sekme {
+        width: auto;
+        padding-block: var(--b1);
+        white-space: nowrap;
+    }
+
+        /* Yatay şeritte kısa çizginin yeri yok; aktiflik renkle okunuyor */
+        .menu__sekme::before {
+            display: none;
+        }
+
+    .menu__sayac {
+        display: none;
+    }
+}
+
+/* =============================================================
+   KİNETİK BAŞLANGIÇ
+   JS bunları açıyor; motor hiç çalışmazsa gorunurlukEmniyeti()
+   aynı seçicileri temizliyor (rosso-hareket.js).
+   ============================================================= */
+.rosso-kinetik .menu__bas > *,
+.rosso-kinetik .menu__ray-ic,
+.rosso-kinetik .menu__oda-bas,
+.rosso-kinetik .menu__kalem {
+    opacity: 0;
+}
+
+/* =============================================================
+   VİTRİN — ana sayfadaki seçki
+   ============================================================= */
+.vitrin {
+    position: relative;
+    padding-block: var(--bolum);
+    background: var(--antrasit);
+}
+
+.vitrin__bas {
+    max-width: 44rem;
+    margin-block-end: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+.vitrin__ustbaslik {
+    margin-block-end: var(--b4);
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: var(--harf-genis);
+    text-transform: uppercase;
+}
+
+.vitrin__baslik {
+    margin-block-end: var(--b4);
+    font-size: clamp(2rem, 1.2rem + 2.6vw, 3.75rem);
+    font-weight: 300;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+}
+
+    .vitrin__baslik em {
+        font-style: italic;
+        color: var(--sampanya);
+    }
+
+.vitrin__alt {
+    max-width: 44ch;
+    color: var(--metin-2);
+    line-height: var(--satir-genis);
+}
+
+/* --- Kart ızgarası --- */
+.vitrin__izgara {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(1.25rem, 3vw, 2.5rem);
+}
+
+.vitrin__kart {
+    display: flex;
+    flex-direction: column;
+}
+
+    /* Ortadaki kart aşağı kaydırılır — düz ızgara yerine ritim */
+    .vitrin__kart:nth-child(2) {
+        margin-block-start: clamp(1.5rem, 5vw, 4rem);
+    }
+
+.vitrin__gorsel {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 5;
+    background: var(--antrasit-3);
+}
+
+    .vitrin__gorsel img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 1.1s var(--egri), filter var(--h3) var(--egri);
+    }
+
+    .vitrin__kart:hover .vitrin__gorsel img {
+        transform: scale(1.06);
+    }
+
+    /* Alt kenarda yumuşak karartma — yazı ile görsel arası geçiş */
+    .vitrin__gorsel::after {
+        content: "";
+        position: absolute;
+        inset-block-end: 0;
+        inset-inline: 0;
+        height: 45%;
+        background: linear-gradient(to top, var(--antrasit) 4%, transparent);
+        pointer-events: none;
+    }
+
+.vitrin__govde {
+    padding-block-start: var(--b5);
+}
+
+.vitrin__ad {
+    margin-block-end: var(--b3);
+    font-family: var(--f-serif);
+    font-size: clamp(1.375rem, 1rem + 1.1vw, 1.875rem);
+    font-weight: 400;
+    line-height: 1.14;
+    letter-spacing: -0.02em;
+    color: var(--metin);
+    transition: color var(--h2) var(--egri);
+}
+
+.vitrin__kart:hover .vitrin__ad {
+    color: var(--sampanya);
+}
+
+.vitrin__aciklama {
+    margin-block-end: var(--b4);
+    color: var(--metin-3);
+    font-size: var(--t-sm);
+    font-weight: 300;
+    line-height: 1.65;
+}
+
+.vitrin__fiyat {
+    display: flex;
+    align-items: baseline;
+    gap: var(--b5);
+    padding-block-start: var(--b4);
+    border-block-start: 1px solid var(--cizgi);
+    font-family: var(--f-serif);
+    font-size: var(--t-lg);
+    color: var(--metin);
+}
+
+/* Her fiyat kendi ölçü adıyla: "Orta 290₺  Büyük 350₺" */
+.vitrin__olcu {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--b2);
+    white-space: nowrap;
+}
+
+.vitrin__olcu-ad {
+    color: var(--metin-3);
+    font-family: var(--f-sans);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.vitrin__para {
+    color: var(--sampanya);
+    font-size: 0.75em;
+}
+
+/* --- Tüm menü çağrısı --- */
+.vitrin__eylem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--b4);
+    margin-block-start: clamp(3rem, 7vw, 5.5rem);
+}
+
+.vitrin__ipucu {
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.vitrin__bos {
+    padding-block: var(--b8);
+    color: var(--metin-3);
+    text-align: center;
+}
+
+@media (max-width: 860px) {
+    .vitrin__izgara {
+        grid-template-columns: minmax(0, 1fr);
+        gap: clamp(2rem, 7vw, 3rem);
+    }
+
+    .vitrin__kart:nth-child(2) {
+        margin-block-start: 0;
+    }
+
+    .vitrin__gorsel {
+        aspect-ratio: 3 / 2;
+    }
+}
+
+/* Kinetik başlangıç */
+.rosso-kinetik .vitrin__kart,
+.rosso-kinetik .vitrin__bas > *,
+.rosso-kinetik .vitrin__eylem {
+    opacity: 0;
+}
+
+
+/* =============================================================
+   GALERİ SERGİSİ — yatay akış
+   -------------------------------------------------------------
+   İKİ KATMANLI KURULUM (bozulmaya dayanıklılık)
+   1) VARSAYILAN: ray, kendi kendine yeten yatay bir kaydırıcıdır.
+      JS kapalı, GSAP düşük, hareket azaltma açık ya da ekran dar —
+      hangisi olursa olsun kareler parmakla / kaydırma çubuğuyla gezilir.
+   2) .galeri--pinli: bu sınıfı rosso-hareket.js YALNIZCA pin kurulumu
+      gerçekten yapıldığında ekler. O zaman sahne ekrana sabitlenir ve
+      dikey kaydırma yatay akışa dönüşür.
+   Sınıf eklenmezse hiçbir içerik gizli kalmaz.
+   ============================================================= */
+.galeri {
+    position: relative;
+    background: var(--obsidyen);
+}
+
+.galeri__sahne {
+    position: relative;
+    padding-block: var(--bolum);
+}
+
+/* --- Ray: varsayılan hâli doğal yatay kaydırıcı --- */
+.galeri__ray {
+    display: flex;
+    align-items: flex-end;
+    gap: clamp(1rem, 2.4vw, 2.75rem);
+    padding-inline: var(--kap-yan);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+    .galeri__ray::-webkit-scrollbar {
+        display: none;
+    }
+
+/* --- Pinli mod: dikey kaydırma yatay akışa dönüşür --- */
+.galeri--pinli .galeri__sahne {
+    display: flex;
+    align-items: center;
+    height: 100vh;
+    padding-block: 0;
+    /* Ray ekranın dışına taşar; pin sırasında kırpılması şart */
+    /* clip, hidden DEĞİL. hidden görünürde kaydırmayı kapatır ama
+       kutu PROGRAMLI olarak hâlâ kaydırılabilir kalır: tam ekran
+       görüntüleyici kapanırken odak, ekran dışı bir kareyi görünür
+       kılmak için sahneyi 2027px yana kaydırıyordu (ölçüldü).
+       clip kaydırma kutusu OLUŞTURMAZ, o yol tamamen kapanır.
+       JS tarafında ayrıca focus({preventScroll:true}) var —
+       clip'i tanımayan eski tarayıcılarda o koruyor. */
+    overflow: clip;
+}
+
+.galeri--pinli .galeri__ray {
+    width: max-content;
+    overflow: visible;
+    scroll-snap-type: none;
+    will-change: transform;
+}
+
+/* --- Ray'ın ilk paneli: sergi başlıkla açılır --- */
+.galeri__giris {
+    flex: 0 0 auto;
+    width: clamp(16rem, 32vw, 26rem);
+    padding-inline-end: clamp(1rem, 3vw, 3.5rem);
+    padding-block-end: clamp(2rem, 5vh, 4rem);
+    scroll-snap-align: center;
+}
+
+.galeri__ustbaslik {
+    margin-block-end: var(--b4);
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: var(--harf-genis);
+    text-transform: uppercase;
+}
+
+.galeri__baslik {
+    margin-block-end: var(--b4);
+    font-size: clamp(2rem, 1.2rem + 2.6vw, 3.75rem);
+    font-weight: 300;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+}
+
+    .galeri__baslik em {
+        font-style: italic;
+        color: var(--sampanya);
+    }
+
+.galeri__alt {
+    max-width: 34ch;
+    color: var(--metin-2);
+    line-height: var(--satir-genis);
+}
+
+.galeri__ipucu {
+    display: flex;
+    align-items: center;
+    gap: var(--b3);
+    margin-block-start: var(--b6);
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.galeri__ipucu-cizgi {
+    display: block;
+    width: 3rem;
+    height: 1px;
+    background: var(--bronz);
+}
+
+/* --- Kare --- */
+.galeri__kare {
+    flex: 0 0 auto;
+    width: clamp(14rem, 27vw, 23rem);
+    padding: 0;
+    background: none;
+    border: 0;
+    text-align: start;
+    scroll-snap-align: center;
+    cursor: pointer;
+    /* Hız eğimi (skewX) buradan uygulanır; merkezden bükülsün */
+    transform-origin: center center;
+}
+
+.galeri__kare--genis {
+    width: clamp(17rem, 38vw, 34rem);
+}
+
+.galeri__cerceve {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    height: clamp(15rem, 54vh, 30rem);
+    background: var(--antrasit-2);
+    box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.9);
+}
+
+.galeri__kare--genis .galeri__cerceve {
+    height: clamp(12rem, 42vh, 24rem);
+}
+
+/* İnce iç çerçeve — camlı vitrin hissi */
+.galeri__cerceve::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--cizgi);
+    pointer-events: none;
+}
+
+/* Foto çerçeveden geniştir: iç parallax kayarken asla boşluk açılmaz.
+   %124 genişlik + %-12 başlangıç kayması → ±%8.7'lik kayma payı güvenli. */
+.galeri__foto {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: -12%;
+    width: 124%;
+    height: 100%;
+    object-fit: cover;
+    will-change: transform;
+    transition: filter var(--h3) var(--egri);
+}
+
+.galeri__kare:hover .galeri__foto,
+.galeri__kare:focus-visible .galeri__foto {
+    filter: brightness(1.08);
+}
+
+.galeri__ayak {
+    display: flex;
+    align-items: baseline;
+    gap: var(--b3);
+    padding-block-start: var(--b4);
+}
+
+.galeri__no {
+    color: var(--bronz);
+    font-family: var(--f-serif);
+    font-size: var(--t-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+.galeri__etiket {
+    color: var(--metin-2);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    transition: color var(--h2) var(--egri);
+}
+
+.galeri__kare:hover .galeri__etiket,
+.galeri__kare:focus-visible .galeri__etiket {
+    color: var(--metin);
+}
+
+/* --- İlerleme çubuğu --- */
+.galeri__ilerleme {
+    position: absolute;
+    inset-inline: var(--kap-yan);
+    inset-block-end: clamp(1.25rem, 4vh, 2.5rem);
+    height: 1px;
+    background: var(--cizgi);
+}
+
+.galeri__ilerleme-dolgu {
+    display: block;
+    height: 100%;
+    background: var(--sampanya);
+    transform: scaleX(0);
+    transform-origin: left center;
+}
+
+/* Doğal kaydırıcı modunda ilerlemeyi sürecek bir şey yok */
+.galeri:not(.galeri--pinli) .galeri__ilerleme {
+    display: none;
+}
+
+/* =============================================================
+   TAM EKRAN GÖRÜNTÜLEYİCİ
+   -------------------------------------------------------------
+   .tamekran__cerceve, tıklanan karenin çerçevesinin üstüne Flip.fit
+   ile oturtulup oradan büyütülür. Bu yüzden iki çerçeve aynı
+   davranışta olmalı: overflow:hidden + içinde object-fit:cover foto.
+   ============================================================= */
+.tamekran {
+    position: fixed;
+    inset: 0;
+    z-index: var(--k-loader);
+    display: grid;
+    place-items: center;
+}
+
+.tamekran[hidden] {
+    display: none;
+}
+
+.tamekran__zemin {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 8, 10, 0.72);
+    -webkit-backdrop-filter: blur(20px) saturate(115%);
+    backdrop-filter: blur(20px) saturate(115%);
+}
+
+.tamekran__cerceve {
+    position: relative;
+    overflow: hidden;
+    width: min(1120px, 92vw);
+    height: min(76vh, 44rem);
+    background: var(--antrasit-2);
+    box-shadow: 0 60px 140px -40px rgba(0, 0, 0, 0.95);
+    will-change: transform;
+}
+
+.tamekran__foto {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tamekran__ayak {
+    position: absolute;
+    inset-block-end: clamp(1rem, 3.5vh, 2.25rem);
+    inset-inline-start: 50%;
+    display: flex;
+    align-items: baseline;
+    gap: var(--b3);
+    transform: translateX(-50%);
+}
+
+.tamekran__no {
+    color: var(--bronz);
+    font-family: var(--f-serif);
+    font-size: var(--t-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+.tamekran__etiket {
+    color: var(--metin-2);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.tamekran__kapat,
+.tamekran__ok {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: var(--dokunma);
+    height: var(--dokunma);
+    padding: 0;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--cizgi-2);
+    border-radius: 50%;
+    color: var(--metin);
+    font-size: var(--t-lg);
+    line-height: 1;
+    cursor: pointer;
+    transition: background var(--h2) var(--egri), border-color var(--h2) var(--egri);
+}
+
+    .tamekran__kapat:hover,
+    .tamekran__ok:hover {
+        background: var(--sampanya-sis);
+        border-color: var(--sampanya);
+    }
+
+.tamekran__kapat {
+    inset-block-start: clamp(1rem, 3vh, 2rem);
+    inset-inline-end: clamp(1rem, 3vw, 2rem);
+}
+
+.tamekran__ok {
+    inset-block-start: 50%;
+    margin-block-start: calc(var(--dokunma) / -2);
+}
+
+.tamekran__ok--onceki {
+    inset-inline-start: clamp(0.75rem, 2.5vw, 2rem);
+}
+
+.tamekran__ok--sonraki {
+    inset-inline-end: clamp(0.75rem, 2.5vw, 2rem);
+}
+
+/* =============================================================
+   GALERİ — DAR EKRAN
+   ============================================================= */
+@media (max-width: 899.98px) {
+    .galeri__ray {
+        align-items: flex-start;
+        padding-block-end: var(--b4);
+    }
+
+    .galeri__giris {
+        width: min(78vw, 24rem);
+    }
+
+    .galeri__kare,
+    .galeri__kare--genis {
+        width: min(76vw, 22rem);
+    }
+
+    .galeri__cerceve,
+    .galeri__kare--genis .galeri__cerceve {
+        height: clamp(14rem, 46vh, 22rem);
+    }
+}
+
+/* =============================================================
+   ZİYARETÇİ DEFTERİ — tipografik yorum sergisi
+   -------------------------------------------------------------
+   İKİ KATMANLI KURULUM (galeriyle aynı desen)
+   1) VARSAYILAN: yapraklar alt alta, hepsi okunur bir liste.
+      JS kapalı / GSAP düşük / hareket azaltma açık → içerik tam.
+   2) .defter--sahnede: sınıfı rosso-hareket.js yalnızca sergiyi
+      gerçekten devraldığında ekliyor. O zaman yapraklar tek ızgara
+      gözünde üst üste binip teker teker gösteriliyor.
+   ============================================================= */
+.defter {
+    position: relative;
+    padding-block: var(--bolum);
+    background: var(--antrasit);
+    overflow: hidden;
+}
+
+.defter__bas {
+    max-width: 46rem;
+    margin-block-end: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+.defter__ustbaslik {
+    margin-block-end: var(--b4);
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: var(--harf-genis);
+    text-transform: uppercase;
+}
+
+.defter__baslik {
+    margin-block-end: var(--b4);
+    font-size: clamp(2rem, 1.2rem + 2.6vw, 3.75rem);
+    font-weight: 300;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+}
+
+    .defter__baslik em {
+        font-style: italic;
+        color: var(--sampanya);
+    }
+
+.defter__alt {
+    max-width: 42ch;
+    color: var(--metin-2);
+    line-height: var(--satir-genis);
+}
+
+/* --- Sergi alanı: kenar bölgeleri buna göre konumlanır --- */
+.defter__sergi {
+    position: relative;
+}
+
+/* --- Sahne --- */
+.defter__sahne {
+    /* Varsayılan: alt alta okunur liste */
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3rem, 8vw, 6rem);
+    /* Yatay sürükleme bizim, dikey kaydırma sayfanın */
+    touch-action: pan-y;
+}
+
+    .defter__sahne:focus-visible {
+        outline: 2px solid var(--sampanya);
+        outline-offset: clamp(0.75rem, 2vw, 1.5rem);
+    }
+
+/* Sergi modunda yapraklar tek gözde üst üste biner: yükseklik en uzun
+   yoruma göre sabitlenir, geçişlerde sayfa zıplamaz. */
+.defter--sahnede .defter__sahne {
+    display: grid;
+    align-content: center;
+    min-height: clamp(17rem, 40vh, 28rem);
+}
+
+    .defter--sahnede .defter__yaprak {
+        grid-area: 1 / 1;
+    }
+
+.defter__yaprak {
+    text-align: center;
+    /* Sürüklerken imleci takip eder; GSAP x/rotate yazar */
+    will-change: transform;
+}
+
+/* --- Tipografik işaret (yıldız yerine) --- */
+.defter__isaret {
+    margin-block-end: clamp(0.5rem, 2vh, 1.25rem);
+    color: var(--bronz);
+    font-family: var(--f-serif);
+    font-size: clamp(3rem, 5vw, 5rem);
+    font-weight: 400;
+    line-height: 0.6;
+    opacity: 0.6;
+}
+
+/* --- Yorum metni ---
+   Punto metnin uzunluğuna göre kademeli (Razor sınıf veriyor).
+   ch ölçüsü doğru çıksın diye serif yüzü .defter__soz'e yazıyoruz;
+   <p> miras alıyor. */
+.defter__soz {
+    margin: 0 auto;
+    color: var(--metin);
+    font-family: var(--f-serif);
+    font-weight: 300;
+    letter-spacing: -0.015em;
+}
+
+    .defter__soz p {
+        margin: 0;
+        font: inherit;
+        letter-spacing: inherit;
+    }
+
+.defter__soz--dev {
+    max-width: 17ch;
+    font-size: clamp(1.75rem, 1.05rem + 3vw, 4rem);
+    line-height: 1.16;
+}
+
+.defter__soz--orta {
+    max-width: 26ch;
+    font-size: clamp(1.375rem, 0.95rem + 1.9vw, 2.75rem);
+    line-height: 1.24;
+}
+
+.defter__soz--sik {
+    max-width: 46ch;
+    font-size: clamp(1.0625rem, 0.9rem + 0.9vw, 1.75rem);
+    line-height: 1.42;
+}
+
+/* SplitText satırları: maskeli giriş için taşan kap */
+.defter__satir-kap {
+    display: block;
+    overflow: hidden;
+}
+
+.defter__satir {
+    display: block;
+    will-change: transform, filter;
+}
+
+/* --- İmza --- */
+.defter__imza {
+    margin-block-start: clamp(1.75rem, 4vw, 3.25rem);
+}
+
+.defter__ad {
+    color: var(--metin);
+    font-size: var(--t-sm);
+    font-weight: 500;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+}
+
+.defter__ayrinti {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--b4);
+    margin-block-start: var(--b3);
+}
+
+.defter__tarih {
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+/* Puan: beş ince çizik. Yıldız yok — değer aria-label'da. */
+.defter__puan {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.defter__cizik {
+    display: block;
+    width: 1px;
+    height: 14px;
+    background: var(--cizgi-2);
+}
+
+.defter__cizik--dolu {
+    background: var(--sampanya);
+}
+
+/* --- Kenar bölgeleri (İleri / Geri) ---
+   Tam yükseklikte, görünmez tıklama alanları. Görünen tek şey
+   aşağıdaki dikey etiket. */
+.defter__yon {
+    position: absolute;
+    inset-block: 0;
+    z-index: var(--k-icerik);
+    display: grid;
+    place-items: center;
+    width: clamp(3.25rem, 10vw, 10rem);
+    padding: 0;
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+
+.defter__yon--geri {
+    inset-inline-start: 0;
+}
+
+.defter__yon--ileri {
+    inset-inline-end: 0;
+}
+
+/* KENAR İŞARETLERİ
+
+   Sorun: kenar bölgeleri masaüstünde TAMAMEN görünmezdi (opacity 0).
+   İmleç oraya gidince sıvı imleç "Geri/İleri" etiketine dönüşüyordu —
+   ama oraya gitmeyi bilmek gerekiyordu ve kimse bilemez.
+
+   Çözüm: etiketler artık her zaman duruyor, yalnızca çok sessiz.
+   Dikey ve harf aralıklı; sayfadaki diğer üst başlıklarla
+   ("SÜRÜKLEYİN", "MİSAFİRLERİMİZ") aynı tipografik ses — ikon değil,
+   çünkü bu sayfanın dili tipografi.
+
+   Üç kademe: durağan 0.32 → imleç sergiye girince 0.72 → kendi
+   üstünde şampanya. */
+.defter__yon-yazi {
+    writing-mode: vertical-rl;
+    color: var(--titanyum-sonuk);
+    font-family: var(--f-sans);
+    font-size: 0.625rem;
+    font-weight: 500;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    opacity: 0.32;
+    transition: opacity var(--h2) var(--egri), color var(--h2) var(--egri);
+}
+
+/* Sol etiket aşağıdan yukarı okunuyor; iki kenar birbirinin aynası */
+.defter__yon--geri .defter__yon-yazi {
+    transform: rotate(180deg);
+}
+
+/* İmleç sergiye girer girmez belirginleşiyor: kenarların tıklanabilir
+   olduğu, oraya varmadan ÖNCE anlaşılıyor. */
+.defter__sergi:hover .defter__yon-yazi,
+.defter__sergi:focus-within .defter__yon-yazi {
+    opacity: 0.72;
+}
+
+/* Kendi üstünde tam güç — sıra bilinçli: yukarıdaki kuralla aynı
+   özgüllükte, sonra geldiği için kazanıyor. */
+.defter__yon:hover .defter__yon-yazi,
+.defter__yon:focus-visible .defter__yon-yazi {
+    color: var(--sampanya);
+    opacity: 1;
+}
+
+/* İmleci olmayan cihazda etiket görünsün — yoksa geçişin yolu kalmaz */
+@media (hover: none) {
+    .defter__yon-yazi {
+        opacity: 0.8;
+    }
+}
+
+/* Kinetik başlangıç: kenarlardan içeri süzülüyorlar. Tek seferlik
+   giriş, gözün onları fark etmesi için (bkz. yorumDefteri). */
+.rosso-kinetik .defter__yon {
+    opacity: 0;
+}
+
+/* --- Ayak: sayaç + sinematik ilerleme çizgisi --- */
+.defter__ayak {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(1rem, 3vw, 2.5rem);
+    margin-block-start: clamp(2.5rem, 5vw, 4rem);
+}
+
+.defter__sayac {
+    display: flex;
+    gap: 0.4em;
+    color: var(--metin-3);
+    font-family: var(--f-serif);
+    font-size: var(--t-lg);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.08em;
+}
+
+.defter__su {
+    color: var(--sampanya);
+}
+
+.defter__ilerleme {
+    height: 1px;
+    background: var(--cizgi);
+}
+
+.defter__ilerleme-dolgu {
+    display: block;
+    height: 100%;
+    background: var(--sampanya);
+    transform: scaleX(0);
+    transform-origin: left center;
+}
+
+.defter__ipucu {
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+/* Sergiyi JS devralmadıysa gezinme araçlarının anlamı yok */
+.defter:not(.defter--sahnede) .defter__yon,
+.defter:not(.defter--sahnede) .defter__ayak {
+    display: none;
+}
+
+/* --- Boş durum --- */
+.defter__bos {
+    max-width: 34rem;
+    padding-block: clamp(2rem, 6vw, 4rem);
+    text-align: center;
+    margin-inline: auto;
+}
+
+.defter__bos-baslik {
+    margin-block-end: var(--b4);
+    color: var(--metin);
+    font-family: var(--f-serif);
+    font-size: var(--t-2xl);
+    font-weight: 300;
+}
+
+.defter__bos-alt {
+    color: var(--metin-2);
+    line-height: var(--satir-genis);
+}
+
+@media (max-width: 720px) {
+    .defter__ayak {
+        grid-template-columns: auto minmax(0, 1fr);
+        row-gap: var(--b4);
+    }
+
+    .defter__ipucu {
+        grid-column: 1 / -1;
+        text-align: center;
+    }
+}
+
+/* Sürüklerken metin seçilmesin. Tutma imleci artık KOŞULSUZ:
+   özel imleç söküldü, ziyaretçinin kendi imleci her zaman görünür
+   ve sürüklenebilirliği anlatan tek işaret o. */
+.defter--tutuluyor .defter__sahne {
+    user-select: none;
+}
+
+.defter--sahnede .defter__sahne {
+    cursor: grab;
+}
+
+.defter--tutuluyor .defter__sahne {
+    cursor: grabbing;
+}
+
+/* =============================================================
+   YORUM GÖNDERME PANELİ
+   -------------------------------------------------------------
+   İKİ KATMANLI KURULUM (galeri / defter ile aynı desen)
+   1) VARSAYILAN: panel akışın içinde normal bir form. JS kapalıysa
+      ziyaretçi yorumunu yine de gönderebilir.
+   2) .paylas--katman: sınıfı rosso-hareket.js ekler; panel sağdan
+      kayan, arka planı bulanıklaşan bir off-canvas katmana dönüşür.
+   ============================================================= */
+
+/* --- Çağrı butonu --- */
+.paylas-cagri {
+    margin-block-start: clamp(2.5rem, 6vw, 4.5rem);
+    text-align: center;
+}
+
+.paylas-ac {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--b2);
+    min-height: var(--dokunma);
+    padding: var(--b2) var(--b4);
+    background: none;
+    border: 0;
+    color: var(--metin-2);
+    font-family: var(--f-serif);
+    font-size: var(--t-lg);
+    font-style: italic;
+    cursor: pointer;
+    transition: color var(--h2) var(--egri);
+}
+
+    .paylas-ac:hover {
+        color: var(--sampanya);
+    }
+
+.paylas-ac__cizgi {
+    display: block;
+    width: 100%;
+    height: 1px;
+    background: var(--bronz);
+    transform: scaleX(0.42);
+    transition: transform var(--h2) var(--egri), background var(--h2) var(--egri);
+}
+
+.paylas-ac:hover .paylas-ac__cizgi,
+.paylas-ac:focus-visible .paylas-ac__cizgi {
+    background: var(--sampanya);
+    transform: scaleX(1);
+}
+
+/* --- Panel: akış hâli --- */
+.paylas__panel {
+    max-width: 40rem;
+    margin: clamp(2.5rem, 6vw, 4rem) auto 0;
+    padding: clamp(1.75rem, 4vw, 3rem);
+    background: var(--antrasit-2);
+    border: 1px solid var(--cizgi);
+}
+
+.paylas__zemin {
+    display: none;
+}
+
+.paylas__ustbaslik {
+    margin-block-end: var(--b3);
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: var(--harf-genis);
+    text-transform: uppercase;
+}
+
+.paylas__baslik {
+    margin-block-end: var(--b3);
+    font-size: clamp(1.625rem, 1.2rem + 1.4vw, 2.5rem);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+}
+
+    .paylas__baslik em {
+        font-style: italic;
+        color: var(--sampanya);
+    }
+
+.paylas__alt {
+    margin-block-end: clamp(1.75rem, 4vw, 2.75rem);
+    max-width: 40ch;
+    color: var(--metin-2);
+    line-height: var(--satir-genis);
+}
+
+.paylas__form {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.75rem, 3.5vw, 2.5rem);
+}
+
+/* =============================================================
+   ALAN — yüzen etiket
+   -------------------------------------------------------------
+   Kalın çerçeve yok: yalnızca ince bir alt çizgi. Etiket girdinin
+   İÇİNDE dinleniyor; odakta veya alan doluyken küçülüp yukarı
+   kayıyor ve şampanyaya dönüyor.
+
+   :placeholder-shown "alan boş mu" sorusunu yanıtlıyor — bu yüzden
+   işaretlemede placeholder=" " (tek boşluk) var. Etiket girdiden
+   SONRA yazılmak zorunda, + kardeş seçicisi geriye bakamaz.
+   ============================================================= */
+.alan {
+    position: relative;
+}
+
+.alan__girdi {
+    display: block;
+    width: 100%;
+    padding: 1.6rem 0 0.7rem;
+    background: none;
+    border: 0;
+    border-block-end: 1px solid var(--cizgi-2);
+    border-radius: 0;
+    color: var(--metin);
+    font-family: var(--f-sans);
+    font-size: var(--t-md);
+    line-height: 1.5;
+    outline: none;
+    transition: border-color var(--h2) var(--egri);
+}
+
+    .alan__girdi:hover {
+        border-block-end-color: var(--titanyum-sonuk);
+    }
+
+.alan--govde .alan__girdi {
+    min-height: 7.5rem;
+    resize: vertical;
+}
+
+.alan__etiket {
+    position: absolute;
+    inset-block-start: 1.6rem;
+    inset-inline-start: 0;
+    color: var(--metin-3);
+    font-size: var(--t-md);
+    line-height: 1.5;
+    pointer-events: none;
+    transform-origin: left top;
+    transition: transform var(--h2) var(--egri), color var(--h2) var(--egri);
+}
+
+/* ~ kullanılıyor (+ değil): flatpickr altInput'u asıl girdinin
+   hemen ardına eklediği için doğrudan kardeşlik zinciri kopuyor. */
+.alan__girdi:focus ~ .alan__etiket,
+.alan__girdi:not(:placeholder-shown) ~ .alan__etiket {
+    color: var(--sampanya);
+    transform: translateY(-1.55rem) scale(0.76);
+}
+
+/* Odak dışında ama dolu: vurgu rengi yerine sakin ton */
+.alan__girdi:not(:focus):not(:placeholder-shown) ~ .alan__etiket {
+    color: var(--metin-3);
+}
+
+/* Alt çizgi odakta soldan sağa çekiliyor */
+.alan__cizgi {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    height: 1px;
+    background: var(--sampanya);
+    transform: scaleX(0);
+    /* Merkezden dışa doğru dolar */
+    transform-origin: center;
+    transition: transform var(--h3) var(--egri);
+}
+
+.alan__girdi:focus ~ .alan__cizgi {
+    transform: scaleX(1);
+}
+
+.alan__sayac {
+    position: absolute;
+    inset-block-end: -1.5rem;
+    inset-inline-end: 0;
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.08em;
+    opacity: 0;
+    transition: opacity var(--h2) var(--egri);
+}
+
+.alan--govde:focus-within .alan__sayac {
+    opacity: 1;
+}
+
+/* =============================================================
+   PUAN — ince çizgili elmaslar
+   -------------------------------------------------------------
+   Radyolar erişilebilir kalıyor (görsel olarak gizli, odaklanabilir).
+   İşaretlemede 5→1 sırası var, burada row-reverse ile çevriliyor:
+   böylece "seçilen ve altındakiler dolu" kuralı ~ kardeş seçicisiyle
+   JS olmadan çalışıyor.
+   ============================================================= */
+.puan {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.puan__baslik {
+    padding: 0;
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+.puan__sira {
+    position: relative;
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: var(--b2);
+    margin-block-start: var(--b4);
+}
+
+.puan__radyo {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.puan__isaret {
+    display: grid;
+    place-items: center;
+    width: var(--dokunma);
+    height: var(--dokunma);
+    cursor: pointer;
+}
+
+    .puan__isaret svg {
+        width: 26px;
+        height: 26px;
+        overflow: visible;
+    }
+
+    .puan__isaret path {
+        fill: transparent;
+        stroke: var(--cizgi-2);
+        stroke-width: 1.1;
+        transition: fill var(--h2) var(--egri), stroke var(--h2) var(--egri);
+    }
+
+/* Seçili olan ve ondan küçükler dolu */
+.puan__radyo:checked ~ .puan__isaret path {
+    fill: var(--sampanya);
+    stroke: var(--sampanya);
+}
+
+/* Fare sıradayken seçim görüntüsü bırakılır, imleç yönetir */
+.puan__sira:hover .puan__radyo:checked ~ .puan__isaret path {
+    fill: transparent;
+    stroke: var(--cizgi-2);
+}
+
+.puan__sira .puan__isaret:hover path,
+.puan__sira .puan__isaret:hover ~ .puan__isaret path {
+    fill: var(--sampanya);
+    stroke: var(--sampanya);
+}
+
+.puan__radyo:focus-visible + .puan__isaret {
+    outline: 2px solid var(--sampanya);
+    outline-offset: 2px;
+}
+
+.puan__yazi {
+    min-height: 1.4em;
+    margin-block-start: var(--b3);
+    color: var(--sampanya);
+    font-family: var(--f-serif);
+    font-size: var(--t-lg);
+    font-style: italic;
+}
+
+/* =============================================================
+   GÖNDER — iletim durumu
+   ============================================================= */
+.paylas__gonder,
+.konsiyer__gonder {
+    position: relative;
+    align-self: flex-start;
+    overflow: hidden;
+    min-height: var(--dokunma);
+    padding: var(--b3) clamp(1.75rem, 4vw, 2.75rem);
+    background: var(--sampanya);
+    border: 1px solid var(--sampanya);
+    color: var(--obsidyen);
+    font-family: var(--f-sans);
+    font-size: var(--t-xs);
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background var(--h2) var(--egri), color var(--h2) var(--egri);
+    will-change: transform;
+}
+
+    .paylas__gonder:hover,
+    .konsiyer__gonder:hover {
+        background: var(--metin);
+        border-color: var(--metin);
+    }
+
+    .paylas__gonder:disabled,
+    .konsiyer__gonder:disabled {
+        cursor: default;
+    }
+
+/* İletim durumu: gerçek metin görünmez olur (ekran okuyucu için DOM'da
+   kalır, ortak.js aria-busy ekler), görünen yazıyı ::before üstlenir.
+   Böylece ortak.js'in textContent'i değiştirmesi görüntüyü bozmuyor. */
+.rosso-iletiliyor {
+    background: var(--sampanya);
+    border-color: var(--sampanya);
+    color: transparent;
+}
+
+    .rosso-iletiliyor::before {
+        content: 'İletiliyor';
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: var(--obsidyen);
+        letter-spacing: 0.2em;
+    }
+
+    /* Belirsiz ilerleme: ince bir çizgi butonun altında gidip gelir */
+    .rosso-iletiliyor::after {
+        content: '';
+        position: absolute;
+        inset-inline: 0;
+        inset-block-end: 0;
+        height: 2px;
+        background: var(--obsidyen);
+        opacity: 0.32;
+        transform-origin: left center;
+        animation: gonderimCizgi 1.15s var(--egri) infinite;
+    }
+
+@keyframes gonderimCizgi {
+    0% { transform: scaleX(0); transform-origin: left center; }
+    48% { transform: scaleX(1); transform-origin: left center; }
+    52% { transform: scaleX(1); transform-origin: right center; }
+    100% { transform: scaleX(0); transform-origin: right center; }
+}
+
+/* Hareket azaltmada animasyon süresi 0.01ms'e iniyor; çizgi kaybolmasın */
+@media (prefers-reduced-motion: reduce) {
+    .rosso-iletiliyor::after {
+        transform: scaleX(1);
+    }
+}
+
+/* =============================================================
+   KATMAN MODU — sağdan kayan off-canvas
+   ============================================================= */
+.paylas--katman {
+    position: fixed;
+    inset: 0;
+    z-index: var(--k-loader);
+    display: flex;
+    justify-content: flex-end;
+}
+
+    .paylas--katman[hidden] {
+        display: none;
+    }
+
+    .paylas--katman .paylas__zemin {
+        position: absolute;
+        inset: 0;
+        display: block;
+        background: rgba(8, 8, 10, 0.66);
+        -webkit-backdrop-filter: blur(16px) saturate(115%);
+        backdrop-filter: blur(16px) saturate(115%);
+    }
+
+    .paylas--katman .paylas__panel {
+        position: relative;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        width: min(30rem, 100%);
+        max-width: none;
+        height: 100%;
+        margin: 0;
+        padding: clamp(3.5rem, 7vh, 5rem) clamp(1.5rem, 4vw, 3rem) clamp(2rem, 5vh, 3.5rem);
+        background: var(--antrasit);
+        border: 0;
+        border-inline-start: 1px solid var(--cizgi-2);
+        box-shadow: -60px 0 120px -40px rgba(0, 0, 0, 0.9);
+    }
+
+        .paylas--katman .paylas__panel:focus-visible {
+            outline: none;
+        }
+
+.paylas__kapat {
+    position: absolute;
+    inset-block-start: clamp(1rem, 3vh, 1.75rem);
+    inset-inline-end: clamp(1rem, 3vw, 1.75rem);
+    display: grid;
+    place-items: center;
+    width: var(--dokunma);
+    height: var(--dokunma);
+    padding: 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--cizgi-2);
+    border-radius: 50%;
+    color: var(--metin);
+    font-size: var(--t-lg);
+    line-height: 1;
+    cursor: pointer;
+    transition: background var(--h2) var(--egri), border-color var(--h2) var(--egri);
+}
+
+    .paylas__kapat:hover {
+        background: var(--sampanya-sis);
+        border-color: var(--sampanya);
+    }
+
+@media (max-width: 520px) {
+    .paylas--katman .paylas__panel {
+        width: 100%;
+        border-inline-start: 0;
+    }
+
+    .paylas__gonder {
+        align-self: stretch;
+    }
+}
+
+/* =============================================================
+   KONSİYER — iletişim
+   -------------------------------------------------------------
+   Asimetrik bölünme: solda devasa serif başlık + mekân bilgileri,
+   sağda sekmeli form paneli (rezervasyon + mesaj).
+
+   Bilgi satırları .kn-maske taşıyor: gizleme yalnızca
+   html.rosso-kinetik altında geçerli ve gorunurlukEmniyeti bu
+   sınıfın inline gizlemelerini zaten temizliyor.
+   ============================================================= */
+.konsiyer {
+    position: relative;
+    /* Alt dolgu kısa: devasa imza bu bölümün içinde durduğu için
+       footer şeridi haritaya yakın kalmalı. */
+    padding-block: var(--bolum) clamp(2.5rem, 5vw, 4rem);
+    background: var(--obsidyen);
+}
+
+.konsiyer__izgara {
+    display: grid;
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    gap: clamp(2.5rem, 6vw, 6rem);
+    align-items: start;
+}
+
+/* Sağ sütun satırın tamamını kaplasın: imzadaki "margin-block: auto"
+   ancak böyle kalan boşlukta ortalanabiliyor. */
+.konsiyer__sag {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+}
+
+@media (max-width: 980px) {
+    .konsiyer__izgara {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* --- Sol sütun --- */
+.konsiyer__ustbaslik {
+    margin-block-end: var(--b4);
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: var(--harf-genis);
+    text-transform: uppercase;
+}
+
+.konsiyer__baslik {
+    margin-block-end: var(--b5);
+    font-size: clamp(2.5rem, 1.4rem + 3.8vw, 5.5rem);
+    font-weight: 300;
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+}
+
+    .konsiyer__baslik em {
+        font-style: italic;
+        color: var(--sampanya);
+    }
+
+.konsiyer__alt {
+    max-width: 38ch;
+    color: var(--metin-2);
+    line-height: var(--satir-genis);
+}
+
+/* --- Bilgi listesi --- */
+.konsiyer__bilgi {
+    margin: clamp(2.25rem, 5vw, 3.5rem) 0 0;
+}
+
+.konsiyer__satir {
+    display: grid;
+    grid-template-columns: minmax(0, 10rem) minmax(0, 1fr);
+    gap: var(--b4);
+    padding-block: clamp(1rem, 2.2vw, 1.5rem);
+    border-block-start: 1px solid var(--cizgi);
+}
+
+    .konsiyer__satir:last-of-type {
+        border-block-end: 1px solid var(--cizgi);
+    }
+
+@media (max-width: 560px) {
+    .konsiyer__satir {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--b2);
+    }
+}
+
+.konsiyer__etiket {
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+.konsiyer__deger {
+    margin: 0;
+    color: var(--metin);
+    line-height: 1.65;
+}
+
+    .konsiyer__deger a {
+        display: inline-flex;
+        align-items: center;
+        min-height: var(--dokunma);
+        color: inherit;
+        text-decoration: none;
+        transition: color var(--h2) var(--egri);
+    }
+
+        .konsiyer__deger a:hover {
+            color: var(--sampanya);
+        }
+
+.konsiyer__telefon {
+    font-family: var(--f-serif);
+    font-size: var(--t-xl);
+    letter-spacing: 0.01em;
+}
+
+/* Adresin kendisi bağlantı — ayrı "Yol tarifi al" butonu kaldırıldı.
+   Ayrı renk kuralı GEREKMİYOR: yukarıdaki ".konsiyer__deger a" rengi
+   metinden miras alıyor, ":hover" da şampanyaya çeviriyor. Ölçüldü:
+   #f2efe9 -> #e6d9bd -> geri. Sınıf yalnızca işaretleme kancası. */
+
+/* --- Canlı saat + durum ışığı --- */
+.saat-isik {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--b3);
+    margin-block: clamp(1.5rem, 3vw, 2.25rem) clamp(1rem, 2vw, 1.5rem);
+    padding: var(--b3) var(--b5);
+    border: 1px solid var(--cizgi);
+    border-radius: 999px;
+    font-size: var(--t-sm);
+}
+
+.saat-isik__nokta {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--metin-3);
+    /* Işığın kendisi kadar hâlesi de okunurluğu artırıyor */
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
+}
+
+.saat-isik__saat {
+    font-family: var(--f-serif);
+    font-size: var(--t-lg);
+    color: var(--metin);
+    font-variant-numeric: tabular-nums;
+}
+
+.saat-isik__metin {
+    color: var(--metin-2);
+    letter-spacing: 0.06em;
+}
+
+/* Üç durum. Renkler obsidyen üstünde AA'yı geçiyor. */
+.saat-isik--acik .saat-isik__nokta { background: #7fd4a0; }
+.saat-isik--acik .saat-isik__metin { color: #7fd4a0; }
+
+.saat-isik--mola .saat-isik__nokta { background: #e0b558; }
+.saat-isik--mola .saat-isik__metin { color: #e0b558; }
+
+.saat-isik--kapali .saat-isik__nokta { background: #e08b86; }
+.saat-isik--kapali .saat-isik__metin { color: #e08b86; }
+
+.konsiyer__sosyal {
+    margin-block-start: clamp(1.75rem, 4vw, 2.5rem);
+}
+
+/* =============================================================
+   HARİTA — monokrom
+   -------------------------------------------------------------
+   Gömülü harita renkli hâliyle koyu dili bozuyordu. Filtre onu
+   obsidyen paletine indiriyor.
+
+   CANLILIK KAYDIRMAYA BAĞLI: griliği --harita-gri değişkeni taşıyor,
+   rosso-hareket.js onu ScrollTrigger ile sürüyor — harita ekrana
+   girerken renkleniyor, yukarı çıktıkça geri griliyor. Değişken
+   sürülmezse varsayılan 1 (tam gri) kalır, yani JS yoksa da
+   sahneye uygun görünür.
+
+   KAYDIRMA KİLİDİ: gömülü harita tekerlek olaylarını yutuyor ve
+   imleç üstündeyken sayfa kaydırılamıyordu. Çerçeve varsayılan
+   olarak pointer-events almıyor; kullanıcı tıklayınca
+   .harita--etkin ile etkileşim açılıyor, fare ayrılınca kapanıyor.
+   ============================================================= */
+.harita {
+    position: relative;
+    overflow: hidden;
+    margin: clamp(2rem, 4vw, 3rem) 0 0;
+    aspect-ratio: 16 / 10;
+    background: var(--antrasit-2);
+    border: 1px solid var(--cizgi);
+}
+
+.harita {
+    --harita-gri: 1;
+}
+
+.harita__cerceve {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    /* Tekerlek olayları sayfaya geçsin diye kapalı; tıklamayla açılıyor */
+    pointer-events: none;
+    filter: grayscale(var(--harita-gri)) invert(0.92) contrast(0.82) brightness(0.96);
+}
+
+.harita--etkin .harita__cerceve {
+    pointer-events: auto;
+}
+
+.harita__perde {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--b3);
+    padding: var(--b5);
+    background: linear-gradient(to top, rgba(8, 8, 10, 0.9), rgba(8, 8, 10, 0));
+    /* Tıklama .harita'ya düşsün: etkinleştirmeyi o dinliyor */
+    pointer-events: none;
+    transition: opacity var(--h3) var(--egri);
+}
+
+.harita:hover .harita__perde {
+    opacity: 0.72;
+}
+
+.harita__ipucu {
+    color: var(--sampanya);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity var(--h2) var(--egri);
+}
+
+.harita:hover .harita__ipucu {
+    opacity: 1;
+}
+
+/* Dokunmatikte hover yok; ipucu görünür olmalı yoksa haritanın
+   dokunmayla açıldığı hiç anlaşılmaz */
+@media (hover: none) {
+    .harita__ipucu {
+        opacity: 1;
+    }
+}
+
+/* Etkinleşince ipucu görevini tamamlar */
+.harita--etkin .harita__ipucu {
+    opacity: 0;
+}
+
+.harita--etkin .harita__perde {
+    opacity: 0.35;
+}
+
+.harita__yer {
+    color: var(--metin-2);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+/* =============================================================
+   FORM PANELİ — sekmeler
+   ============================================================= */
+.form-panel {
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+    background: var(--antrasit);
+    border: 1px solid var(--cizgi);
+}
+
+.form-sekmeler {
+    display: flex;
+    gap: clamp(1.25rem, 3vw, 2.25rem);
+    margin-block-end: clamp(1.5rem, 3vw, 2.25rem);
+    background: none;
+    border-block-end: 1px solid var(--cizgi);
+}
+
+.form-sekme {
+    position: relative;
+    min-height: var(--dokunma);
+    padding: 0 0 var(--b3);
+    background: none;
+    border: 0;
+    color: var(--metin-3);
+    font-family: var(--f-sans);
+    font-size: var(--t-xs);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color var(--h2) var(--egri);
+}
+
+    .form-sekme::after {
+        content: "";
+        position: absolute;
+        inset-inline: 0;
+        inset-block-end: -1px;
+        height: 1px;
+        background: var(--sampanya);
+        transform: scaleX(0);
+        transform-origin: center;
+        transition: transform var(--h2) var(--egri);
+    }
+
+    .form-sekme:hover {
+        color: var(--metin-2);
+    }
+
+    .form-sekme:hover::after {
+        transform: scaleX(0.5);
+    }
+
+.form-sekme.aktif {
+    color: var(--metin);
+}
+
+    .form-sekme.aktif::after {
+        transform: scaleX(1);
+    }
+
+.form-govde:focus-visible {
+    outline: 2px solid var(--sampanya);
+    outline-offset: 4px;
+}
+
+.konsiyer__form-alt {
+    margin-block-end: clamp(1.5rem, 3vw, 2rem);
+    color: var(--metin-3);
+    font-size: var(--t-sm);
+    line-height: var(--satir-genis);
+}
+
+/* --- Alan ızgarası --- */
+.konsiyer__form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(1.75rem, 3vw, 2.25rem) clamp(1rem, 2.5vw, 1.75rem);
+    align-items: start;
+}
+
+@media (max-width: 560px) {
+    .konsiyer__form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.alan--tam {
+    grid-column: 1 / -1;
+}
+
+/* =============================================================
+   ALAN — konsiyer eklentileri
+   ============================================================= */
+.alan__yardim {
+    display: block;
+    margin-block-start: var(--b2);
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    line-height: 1.5;
+}
+
+.alan__istege-bagli {
+    color: var(--metin-3);
+    font-size: 0.85em;
+}
+
+/* Sayı alanındaki tarayıcı okları minimal dili bozuyor */
+.alan__girdi[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+    .alan__girdi::-webkit-outer-spin-button,
+    .alan__girdi::-webkit-inner-spin-button {
+        margin: 0;
+        -webkit-appearance: none;
+    }
+
+/* script.js'in eklediği satır içi hata kutusu alanın altına otursun */
+.alan [data-rez-hata] {
+    margin-block-start: var(--b2);
+}
+
+.alan__girdi[aria-invalid="true"] {
+    border-block-end-color: var(--renk-marka-acik, #e57373);
+}
+
+/* flatpickr altInput'u görünen alan; yüzen etiket ona bağlanıyor
+   (bkz. script.js §6 — asıl girdiden .alan__girdi sınıfı alınıyor) */
+.alan .flatpickr-alt-input {
+    cursor: pointer;
+}
+
+.konsiyer__gonder {
+    margin-block-start: var(--b2);
+}
+
+/* =============================================================
+   FİNALE — iki satırlık alt bilgi
+
+   Devasa ROSSO LOUNGE yazısı iletişim bölümüne (haritanın sağına)
+   taşındı; geriye telif + geliştirici imzası kaldı. Bu yüzden eski
+   "sabit footer perdesi" (fixed konum + .finale-bosluk yer ayırma)
+   tamamen kaldırıldı: iki satır için gereksizdi ve main'e verdiği
+   z-index bağlamı tam ekran görüntüleyici ile yorum panelini
+   hapsediyordu.
+
+   ESKİ CSS UYARISI: style.css içinde "body:not(.panel) footer"
+   kuralı var; özgüllüğü (0,1,2) ve tek sınıflı .finale'yi (0,1,0)
+   ezip zemini/dolguyu/hizayı geri yazıyor. Bu yüzden kap düzeyindeki
+   kurallar bilerek "body:not(.panel) footer.finale" (0,2,2) ile
+   yazıldı.
+   ============================================================= */
+body:not(.panel) footer.finale {
+    position: relative;
+    margin-block-start: 0;
+    /* Haritaya yakın dursun diye üst boşluk dar tutuldu */
+    padding-block: clamp(1.25rem, 2.5vw, 2rem);
+    background: var(--obsidyen);
+    border-block-start: 1px solid var(--cizgi);
+    color: var(--metin-2);
+    text-align: left;
+}
+
+.finale__alt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--b5);
+}
+
+.finale__telif {
+    color: var(--metin-3);
+    font-size: var(--t-xs);
+    letter-spacing: 0.06em;
+}
+
+.rosso-kinetik .finale__alt {
+    opacity: 0;
+}
+
+/* =============================================================
+   İMZA — haritanın sağındaki devasa yazı
+
+   Dar sütunda durduğu için iki söz alt alta; her söz kendi içinde
+   space-between ile kenardan kenara yayılıyor, böylece sütun
+   genişliği ne olursa olsun hizalı bir blok oluşuyor.
+   ============================================================= */
+.imza {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    /* Sütunda formdan sonra kalan boşlukta ortalanır — haritanın
+       hizasına gelsin diye, üste yapışık durmasın. */
+    margin-block: auto;
+    padding-block-start: clamp(1.5rem, 3vw, 2.5rem);
+    /* İki söz arasında nefes payı */
+    gap: clamp(0.5rem, 1.4vw, 1.1rem);
+    font-family: var(--f-serif);
+    font-size: clamp(2.25rem, 7vw, 5rem);
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    color: var(--metin);
+    user-select: none;
+}
+
+    /* İnce şampanya çizgisi: yazıyı sayfaya bağlayan tek detay */
+    .imza::before {
+        content: "";
+        position: absolute;
+        inset-block-start: 0;
+        inset-inline-start: 0;
+        width: clamp(3rem, 18%, 6rem);
+        height: 1px;
+        background: linear-gradient(to right, var(--sampanya), transparent);
+    }
+
+.imza__soz {
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Harflerde yukarıdan aşağı hafif sönümlenme — düz beyaz yerine derinlik.
+   Desteklenmeyen tarayıcıda üstteki düz renk kalır. */
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+    .imza__harf > span {
+        background-image: linear-gradient(to bottom, var(--metin) 35%, var(--bronz) 140%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+}
+
+.imza__harf {
+    display: inline-block;
+    overflow: hidden;
+    line-height: 1;
+}
+
+    .imza__harf > span {
+        display: inline-block;
+    }
+
+/* Kinetik başlangıç — harfler maskenin altında bekler */
+.rosso-kinetik .imza__harf > span {
+    transform: translateY(105%);
+}
+
+@media (max-width: 980px) {
+    /* Tek sütuna inince imza sayfa genişliğine yayılıyor */
+    .imza {
+        font-size: clamp(2.5rem, 15vw, 7rem);
+    }
+}
+
+/* =============================================================
+   BAŞA DÖN
+
+   Sona yaklaşınca beliriyor. İmleç 10000'de olduğu için onun
+   altında ama içeriğin üstünde duruyor.
+   ============================================================= */
+/* -------------------------------------------------------------
+   BAŞA DÖN + İLERLEME HALKASI
+
+   Sürekli ekranda; boş durmuyor, sayfanın ne kadarının geçildiğini
+   gösteriyor. Dolum SVG yayında (stroke-dashoffset): tek bir sayı
+   yazımı, düzen hesabı yok.
+
+   ------------------------------------------------------------- */
+.basa-don {
+    position: fixed;
+    inset-block-end: clamp(1.25rem, 3vw, 2rem);
+    inset-inline-end: clamp(1.25rem, 3vw, 2rem);
+    z-index: var(--k-nav);
+    display: grid;
+    place-items: center;
+    width: 60px;
+    height: 60px;
+    padding: 0;
+    background: rgba(8, 8, 10, 0.5);
+    border: 0;
+    border-radius: 50%;
+    color: var(--metin-2);
+    cursor: pointer;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    transition: background var(--h2) var(--egri);
+}
+
+    .basa-don:focus-visible {
+        outline: 1px solid var(--sampanya);
+        outline-offset: 4px;
+    }
+
+/* Hover'da içi dolan vurgu. ::before boyama sırasında ÇOCUKLARDAN
+   ÖNCE geliyor: halka ve ok dolgunun üstünde kalıyor.
+
+   inset 7px bilinçli: yay 27 yarıçapta (kenardan 3px içeride). Dolgu
+   ona kadar gelseydi şampanya yay şampanya zeminde kaybolurdu; arada
+   koyu bir halka boşluğu bırakılıyor. */
+.basa-don::before {
+    content: "";
+    position: absolute;
+    inset: 7px;
+    border-radius: 50%;
+    background: var(--sampanya);
+    opacity: 0;
+    transform: scale(0.55);
+    transition: opacity var(--h2) var(--egri), transform var(--h2) var(--egri);
+}
+
+.basa-don:hover::before,
+.basa-don:focus-visible::before {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Halka ve ok aynı ızgara gözünde üst üste */
+.basa-don__halka,
+.basa-don__ic {
+    grid-area: 1 / 1;
+}
+
+/* Yay saat 12'den başlasın */
+.basa-don__halka {
+    transform: rotate(-90deg);
+}
+
+.basa-don__ray,
+.basa-don__yay {
+    fill: none;
+}
+
+.basa-don__ray {
+    stroke: var(--cizgi-2);
+    stroke-width: 1;
+}
+
+.basa-don__yay {
+    stroke: url(#basaDonAkim);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    /* JS getTotalLength() ile ölçüp üzerine yazıyor; buradaki değer
+       (2π·27) JS çalışmadan önceki tek karelik hâl için. */
+    stroke-dasharray: 169.65;
+    stroke-dashoffset: 169.65;
+}
+
+.basa-don__renk-1 {
+    stop-color: var(--bronz);
+}
+
+.basa-don__renk-2 {
+    stop-color: var(--sampanya);
+}
+
+/* Ok: hover'da yukarı sekiyor. Eğri bilerek back: düz bir çıkış
+   mekanik duruyordu, hafif aşma "sekme" hissini veriyor. */
+.basa-don__ok {
+    transition: transform var(--h2) cubic-bezier(0.34, 1.56, 0.64, 1),
+                color var(--h2) var(--egri);
+}
+
+.basa-don:hover .basa-don__ok,
+.basa-don:focus-visible .basa-don__ok {
+    /* Dolgu şampanya; ok koyuya dönmezse okunmuyor */
+    color: var(--obsidyen);
+    transform: translateY(-3px);
+}
+
+/* Hareket azaltma: renk değişiyor, sekme yok */
+@media (prefers-reduced-motion: reduce) {
+    .basa-don__ok {
+        transition: color var(--h1) linear;
+    }
+
+    .basa-don:hover .basa-don__ok,
+    .basa-don:focus-visible .basa-don__ok {
+        transform: none;
+    }
+}
+
+/* =============================================================
+   NAVBAR GİZLEME
+
+   İmza görünürken header kayboluyor: iki ROSSO LOUNGE yazısı
+   aynı anda ekranda durmasın.
+   ============================================================= */
+.nav--gizli {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* =============================================================
+   HERO + NAVBAR — kinetik başlangıç durumu
+
+   Bunlar eksikti: perde yırtılıp sayfayı açtığında hero ve navbar
+   HAZIR görünüyordu, hemen ardından heroGirisi() onları gizleyip
+   baştan animasyonluyordu. Kullanıcı "yazılar tekrar yükleniyor"
+   diye bunu görüyordu (videoda 2.7sn'de tam, 3.0sn'de yeniden
+   animasyonda).
+
+   heroGirisi() bu yüzden fromTo kullanıyor: gsap.from() mevcut
+   değeri BİTİŞ olarak okuduğu için buradaki 0'ı görüp 0'dan 0'a
+   animasyon yapardı.
+
+   Emniyet: kinetik mod düşerse (GSAP yok, ticker durdu, JS hiç
+   çalışmadı) html'den .rosso-kinetik kalkıyor ve bu kural da
+   devre dışı kalıyor — içerik her koşulda görünür.
+   ============================================================= */
+.rosso-kinetik .hero__ustbaslik,
+.rosso-kinetik .hero__baslik,
+.rosso-kinetik .hero__alt,
+.rosso-kinetik .hero__eylemler > *,
+.rosso-kinetik .hero__durum,
+.rosso-kinetik .nav__marka,
+.rosso-kinetik .nav__menu > li,
+.rosso-kinetik .nav__eylem {
+    opacity: 0;
+}
+
+/* =============================================================
+   ETKİLEŞİM KATMANI   (rosso-hareket.js → 7. bölüm)
+
+   Özel imleç söküldü: ziyaretçinin kendi işletim sistemi imleci her
+   yerde görünür, projede hiçbir yerde cursor: none yok. Premium his
+   artık imlecin DOKUNDUĞU öğelerde. Görsel taraf burada; JS yalnızca
+   sayı sürüyor (CSS değişkeni ya da GSAP dönüşümü).
+   ============================================================= */
+
+/* --- Yakınlık ışığı ---
+   z-index: -1 + isolation: isolate ŞART ve bilinçli. Boyama sırası
+   gereği negatif z-index'li sözde öğe, kabın KENDİ zemininden SONRA
+   ama içeriğinden ÖNCE boyanıyor. Aksi hâlde .form-panel'in antrasit
+   zemini parıltıyı yutardı; z-index verilmeseydi de parıltı form
+   alanlarının üstünü örtüp kontrastı düşürürdü. */
+.vitrin__kart,
+.form-panel {
+    position: relative;
+    isolation: isolate;
+}
+
+    .vitrin__kart::after,
+    .form-panel::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity var(--h2) var(--egri);
+        background: radial-gradient(circle 260px at var(--isik-x, 50%) var(--isik-y, 50%),
+                    rgba(154, 123, 79, 0.32),
+                    rgba(154, 123, 79, 0.09) 42%,
+                    transparent 70%);
+    }
+
+.isik--acik::after {
+    opacity: 1;
+}
+
+/* --- 3B eğilme ---
+   Perspektif ÇERÇEVEDE, dönme fotoğrafta: çerçevenin kutusu
+   kıpırdamıyor. Galeri karesine tıklanınca tam ekran görüntüleyici
+   o çerçevenin getBoundingClientRect'inden büyüyor; eğik bir kutu
+   açılışı kaydırırdı.
+
+   Fotoğraflar zaten çerçeveden taşkın (%124 genişlik / %128 yükseklik,
+   parallax payı). 4 derecelik dönme bu yüzden hiçbir kenarda boşluk
+   açmıyor. */
+.galeri__cerceve,
+.hakkinda__cerceve {
+    perspective: 900px;
+}
+
+/* --- Menü sayfası: tabak önizlemesi ---
+   Sol rayın altındaki boş sütuna oturuyor. position: fixed, ama
+   fareyi TAKİP ETMİYOR — konumu JS rayın kutusundan okuyor. */
+.menu__onizleme {
+    position: fixed;
+    z-index: var(--k-nav);
+    height: 17rem;
+    margin: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background: var(--antrasit-3);
+    border: 1px solid var(--cizgi-2);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity var(--h2) var(--egri), transform var(--h2) var(--egri);
+}
+
+.menu__onizleme--acik {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Önizleme açıkken ray içeriği çekiliyor: sütun devrediliyor.
+   Yarı örtülmüş bir kategori listesi kaza gibi duruyordu.
+   Opaklığı JS satır içi yazıyor (giriş animasyonu da satır içi
+   yazdığı için sınıf kuralı eziliyordu); burada yalnızca geçiş. */
+.menu__ray-ic {
+    transition: opacity var(--h2) var(--egri);
+}
+
+.menu__onizleme-foto {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* =============================================================
+   BUTON MÜREKKEBİ
+
+   İmleç butona girince içeride sıvı bir leke akıyor; imleç
+   hareket ettikçe arkasında kuyruk bırakıyor, DURUNCA lekeler
+   tek damlada birleşip sakinleşiyor, çıkınca siliniyor.
+
+   Dört ayrı leke var ama tek bir sıvı gibi görünüyorlar: katmana
+   uygulanan gooey filtresi (feGaussianBlur + feColorMatrix)
+   birbirine değen alfaları kaynaştırıyor.
+
+   Buton KIPIRDAMIYOR — hareket yalnızca butonun İÇİNDE.
+   ============================================================= */
+.svg-tanim {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+/* z-index: -1 + isolation: isolate — boyama sırası gereği katman
+   butonun KENDİ zemininden sonra, yazısından önce boyanıyor.
+   overflow: hidden lekeleri hap biçimine kırpıyor. */
+.btn,
+.nav__eylem {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+}
+
+.paylas__gonder,
+.konsiyer__gonder {
+    isolation: isolate;
+}
+
+.mrk {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+    filter: url(#rosso-murekkep);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--h2) var(--egri), visibility 0s linear var(--h2);
+}
+
+/* Görünmezken visibility: hidden — filtre o zaman hiç hesaplanmıyor.
+
+   SAYDAMLIK KATMANDA, leke renginde DEĞİL. Sebebi: gooey filtresinin
+   feColorMatrix'i alfayı eşikleyip sertleştiriyor — yarı saydam bir
+   leke rengi filtreden neredeyse tam opak çıkıyor ve buton "silinmiş"
+   gibi görünüyordu (ekran görüntüsüyle görüldü). Lekeler tam alfayla
+   kaynaşıyor, inceltmeyi sonra katman yapıyor. */
+.mrk--acik {
+    opacity: 0.55;
+    visibility: visible;
+    transition: opacity var(--h2) var(--egri), visibility 0s;
+}
+
+.mrk__leke {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    /* Butonun yüksekliğine yakın: hareket ederken lekeler tek bir
+       şeride kaynaşıyor. Daha küçük yaptığımda yazının arkasında
+       dolaşan bir nokta gibi duruyordu, "boya" hissi vermiyordu. */
+    width: var(--leke-boy, 60px);
+    height: var(--leke-boy, 60px);
+    /* Negatif kenar boşluğu: GSAP'in yazdığı translate lekenin
+       MERKEZİNİ imlece oturtuyor */
+    margin: calc(var(--leke-boy, 60px) / -2);
+    border-radius: 50%;
+    background: var(--mrk-renk, var(--sampanya));
+    will-change: transform;
+}
+
+/* Açık zeminli butonlarda şampanya mürekkep kaybolur; bronz */
+.paylas__gonder,
+.konsiyer__gonder {
+    --mrk-renk: #4a3618;
+}
+
+/* Navbar düğmesi kısa: leke de küçülüyor */
+.nav__eylem {
+    --leke-boy: 40px;
+}

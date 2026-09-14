@@ -1,89 +1,148 @@
-﻿@model RossoLoungeWeb.Models.Urun
+@model RossoLoungeWeb.Models.Urun
+@*
+    ÜRÜN DÜZENLE
+    ===============================================================
+    Uç değişmedi: POST /Urun/Duzenle, multipart (ResimDosyasi).
+    Fiyatlar InvariantCulture ile basılıyor — alan metin girdisi
+    olduğu için sunucunun okuduğu biçimle aynı olmalı.
+
+    SIRA NO ALANI KALDIRILDI — gerekçe Ekle.cshtml'de. Burada ayrıca
+    zararlıydı: kategorisinin 5. sırasındaki ürüne "1" yazmak
+    diğerlerini kaydırmıyor, yalnızca ikinci bir 1 üretiyordu.
+    Controller da artık SiraNo'ya dokunmuyor.
+
+    Başlığın yanındaki rozet bir DÜĞME DEĞİL, bağlam: ürünün hangi
+    kategoride olduğunu söylüyor ve o kategorinin listesine götürüyor.
+    Eskiden orada duran "Listeye dön", formun altındaki "İptal" ile
+    aynı işi yapıyordu.
+*@
 @{
-    Layout = null;
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Baslik"] = "Ürün Düzenle";
+    // Doğrulama hatasında Model.Ad boş olabilir; o zaman kaydın adı
+    // controller'dan geliyor, başlık "hangi ürün" bilgisini yitirmesin.
+    ViewData["AltBaslik"] = string.IsNullOrWhiteSpace(Model.Ad)
+        ? ViewBag.MevcutAd as string
+        : Model.Ad;
+    ViewData["Aktif"] = "urunler";
+
+    var ik = System.Globalization.CultureInfo.InvariantCulture;
+    var kategoriAdi = ViewBag.KategoriAdi as string;
 }
 
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <title>Ürün Düzenle</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light d-flex align-items-center justify-content-center" style="min-height: 100vh; padding: 20px;">
+@section Eylemler {
+    @if (!string.IsNullOrEmpty(kategoriAdi))
+    {
+        <a class="y-rozet y-rozet--sonuk" href="/Urun/Index?kategoriId=@Model.KategoriId">
+            @kategoriAdi
+        </a>
+    }
+}
 
-    <div class="card shadow p-4" style="width: 100%; max-width: 600px;">
-        <h4 class="mb-4 text-center">Ürün Düzenle</h4>
+@await Html.PartialAsync("_YonetimDogrulama")
 
-        <form action="/Urun/Duzenle" method="post" enctype="multipart/form-data">
-            <input type="hidden" name="Id" value="@Model.Id" />
+<form class="y-form" method="post" action="/Urun/Duzenle" enctype="multipart/form-data" data-ondalik-form>
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="Id" value="@Model.Id">
 
-            <div class="mb-3">
-                <label class="form-label fw-bold">Sıra No:</label>
-                <input type="number" name="SiraNo" class="form-control" value="@Model.SiraNo" required>
-                <small class="text-muted">Menüde kaçıncı sırada görünsün?</small>
-            </div>
+    <div class="y-form__izgara">
+        <div class="y-form__alan">
+            <label class="y-form__etiket" for="ad">
+                Ürün adı <span class="y-zorunlu" aria-hidden="true">*</span>
+            </label>
+            <input class="y-girdi" type="text" id="ad" name="Ad" value="@Model.Ad"
+                   maxlength="100" required autofocus>
+        </div>
 
-            <div class="mb-3">
-                <label class="form-label fw-bold">Ürün Adı:</label>
-                <input type="text" name="Ad" class="form-control" value="@Model.Ad" required>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label fw-bold">Kategori:</label>
-                @Html.DropDownList("KategoriId", (SelectList)ViewBag.Kategoriler, new { @class = "form-control" })
-            </div>
-
-            <div class="card bg-light border-0 mb-3 p-3">
-                <h6 class="text-muted mb-3 border-bottom pb-2">Fiyatlandırma Seçenekleri</h6>
-
-                <div class="row mb-2">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label small fw-bold">1. Fiyat (Zorunlu):</label>
-                        <input type="text" name="Fiyat" class="form-control"
-                               value="@Model.Fiyat.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label small fw-bold">2. Fiyat (Opsiyonel):</label>
-                        <input type="text" name="FiyatBuyuk" class="form-control"
-                               value="@(Model.FiyatBuyuk.HasValue? Model.FiyatBuyuk.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")">
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-2">
-                        <label class="form-label small">1. Fiyat İsmi (Opsiyonel):</label>
-                        <input type="text" name="FiyatTur" class="form-control form-control-sm" value="@Model.FiyatTur" placeholder="Örn: Orta, Kutu (Boşsa 'Orta')">
-                    </div>
-                    <div class="col-md-6 mb-2">
-                        <label class="form-label small">2. Fiyat İsmi (Opsiyonel):</label>
-                        <input type="text" name="FiyatBuyukTur" class="form-control form-control-sm" value="@Model.FiyatBuyukTur" placeholder="Örn: Büyük, Şişe (Boşsa 'Büyük')">
-                    </div>
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label fw-bold">Açıklama:</label>
-                <textarea name="Aciklama" class="form-control" rows="3">@Model.Aciklama</textarea>
-            </div>
-
-            <div class="mb-4">
-                <label class="form-label fw-bold">Yeni Resim (Opsiyonel):</label>
-                <input type="file" name="ResimDosyasi" class="form-control" accept="image/*">
-
-                @if (!string.IsNullOrEmpty(Model.ResimUrl))
-                {
-                    <div class="mt-2 p-2 border rounded bg-white d-inline-block">
-                        <small class="d-block text-muted mb-1">Mevcut:</small>
-                        <img src="@Model.ResimUrl" width="80" style="border-radius: 5px;" />
-                    </div>
-                }
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Değişiklikleri Kaydet</button>
-        </form>
-
-        <a href="/Urun/Index" class="btn btn-outline-secondary w-100 mt-2">İptal</a>
+        <div class="y-form__alan">
+            <label class="y-form__etiket" for="KategoriId">
+                Kategori <span class="y-zorunlu" aria-hidden="true">*</span>
+            </label>
+            @Html.DropDownList("KategoriId", (SelectList)ViewBag.Kategoriler,
+                     new { @class = "y-girdi", required = "required", aria_describedby = "kategori-yardim" })
+            <p class="y-form__yardim" id="kategori-yardim">
+                Kategori değişirse ürün menüde yeni başlığın altına taşınır.
+            </p>
+        </div>
     </div>
 
-</body>
-</html>
+    <fieldset class="y-alanlik">
+        <legend class="y-alanlik__baslik">Fiyatlandırma</legend>
+
+        <div class="y-form__izgara">
+            <div class="y-form__alan">
+                <label class="y-form__etiket" for="fiyat">
+                    1. fiyat <span class="y-zorunlu" aria-hidden="true">*</span>
+                </label>
+                <input class="y-girdi y-girdi--sayi" type="text" id="fiyat" name="Fiyat" inputmode="decimal"
+                       value="@Model.Fiyat.ToString("0.##", ik)" required data-ondalik>
+            </div>
+
+            <div class="y-form__alan">
+                <label class="y-form__etiket" for="fiyatBuyuk">2. fiyat</label>
+                <input class="y-girdi y-girdi--sayi" type="text" id="fiyatBuyuk" name="FiyatBuyuk" inputmode="decimal"
+                       value="@(Model.FiyatBuyuk.HasValue ? Model.FiyatBuyuk.Value.ToString("0.##", ik) : "")" data-ondalik>
+            </div>
+
+            <div class="y-form__alan">
+                <label class="y-form__etiket" for="fiyatTur">1. fiyat ismi</label>
+                <input class="y-girdi" type="text" id="fiyatTur" name="FiyatTur"
+                       value="@Model.FiyatTur" maxlength="50" placeholder="Boşsa 'Orta'">
+            </div>
+
+            <div class="y-form__alan">
+                <label class="y-form__etiket" for="fiyatBuyukTur">2. fiyat ismi</label>
+                <input class="y-girdi" type="text" id="fiyatBuyukTur" name="FiyatBuyukTur"
+                       value="@Model.FiyatBuyukTur" maxlength="50" placeholder="Boşsa 'Büyük'">
+            </div>
+        </div>
+    </fieldset>
+
+    <div class="y-form__alan">
+        <label class="y-form__etiket" for="aciklama">Açıklama</label>
+        <textarea class="y-girdi" id="aciklama" name="Aciklama" rows="3" maxlength="1000">@Model.Aciklama</textarea>
+    </div>
+
+    <div class="y-form__alan">
+        <label class="y-form__etiket" for="resimDosyasi">Yeni görsel</label>
+        <input class="y-girdi" type="file" id="resimDosyasi" name="ResimDosyasi"
+               accept="image/*" aria-describedby="resim-yardim">
+        <p class="y-form__yardim" id="resim-yardim">
+            JPG, PNG, WEBP veya GIF · en fazla 5 MB. Boş bırakırsanız mevcut görsel korunur.
+        </p>
+
+        @if (UrunGorseli.Gecerli(Model.ResimUrl))
+        {
+            <div class="y-onizleme">
+                <img src="@Model.ResimUrl" alt="@Model.Ad ürününün mevcut görseli">
+                <span class="y-form__yardim">Mevcut görsel</span>
+            </div>
+        }
+        else
+        {
+            <p class="y-form__yardim">Bu ürünün görseli yok — menüde yer tutucu çıkıyor.</p>
+        }
+    </div>
+
+    @* VİTRİN İŞARETİ — ana sayfadaki "Bu haftanın seçkileri" bölümü.
+       Üç tabak alıyor (ızgara CSS'te üç sütun); sınır sunucuda.
+       Aynı işaret Ürünler listesinde tek tıkla da açılıp kapanıyor. *@
+    <div class="y-form__alan">
+        <label class="y-onay" for="oneCikan">
+            <input type="checkbox" id="oneCikan" name="OneCikan" value="true"
+                   @(Model.OneCikan ? "checked" : null) aria-describedby="vitrin-yardim">
+            Ana sayfada öne çıkar
+        </label>
+        <p class="y-form__yardim" id="vitrin-yardim">
+            Ana sayfadaki vitrin üç tabak gösteriyor. Üçten az
+            işaretlerseniz kalan yerler menü sırasına göre kendiliğinden
+            dolar. Seçili olanları Ürünler listesinin başındaki "Vitrin"
+            rozetinden görebilirsiniz.
+        </p>
+    </div>
+
+    <div class="y-form__ayak">
+        <button type="submit" class="y-dugme y-dugme--birincil">Değişikliği kaydet</button>
+        <a class="y-dugme" href="/Urun/Index">Vazgeç</a>
+    </div>
+</form>

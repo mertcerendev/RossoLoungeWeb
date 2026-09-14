@@ -1,235 +1,186 @@
-﻿@model List<RossoLoungeWeb.Models.Kategori>
+@model List<RossoLoungeWeb.Models.Kategori>
+@*
+    ============================================================
+    KARTA — tam menü sayfası
+
+    Eski tasarım tek sütunda satır satır aşağı iniyordu: 100+ ürün
+    metrelerce kaydırma demekti ve hiçbir şey taranabilir değildi.
+    Yerine EDİTORYAL bir kurgu geldi:
+
+      sol %26  → yapışkan ray (arama + kategoriler + sayaç)
+      sağ      → kategori "odaları", her biri 2–3 kolonluk
+                 tipografik ızgara
+
+    Kurallar:
+      - Ürünlerde GÖRSEL YOK. Fotoğraf yalnızca üzerine gelince
+        SOL RAYIN altında açılıyor (data-gorsel). Sayfaya bu sayede
+        kat kat daha fazla ürün sığıyor.
+        Not: önceden fotoğraf özel imlecin içinde açılıyordu; imleç
+        söküldüğünde önizleme rayın boş sütununa taşındı — fareyi
+        değil ÖĞEYİ takip ediyor.
+      - Kalemler arasında çizgi, kutu, gölge yok. Ayrım yalnızca
+        boşluk ve tipografi ile kuruluyor.
+      - data-ara: canlı aramanın havuzu. JS her tuşta DOM okumasın
+        diye ad + açıklama + kategori burada birleştiriliyor.
+    ============================================================
+*@
 @{
-    Layout = null;
+    ViewData["Baslik"] = "Menü | Rosso Lounge Bistro";
+    ViewData["Aciklama"] = "Rosso Lounge Bistro menüsü — başlangıçlar, ana yemekler, pizzalar, tatlılar ve içecekler.";
+
+    var yil = RossoLoungeWeb.Services.TurkiyeSaati.Simdi.Year;
+    var yerTutucu = "/img/site/sunum.jpg";
+    var kategoriler = Model ?? new List<RossoLoungeWeb.Models.Kategori>();
+    var toplamUrun = kategoriler.Sum(k => k.Urunler.Count);
+    var sira = 0;
 }
 
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menü | Rosso Lounge Bistro</title>
-    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="~/css/style.css">
+<main id="icerik">
+    <section class="menu menu--karta">
+        <div class="kap">
+            <header class="menu__bas">
+                <p class="menu__ustbaslik">Karta</p>
+                <h1 class="menu__baslik">Mutfağımızın <em>tamamı</em></h1>
+                <p class="menu__alt">
+                    @toplamUrun tabak, @kategoriler.Count kategori. Malzemeler günlük,
+                    tarifler sabit; mevsime göre birkaç tabak değişir.
+                </p>
+            </header>
 
-    <style>
-        .menu-header {
-            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1559339352-11d035aa65de?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80');
-            background-size: cover;
-            background-position: center;
-            height: 40vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            text-align: center;
-            margin-top: 60px;
-        }
-
-        .category-title {
-            text-align: center;
-            font-size: 2.2rem;
-            margin-bottom: 2.5rem;
-            color: #e74c3c;
-            position: relative;
-            display: inline-block;
-            padding-bottom: 10px;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
-
-            .category-title::after {
-                content: '';
-                display: block;
-                width: 60px;
-                height: 4px;
-                background: #e74c3c;
-                margin: 10px auto 0;
-                border-radius: 2px;
-            }
-
-        .menu-card {
-            background: #2a2a2a;
-            border-radius: 10px;
-            overflow: hidden;
-            transition: transform 0.3s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-            .menu-card:hover {
-                transform: translateY(-5px);
-            }
-
-            .menu-card img {
-                width: 100%;
-                height: 250px;
-                object-fit: cover;
-            }
-
-        .menu-info {
-            padding: 1.5rem;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-            .menu-info h3 {
-                color: #fff;
-                font-size: 1.3rem;
-                margin-bottom: 0.5rem;
-            }
-
-            .menu-info p {
-                color: #ccc;
-                font-size: 0.9rem;
-                font-weight: 300;
-                min-height: 40px;
-            }
-
-        /* Fiyat Stilleri (GÜNCELLENDİ) */
-        .price-container {
-            border-top: 1px solid #444;
-            padding-top: 10px;
-            margin-top: 10px;
-        }
-
-        .price {
-            color: #e74c3c;
-            font-weight: bold;
-            font-size: 1.2rem;
-            display: block;
-        }
-
-        .price-label {
-            color: #aaa;
-            font-size: 0.85rem;
-            font-weight: normal;
-            margin-right: 5px;
-        }
-    </style>
-</head>
-
-<body>
-
-    <header id="navbar" class="dark-header">
-        <div class="container nav-container">
-            <a href="/Home/Index" class="logo">ROSSO <span>LOUNGE</span></a>
-            <nav>
-                <ul class="nav-links">
-                    <li><a href="/Home/Index#home">Ana Sayfa</a></li>
-                    <li><a href="/Home/Index#about">Hakkımızda</a></li>
-                    <li><a href="/Home/Index#menu">Menü</a></li>
-                    <li><a href="/Home/Index#gallery">Galeri</a></li>
-                    <li><a href="/Home/Index#reviews">Yorumlar</a></li>
-                    <li><a href="/Home/Index#contact">İletişim</a></li>
-                    <li class="mobile-only-reserve-btn">
-                        <a href="/Home/Index#rezervasyon" class="btn-reserve">Rezervasyon Yap</a>
-                    </li>
-                </ul>
-            </nav>
-            <a href="/Home/Index#rezervasyon" class="btn-reserve desktop-only-reserve-btn">Rezervasyon Yap</a>
-            <div class="hamburger">
-                <i class="fas fa-bars"></i>
-            </div>
-        </div>
-    </header>
-
-    <div class="menu-header">
-        <div>
-            <h1 style="font-size: 3.5rem; margin-bottom: 0.5rem; font-weight: 700;">LEZZETLERİMİZ</h1>
-            <p style="font-size: 1.3rem; opacity: 0.9;">Dünya mutfağından seçkin tatlar</p>
-        </div>
-    </div>
-
-    <section class="section-padding" style="background-color: #ffffff;">
-        <div class="container">
-
-            @if (Model.Count == 0)
+            @if (toplamUrun > 0)
             {
-                <div class="alert alert-warning text-center p-5">
-                    <h4>Henüz menü eklenmemiş.</h4>
+                <div class="menu__duzen">
+                    <aside class="menu__ray" aria-label="Menüde gezinme">
+                        <div class="menu__ray-ic">
+                            <div class="menu__ara">
+                                <svg class="menu__ara-ikon" viewBox="0 0 24 24" width="15" height="15"
+                                     fill="none" stroke="currentColor" stroke-width="1.4"
+                                     stroke-linecap="round" aria-hidden="true">
+                                    <circle cx="10.5" cy="10.5" r="6.25" />
+                                    <path d="m15.2 15.2 4.6 4.6" />
+                                </svg>
+                                <label class="gorsel-gizli" for="menu-ara">Menüde ara</label>
+                                <input id="menu-ara" class="menu__ara-alan" type="search"
+                                       placeholder="Tabak ara" autocomplete="off" spellcheck="false"
+                                       aria-controls="menu-akis">
+                            </div>
+
+                            <p class="menu__rubrik">Kategoriler</p>
+
+                            <ul class="menu__sekmeler">
+                                <li>
+                                    <button type="button" class="menu__sekme menu__sekme--aktif"
+                                            data-filtre="tumu" aria-pressed="true">
+                                        <span class="menu__sekme-ad">Tümü</span>
+                                        <span class="menu__sekme-adet">@toplamUrun</span>
+                                    </button>
+                                </li>
+                                @foreach (var kategori in kategoriler)
+                                {
+                                    <li>
+                                        <button type="button" class="menu__sekme"
+                                                data-filtre="kat-@kategori.Id" aria-pressed="false">
+                                            <span class="menu__sekme-ad">@kategori.Ad</span>
+                                            <span class="menu__sekme-adet">@kategori.Urunler.Count</span>
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+
+                            <p class="menu__sayac" aria-live="polite">
+                                <span class="menu__sayac-adet">@toplamUrun</span> tabak listeleniyor
+                            </p>
+                        </div>
+                    </aside>
+
+                    <div class="menu__akis" id="menu-akis">
+                        @foreach (var kategori in kategoriler)
+                        {
+                            sira++;
+                            <section class="menu__oda" data-oda="kat-@kategori.Id"
+                                     aria-labelledby="oda-@kategori.Id">
+                                <h2 class="menu__oda-bas" id="oda-@kategori.Id">
+                                    <span class="menu__oda-no">@sira.ToString("00")</span>
+                                    <span class="menu__oda-ad">@kategori.Ad</span>
+                                </h2>
+
+                                <div class="menu__izgara">
+                                    @foreach (var urun in kategori.Urunler)
+                                    {
+                                        @* Çift fiyatlı ürünün fiyat kutusu iki satır kaplıyor;
+                                           açıklama o zaman sol sütunda kalmalı. Tek fiyatlıda
+                                           tam genişliğe yayılıyor (bkz. CSS). *@
+                                        <article class="menu__kalem@(urun.FiyatBuyuk.HasValue ? " menu__kalem--cift" : "")"
+                                                 data-kategori="kat-@kategori.Id"
+                                                 data-ara="@urun.Ad @urun.Aciklama @kategori.Ad"
+                                                 data-gorsel="@UrunGorseli.Yolu(urun.ResimUrl, yerTutucu)">
+                                            <h3 class="menu__ad">@urun.Ad</h3>
+
+                                            @* Fiyat kutusu ızgarada İKİ SATIRA yayılıyor (bkz. CSS):
+                                               iki fiyatlı üründe açıklama aşağı itilmesin. *@
+                                            <p class="menu__fiyatlar">
+                                                @if (urun.FiyatBuyuk.HasValue)
+                                                {
+                                                    <span class="menu__fiyat">
+                                                        <span class="menu__fiyat-tur">@(string.IsNullOrEmpty(urun.FiyatTur) ? "Orta" : urun.FiyatTur)</span>
+                                                        <span class="menu__tutar">@urun.Fiyat.ToString("N0")<span class="menu__para">₺</span></span>
+                                                    </span>
+                                                    <span class="menu__fiyat">
+                                                        <span class="menu__fiyat-tur">@(string.IsNullOrEmpty(urun.FiyatBuyukTur) ? "Büyük" : urun.FiyatBuyukTur)</span>
+                                                        <span class="menu__tutar">@urun.FiyatBuyuk.Value.ToString("N0")<span class="menu__para">₺</span></span>
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="menu__fiyat">
+                                                        <span class="menu__tutar">@urun.Fiyat.ToString("N0")<span class="menu__para">₺</span></span>
+                                                    </span>
+                                                }
+                                            </p>
+
+                                            @if (!string.IsNullOrWhiteSpace(urun.Aciklama))
+                                            {
+                                                <p class="menu__not">@urun.Aciklama</p>
+                                            }
+                                        </article>
+                                    }
+                                </div>
+                            </section>
+                        }
+
+                        <p class="menu__bos" hidden>Aramanla eşleşen bir tabak yok.</p>
+                    </div>
+
+                    @* Tabak önizlemesi — sol rayın altındaki boş sütuna
+                       oturuyor. Fareyi TAKİP ETMİYOR: konumu üzerine
+                       gelinen satırdan değil, rayın kutusundan alıyor;
+                       böylece hiçbir metnin üstünü örtmüyor.
+                       JS yoksa hidden kalır. *@
+                    <figure class="menu__onizleme" aria-hidden="true" hidden>
+                        <img class="menu__onizleme-foto" alt="" decoding="async">
+                    </figure>
                 </div>
             }
             else
             {
-                @foreach (var kategori in Model)
-                {
-                    if (kategori.Urunler != null && kategori.Urunler.Count > 0)
-                    {
-                        <div class="mb-5">
-
-                            <div class="text-center">
-                                <h2 class="category-title">@kategori.Ad</h2>
-                            </div>
-
-                            <div class="row g-4 justify-content-center">
-                                @foreach (var urun in kategori.Urunler)
-                                {
-                                    <div class="col-lg-4 col-md-6 col-12">
-                                        <div class="menu-card">
-                                            @if (!string.IsNullOrEmpty(urun.ResimUrl))
-                                            {
-                                                <img src="@urun.ResimUrl" alt="@urun.Ad">
-                                            }
-                                            else
-                                            {
-                                                <img src="https://placehold.co/600x400?text=Resim+Yok" alt="Resim Yok">
-                                            }
-
-                                            <div class="menu-info">
-                                                <div>
-                                                    <h3>@urun.Ad</h3>
-                                                    <p>@urun.Aciklama</p>
-                                                </div>
-
-                                                <div class="price-container mt-3">
-                                                    @if (urun.FiyatBuyuk != null && urun.FiyatBuyuk > 0)
-                                                    {
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <div>
-                                                                <span class="price-label">@(string.IsNullOrEmpty(urun.FiyatTur) ? "Orta" : urun.FiyatTur):</span>
-                                                                <span class="price">@urun.Fiyat.ToString("0.#") ₺</span>
-                                                            </div>
-                                                            <div class="text-end">
-                                                                <span class="price-label">@(string.IsNullOrEmpty(urun.FiyatBuyukTur) ? "Büyük" : urun.FiyatBuyukTur):</span>
-                                                                <span class="price">@urun.FiyatBuyuk.Value.ToString("0.#") ₺</span>
-                                                            </div>
-                                                        </div>
-                                                    }
-                                                    else
-                                                    {
-                                                        <div class="text-center">
-                                                            <span class="price">@urun.Fiyat.ToString("0.#") ₺</span>
-                                                        </div>
-                                                    }
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-
-                        </div>
-                    }
-                }
+                <p class="menu__bos">Menü yakında burada olacak.</p>
             }
 
+            <div class="menu__geri">
+                <a href="/#rezervasyon" class="btn btn--sampanya">Masa Ayırt</a>
+            </div>
         </div>
     </section>
+</main>
 
-    <footer>
-        <p>© 2025 Rosso Lounge Bistro. Tüm hakları saklıdır.</p>
-        <div class="footer-signature">
-            Software & Design by <span class="developer-name">Mert CEREN</span>
+@* Ana sayfadaki iki satırlık finale ile aynı — eski .alt-serit kalıbı
+   yalnızca bu sayfada kalmıştı. *@
+<footer class="finale" id="finale">
+    <div class="kap finale__ic">
+        <div class="finale__alt">
+            <p class="finale__telif">&copy; @yil Rosso Lounge Bistro</p>
+
+            <div class="footer-signature">Software &amp; Design by <span class="developer-name">Mert CEREN</span></div>
         </div>
-    </footer>
-
-    <script src="~/js/script.js"></script>
-</body>
-</html>
+    </div>
+</footer>

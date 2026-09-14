@@ -1,187 +1,390 @@
-document.addEventListener('DOMContentLoaded', () => {
+/* =========================================================
+   ROSSO LOUNGE BISTRO — ZİYARETÇİ SİTESİ
+   ---------------------------------------------------------
+   _Layout.cshtml üzerinden ziyaretçi sayfalarında yüklenir.
+   Panel sayfaları yonetim.js kullanır; ortak.js ikisinde de yüklüdür.
 
-    // ============================================================
-    // 1. GÖZ SİMGESİ İŞLEVLERİ (ÖNCELİKLİ - HATA VERMEZ)
-    // ============================================================
+   NOT: Sayfa içi çapa kaydırması, navbar kaydırma durumu, hamburger ve
+   menü filtresi BURADAN KALDIRILDI. Hepsinin karşılığı rosso-hareket.js'te
+   (Lenis ile uyumlu). Eski sürümde bu dosya her a[href^="#"] tıklamasını
+   preventDefault edip window.scrollTo çağırıyordu; Lenis aynı anda kendi
+   kaydırmasını yürüttüğü için hedef tam oturmuyordu.
 
-    // A. Profil Sayfası İçin (Şifre Göster/Gizle)
-    const togglePassword = document.getElementById('toggle-password');
-    const passwordField = document.getElementById('password-field');
+   style.css'in bağlı olduğu kancalar (DEĞİŞTİRMEYİN):
+   .toast-bildirim  .toast-kapat  .kapaniyor  .basarili  .hata
+   #reservation-form  #datePicker  #phoneInput  .form-sekmeler  .form-sekme
 
-    if (togglePassword && passwordField) {
-        togglePassword.addEventListener('click', function () {
-            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordField.setAttribute('type', type);
+   Her blok kendi elemanını arar ve bulamazsa sessizce çıkar,
+   çünkü aynı dosya iki farklı sayfada çalışıyor.
+   ========================================================= */
+(function () {
+    'use strict';
 
-            // İkonu değiştir
-            this.querySelector('i').classList.toggle('fa-eye');
-            this.querySelector('i').classList.toggle('fa-eye-slash');
-        });
-    }
+    var azHareketTercihi = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-    // B. Login Sayfası İçin (Şifre Göster/Gizle)
-    const togglePasswordLogin = document.getElementById('toggle-password-login');
-    const passwordFieldLogin = document.getElementById('password-field-login');
-
-    if (togglePasswordLogin && passwordFieldLogin) {
-        togglePasswordLogin.addEventListener('click', function () {
-            const type = passwordFieldLogin.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordFieldLogin.setAttribute('type', type);
-
-            this.querySelector('i').classList.toggle('fa-eye');
-            this.querySelector('i').classList.toggle('fa-eye-slash');
-        });
+    function azHareket() {
+        return azHareketTercihi.matches;
     }
 
     // ============================================================
-    // 2. NAVİGASYON VE MENU (SADECE ANA SAYFADA ÇALIŞIR)
+    // 1. BİLDİRİM (TOAST) KAPATMA
     // ============================================================
-    const hamburger = document.querySelector('.hamburger');
-    const navLinks = document.querySelector('.nav-links');
-    const allNavLinks = document.querySelectorAll('.nav-links a');
+    (function () {
+        var toastlar = document.querySelectorAll('.toast-bildirim');
+        if (!toastlar.length) return;
 
-    // Eğer sayfada hamburger menü varsa bu kodları çalıştır
-    if (hamburger && navLinks) {
+        Array.prototype.forEach.call(toastlar, function (toast) {
+            var kapandi = false;
 
-        // Hamburger Tıklama
-        hamburger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            navLinks.classList.toggle('active');
-        });
-
-        // Linklere Tıklanınca Kapat
-        allNavLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                if (navLinks.classList.contains('active')) {
-                    navLinks.classList.remove('active');
-                }
-            });
-        });
-
-        // Boşluğa Tıklayınca Kapat
-        document.addEventListener('click', (e) => {
-            if (navLinks.classList.contains('active') && !navLinks.contains(e.target) && !hamburger.contains(e.target)) {
-                navLinks.classList.remove('active');
-            }
-        });
-
-        // Scroll Efektleri
-        window.addEventListener('scroll', () => {
-            const navbar = document.getElementById('navbar');
-
-            // Navbar Gölge
-            if (navbar && !navbar.classList.contains('dark-header')) {
-                if (window.scrollY > 50) {
-                    navbar.style.boxShadow = '0 2px 5px rgba(0,0,0,0.5)';
-                } else {
-                    navbar.style.boxShadow = 'none';
-                }
+            function kapat() {
+                if (kapandi) return;
+                kapandi = true;
+                toast.classList.add('kapaniyor');
+                setTimeout(function () { toast.remove(); }, 350);
             }
 
-            // Kaydırınca Menüyü Kapat
-            if (navLinks.classList.contains('active')) {
-                navLinks.classList.remove('active');
-            }
+            var kapatDugmesi = toast.querySelector('.toast-kapat');
+            if (kapatDugmesi) kapatDugmesi.addEventListener('click', kapat);
+
+            // Hata mesajları okunacak kadar dursun, başarı mesajı erken kapansın.
+            setTimeout(kapat, toast.classList.contains('hata') ? 8000 : 5000);
         });
-
-        // Smooth Scroll (Yumuşak Kaydırma)
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const targetID = this.getAttribute('href');
-
-                if (targetID === '#') {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    return;
-                }
-
-                const targetSection = document.querySelector(targetID);
-                if (targetSection) {
-                    targetSection.scrollIntoView({ behavior: 'smooth' });
-                }
-            });
-        });
-    }
+    })();
 
     // ============================================================
-    // 3. REZERVASYON VE TAKVİM (SADECE FORM VARSA ÇALIŞIR)
+    // 6. REZERVASYON FORMU — flatpickr, telefon, doğrulama
     // ============================================================
-    const datePickerElement = document.getElementById('datePicker');
-    const form = document.getElementById('reservation-form');
+    (function () {
+        var form = document.getElementById('reservation-form');
+        var tarihGirdisi = document.getElementById('datePicker');
 
-    // Eğer tarih kutusu varsa Flatpickr'ı başlat (Yoksa bu bloğu atla, hata verme)
-    if (datePickerElement && form) {
+        if (!form || !tarihGirdisi) return;
+        if (typeof flatpickr !== 'function') return;
 
-        const fp = flatpickr(datePickerElement, {
+        // ---- Takvim ------------------------------------------------
+        // altInput: kullanıcı "31.08.2026 20:00" görür, sunucuya
+        // dateFormat'taki ISO değeri ("2026-08-31 20:00") gider.
+        // Sunucu kültüründen bağımsız parse edilsin diye bu düzen ŞART.
+        var fp = flatpickr(tarihGirdisi, {
             enableTime: true,
-            dateFormat: "d.m.Y H:i",
-            minDate: "today",
+            altInput: true,
+            altFormat: 'd.m.Y H:i',
+            altInputClass: 'flatpickr-alt-input',
+            dateFormat: 'Y-m-d H:i',
+            minDate: 'today',
             time_24hr: true,
-            locale: "tr",
-            disableMobile: "true",
-            theme: "dark"
+            locale: 'tr',
+            disableMobile: 'true',
+            theme: 'dark'
         });
 
-        const phoneInput = document.getElementById('phoneInput');
+        // altInput görünen alan olduğu için <label for="datePicker">
+        // artık gizli inputu gösteriyordu; etiketi görünen alana bağlıyoruz.
+        var gorunenTarih = fp.altInput || tarihGirdisi;
+        if (fp.altInput) {
+            fp.altInput.id = 'datePickerGorunen';
+            var etiket = document.querySelector('label[for="datePicker"]');
+            if (etiket) etiket.setAttribute('for', 'datePickerGorunen');
 
-        // Telefon Input Kontrolü
-        if (phoneInput) {
-            phoneInput.addEventListener('input', function (e) {
-                let cleanVal = this.value.replace(/[^0-9]/g, '');
-                if (cleanVal.startsWith('0')) cleanVal = cleanVal.substring(1);
-                if (cleanVal.length > 10) cleanVal = cleanVal.slice(0, 10);
-                this.value = cleanVal;
+            // Yüzen etiket görünen alana taşınıyor. Asıl girdi type=hidden'a
+            // dönüyor ve :placeholder-shown ile eşleşmiyor; üzerinde
+            // .alan__girdi kalırsa :not(:placeholder-shown) tutuyor ve etiket
+            // kalıcı olarak yukarıda takılı kalıyor.
+            tarihGirdisi.classList.remove('alan__girdi');
+            fp.altInput.classList.add('alan__girdi');
+            fp.altInput.setAttribute('placeholder', ' ');
+        }
+
+        // ---- Telefon ------------------------------------------------
+        var telefon = document.getElementById('phoneInput');
+        if (telefon) {
+            telefon.addEventListener('input', function () {
+                var temiz = telefon.value.replace(/[^0-9]/g, '');
+                if (temiz.charAt(0) === '0') temiz = temiz.substring(1);
+                if (temiz.length > 10) temiz = temiz.slice(0, 10);
+                telefon.value = temiz;
             });
         }
 
-        // Form Gönderimi ve Validasyon
-        form.addEventListener('submit', (e) => {
-            const name = form.querySelector('input[name="AdSoyad"]').value.trim();
-            const phone = phoneInput.value.trim();
-            const dateVal = document.getElementById('datePicker').value;
+        // ---- Satır içi hata mesajları -------------------------------
+        // alert() yerine alanın altında kırmızı metin + aria-invalid.
+        var HATA_ISARETI = 'data-rez-hata';
 
-            let hasError = false;
-            let errorMessage = "";
+        function hataKutusu(girdi, olustur) {
+            var grup = girdi.closest('.alan') || girdi.parentElement;
+            if (!grup) return null;
 
-            // Kural 1: Telefon
-            if (phone.length < 10) {
-                errorMessage = "Lütfen telefon numaranızı eksiksiz giriniz (Başında 0 olmadan 10 hane).";
-                hasError = true;
+            var kutu = grup.querySelector('[' + HATA_ISARETI + ']');
+            if (kutu || !olustur) return kutu;
+
+            // .rs-koyu sarmalayıcı: rezervasyon kutusu koyu zeminli olduğu için
+            // hata metni okunaklı açık kırmızıya (--renk-marka-acik) dönsün.
+            kutu = document.createElement('div');
+            kutu.setAttribute(HATA_ISARETI, '');
+            kutu.className = 'rs-koyu';
+
+            var metin = document.createElement('p');
+            metin.className = 'rs-hata-metin';
+            metin.id = girdi.id + '-hata';
+            metin.setAttribute('role', 'alert');
+            kutu.appendChild(metin);
+
+            grup.appendChild(kutu);
+            return kutu;
+        }
+
+        function aciklamaEkle(el, hataId) {
+            if (!el) return;
+            el.setAttribute('aria-invalid', 'true');
+
+            if (typeof el.dataset.eskiAciklama !== 'string') {
+                el.dataset.eskiAciklama = el.getAttribute('aria-describedby') || '';
             }
-            // Kural 2: Tarih
-            else if (!dateVal) {
-                errorMessage = "Lütfen tarih ve saat seçiniz.";
-                hasError = true;
+
+            var liste = el.dataset.eskiAciklama ? el.dataset.eskiAciklama.split(' ') : [];
+            if (liste.indexOf(hataId) === -1) liste.push(hataId);
+            el.setAttribute('aria-describedby', liste.join(' '));
+        }
+
+        function aciklamaSil(el) {
+            if (!el) return;
+            el.removeAttribute('aria-invalid');
+
+            if (typeof el.dataset.eskiAciklama !== 'string') return;
+
+            if (el.dataset.eskiAciklama) {
+                el.setAttribute('aria-describedby', el.dataset.eskiAciklama);
+            } else {
+                el.removeAttribute('aria-describedby');
             }
-            else {
-                // Tarih mantık kontrolü
-                if (fp.selectedDates.length > 0) {
-                    const selectedDateObj = fp.selectedDates[0];
-                    const now = new Date();
-                    let checkDate = new Date(selectedDateObj);
+        }
 
-                    if (checkDate.getHours() === 0 && checkDate.getMinutes() === 0) {
-                        checkDate.setDate(checkDate.getDate() + 1);
-                    }
+        function hataYaz(girdi, mesaj, gorunen) {
+            var kutu = hataKutusu(girdi, true);
+            if (!kutu) return;
 
-                    if (checkDate < now) {
-                        errorMessage = "Geçmiş bir saate rezervasyon yapamazsınız.";
-                        hasError = true;
-                    }
+            var metin = kutu.querySelector('p');
+            metin.textContent = mesaj;
+            kutu.hidden = false;
+
+            aciklamaEkle(girdi, metin.id);
+            if (gorunen && gorunen !== girdi) aciklamaEkle(gorunen, metin.id);
+        }
+
+        function hataSil(girdi, gorunen) {
+            var kutu = hataKutusu(girdi, false);
+            if (kutu) kutu.hidden = true;
+
+            aciklamaSil(girdi);
+            if (gorunen && gorunen !== girdi) aciklamaSil(gorunen);
+        }
+
+        // Kullanıcı düzeltmeye başlayınca hata kaybolsun
+        var ad = document.getElementById('rez-ad');
+        if (ad) ad.addEventListener('input', function () { hataSil(ad); });
+        if (telefon) telefon.addEventListener('input', function () { hataSil(telefon); });
+        tarihGirdisi.addEventListener('change', function () {
+            hataSil(tarihGirdisi, gorunenTarih);
+        });
+
+        // ---- Gönderim -----------------------------------------------
+        form.addEventListener('submit', function (olay) {
+            var ilkHatali = null;
+
+            function hata(girdi, mesaj, gorunen) {
+                hataYaz(girdi, mesaj, gorunen);
+                if (!ilkHatali) ilkHatali = gorunen || girdi;
+            }
+
+            // 1) Ad Soyad
+            if (ad) {
+                if (ad.value.trim().length < 3) {
+                    hata(ad, 'Lütfen isminizi tam giriniz (en az 3 harf).');
+                } else {
+                    hataSil(ad);
                 }
             }
 
-            // Kural 3: İsim
-            if (!hasError && name.length < 3) {
-                errorMessage = "Lütfen isminizi tam giriniz.";
-                hasError = true;
+            // 2) Telefon
+            if (telefon) {
+                if (telefon.value.trim().length < 10) {
+                    hata(telefon, 'Telefon numarası 10 hane olmalı (başında 0 olmadan).');
+                } else {
+                    hataSil(telefon);
+                }
             }
 
-            // HATA VARSA DURDUR
-            if (hasError) {
-                e.preventDefault();
-                alert(errorMessage);
+            // 3) Tarih ve saat
+            if (!tarihGirdisi.value) {
+                hata(tarihGirdisi, 'Lütfen tarih ve saat seçiniz.', gorunenTarih);
+            } else if (fp.selectedDates.length) {
+                var secilen = new Date(fp.selectedDates[0]);
+
+                // Saat seçilmediyse flatpickr 00:00 verir; o günün tamamı geçmiş sayılmasın.
+                if (secilen.getHours() === 0 && secilen.getMinutes() === 0) {
+                    secilen.setDate(secilen.getDate() + 1);
+                }
+
+                if (secilen < new Date()) {
+                    hata(tarihGirdisi, 'Geçmiş bir saate rezervasyon yapamazsınız.', gorunenTarih);
+                } else {
+                    hataSil(tarihGirdisi, gorunenTarih);
+                }
+            } else {
+                hataSil(tarihGirdisi, gorunenTarih);
+            }
+
+            if (!ilkHatali) return;
+
+            olay.preventDefault();
+            // Kaydırmanın tek sahibi rosso-hareket.js (Lenis uyumlu)
+            if (typeof window.rossoKaydir === 'function') window.rossoKaydir(ilkHatali);
+            else ilkHatali.scrollIntoView({ block: 'center' });
+            ilkHatali.focus({ preventScroll: true });
+        });
+    })();
+
+    // ============================================================
+    // 8. İLETİŞİM FORMU SEKMELERİ
+    // ============================================================
+    const sekmeListesi = document.querySelector('.form-sekmeler');
+
+    if (sekmeListesi) {
+        const sekmeler = [...sekmeListesi.querySelectorAll('.form-sekme')];
+        const panelBul = (sekme) => document.getElementById(sekme.getAttribute('aria-controls'));
+
+        const sekmeAc = (hedef, odakla = true) => {
+            sekmeler.forEach((s) => {
+                const aktif = s === hedef;
+                s.classList.toggle('aktif', aktif);
+                s.setAttribute('aria-selected', aktif ? 'true' : 'false');
+                s.tabIndex = aktif ? 0 : -1;
+
+                const panel = panelBul(s);
+                if (panel) panel.hidden = !aktif;
+            });
+            if (odakla) hedef.focus();
+        };
+
+        sekmeler.forEach((sekme) => {
+            sekme.addEventListener('click', () => sekmeAc(sekme, false));
+        });
+
+        // Ok tuşlarıyla sekmeler arasında gezinme (WAI-ARIA tab deseni)
+        sekmeListesi.addEventListener('keydown', (olay) => {
+            const su = sekmeler.indexOf(document.activeElement);
+            if (su < 0) return;
+
+            let hedef = null;
+            if (olay.key === 'ArrowRight') hedef = sekmeler[(su + 1) % sekmeler.length];
+            else if (olay.key === 'ArrowLeft') hedef = sekmeler[(su - 1 + sekmeler.length) % sekmeler.length];
+            else if (olay.key === 'Home') hedef = sekmeler[0];
+            else if (olay.key === 'End') hedef = sekmeler[sekmeler.length - 1];
+
+            if (hedef) {
+                olay.preventDefault();
+                sekmeAc(hedef);
             }
         });
+
+        // "Mesaj gönder" bağlantıları doğru sekmeyi açsın.
+        // #rezervasyon çıpası panelin kendisinde olduğu için varsayılan sekme
+        // zaten rezervasyon; sadece mesaj tarafını ele alıyoruz.
+        const mesajSekmesi = document.getElementById('sekme-mesaj');
+        document.querySelectorAll('a[href$="#iletisim-form"], a[href$="#mesaj"]').forEach((baglanti) => {
+            baglanti.addEventListener('click', () => {
+                if (mesajSekmesi) sekmeAc(mesajSekmesi, false);
+            });
+        });
+
+        // Sunucudan hata/başarı dönerse ilgili sekme açık gelsin
+        if (location.hash === '#mesaj' && mesajSekmesi) sekmeAc(mesajSekmesi, false);
     }
-});
+
+    // ============================================================
+    // 9. CANLI SAAT + DURUM IŞIĞI (iletişim bölümü)
+    //
+    // Çalışma saatleri sunucudan data-* nitelikleriyle geliyor;
+    // tek kaynak HomeController.Index. Sunucu ilk değeri zaten
+    // basıyor, burası yalnızca canlı tutuyor — JS çalışmasa da
+    // gösterge doğru görünür.
+    //
+    // Saat MEKÂNIN saati: ziyaretçi başka bir saat diliminde olsa
+    // bile Europe/Istanbul gösteriliyor.
+    // ============================================================
+    (function () {
+        var kutu = document.querySelector('.saat-isik');
+        if (!kutu) return;
+
+        var saatOge = kutu.querySelector('.saat-isik__saat');
+        var metinOge = kutu.querySelector('.saat-isik__metin');
+        if (!saatOge || !metinOge) return;
+
+        var ETIKET = { acik: 'Şu an açık', mola: 'Molada', kapali: 'Şu an kapalı' };
+
+        function dakika(metin) {
+            var p = /^\s*(\d{1,2}):(\d{2})\s*$/.exec(metin || '');
+            return p ? (+p[1]) * 60 + (+p[2]) : null;
+        }
+
+        function mekanSaati() {
+            try {
+                var parcalar = new Intl.DateTimeFormat('tr-TR', {
+                    timeZone: 'Europe/Istanbul',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hourCycle: 'h23'   // gece yarısı 24:00 değil 00:00 gelsin
+                }).formatToParts(new Date());
+
+                var sa = '', dk = '';
+                parcalar.forEach(function (p) {
+                    if (p.type === 'hour') sa = p.value;
+                    if (p.type === 'minute') dk = p.value;
+                });
+                return (sa && dk) ? sa + ':' + dk : null;
+            } catch (h) {
+                return null;   // Intl/saat dilimi yoksa sunucunun değeri kalsın
+            }
+        }
+
+        var acilis = dakika(kutu.getAttribute('data-acilis'));
+        var kapanis = dakika(kutu.getAttribute('data-kapanis'));
+        var molaBas = dakika(kutu.getAttribute('data-mola-bas'));
+        var molaBit = dakika(kutu.getAttribute('data-mola-bit'));
+
+        /* Başlangıç bitişten büyükse aralık gece yarısını aşıyor
+           demektir (ör. 11:30 - 00:00). C# tarafındaki CalismaDurumu
+           ile aynı mantık. */
+        function icinde(su, bas, bit) {
+            if (bas === null || bit === null) return false;
+            return bas <= bit ? (su >= bas && su < bit) : (su >= bas || su < bit);
+        }
+
+        function tazele() {
+            var metin = mekanSaati();
+            if (!metin) return;
+
+            saatOge.textContent = metin;
+            saatOge.setAttribute('datetime', metin);
+
+            var su = dakika(metin);
+            if (su === null || acilis === null || kapanis === null) return;
+
+            var durum = 'kapali';
+            if (icinde(su, acilis, kapanis)) {
+                durum = (molaBas !== null && molaBit !== null &&
+                         molaBas !== molaBit && icinde(su, molaBas, molaBit))
+                    ? 'mola' : 'acik';
+            }
+
+            kutu.classList.remove('saat-isik--acik', 'saat-isik--mola', 'saat-isik--kapali');
+            kutu.classList.add('saat-isik--' + durum);
+            metinOge.textContent = ETIKET[durum];
+        }
+
+        tazele();
+        setInterval(tazele, 30000);
+    })();
+
+
+})();

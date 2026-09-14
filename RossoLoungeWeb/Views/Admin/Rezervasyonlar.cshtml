@@ -1,235 +1,346 @@
-﻿@model List<RossoLoungeWeb.Models.Rezervasyon>
+﻿@model RossoLoungeWeb.Models.RezervasyonListeModeli
+@*
+    REZERVASYONLAR
+    ===============================================================
+    Uçlar: POST /Admin/Onayla/{id}, POST /Admin/Iptal/{id}, POST /Admin/Sil/{id}.
+    Üçü de `donus` alanıyla geldiği süzgeç/sayfaya dönüyor.
 
+    İPTAL ile SİLME farkı: iptal bir DURUM (kayıt duruyor, sayımların
+    dışında, geri alınabilir); silme kaydı yok eder. Vazgeçen misafir için
+    iptal, yanlış girilmiş kayıt için silme.
+
+    HACİM SORUNU: liste eskiden bütün kayıtları tek sayfada basıyordu.
+    Çözüm sunucu tarafında sekme + süzgeç + sayfalama. Tarayıcıda
+    gizlemek sorunu çözmezdi; kayıtlar yine indirilirdi.
+
+    Üst bardaki istemci araması bu sayfada KAPALI (ViewData["AramaHedefi"]
+    verilmiyor): yalnızca o sayfadaki satırları süzerdi, "arama sonuç
+    vermedi" sanılırdı. Arama süzgeç çubuğunda ve sunucuda.
+*@
 @{
-    Layout = null;
-    int siraNo = 0;
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Baslik"] = "Rezervasyonlar";
+    ViewData["AltBaslik"] = "Masa taleplerini yönetin";
+    ViewData["Aktif"] = "rezervasyonlar";
+
+    var tr = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+    var s = Model.Suzgec;
+    var bugun = RossoLoungeWeb.Services.TurkiyeSaati.Bugun;
+    var simdi = RossoLoungeWeb.Services.TurkiyeSaati.Simdi;
+
+    // Onay/silme sonrası bu adrese dönülüyor
+    var donusAdres = Url.Action("Rezervasyonlar") + s.SorguKur();
+
+    var sekmeler = new (string Deger, string Ad)[]
+    {
+        ("yaklasan", "Yaklaşan"),
+        ("bugun", "Bugün"),
+        ("bekleyen", "Onay bekleyen"),
+        ("gecmis", "Geçmiş"),
+        ("iptal", "İptal"),
+        ("tumu", "Tümü")
+    };
+
+    string GecenSure(DateTime an)
+    {
+        var fark = simdi - an;
+        if (fark.TotalMinutes < 1) return "az önce";
+        if (fark.TotalMinutes < 60) return $"{(int)fark.TotalMinutes} dk önce";
+        if (fark.TotalHours < 24) return $"{(int)fark.TotalHours} saat önce";
+        if (fark.TotalDays < 30) return $"{(int)fark.TotalDays} gün önce";
+        return an.ToString("dd.MM.yyyy", tr);
+    }
 }
 
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yönetici Paneli | Rosso Lounge</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+@section Eylemler {
+    <span class="y-rozet y-rozet--sonuk">
+        @Model.ToplamKayit kayıt · @Model.ToplamKisi kişi
+    </span>
+    @if (Model.SayiBekleyen > 0 && s.Durum != "bekleyen")
+    {
+        <a class="y-dugme" href="@Url.Action("Rezervasyonlar")?durum=bekleyen">
+            <i class="fas fa-clock" aria-hidden="true"></i> @Model.SayiBekleyen bekleyen
+        </a>
+    }
+}
 
-    <style>
-        body {
-            background-color: #f4f6f9;
-            font-family: 'Segoe UI', sans-serif;
-        }
+@* ---------- Sekmeler ---------- *@
+<nav class="y-sekmeler" aria-label="Rezervasyon görünümü">
+    @foreach (var sekme in sekmeler)
+    {
+        var aktif = s.Durum == sekme.Deger;
+        <a class="y-sekme @(aktif ? "y-sekme--aktif" : null)"
+           href="@Url.Action("Rezervasyonlar")@s.SorguKur(sayfa: 1, sirala: "", durum: sekme.Deger)"
+           aria-current="@(aktif ? "page" : null)">
+            @sekme.Ad
+            <span class="y-sekme__sayi">@Model.SayiGetir(sekme.Deger)</span>
+        </a>
+    }
+</nav>
 
-        /* Masaüstü Sidebar */
-        .sidebar {
-            height: 100vh;
-            background: #1a1a1a;
-            color: white;
-            padding: 20px;
-            position: fixed;
-            width: 250px;
-            top: 0;
-            left: 0;
-            z-index: 100;
-        }
+@* ---------- Süzgeç çubuğu ---------- *@
+<form class="y-suzgec y-suzgec--genis" method="get" action="@Url.Action("Rezervasyonlar")">
+    <input type="hidden" name="durum" value="@s.Durum">
+    <input type="hidden" name="boyut" value="@s.Boyut">
 
-        .content {
-            margin-left: 250px;
-            padding: 30px;
-            transition: all 0.3s;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 40px;
-            display: block;
-            color: white;
-            text-decoration: none;
-        }
-
-            .logo span {
-                color: #e74c3c;
-            }
-
-        .menu-item {
-            display: block;
-            padding: 12px 15px;
-            color: #bbb;
-            text-decoration: none;
-            margin-bottom: 5px;
-            border-radius: 8px;
-            transition: 0.3s;
-        }
-
-            .menu-item:hover, .menu-item.active {
-                background: #e74c3c;
-                color: white;
-                transform: translateX(5px);
-            }
-
-        .card {
-            border: none;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-            border-radius: 10px;
-        }
-
-        /* Mobil Uyum */
-        @@media (max-width: 768px) {
-            .sidebar
-
-        {
-            width: 100%;
-            height: auto;
-            position: relative;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .menu-item {
-            width: 100%;
-            text-align: center;
-            margin-bottom: 5px;
-        }
-
-            .menu-item:hover {
-                transform: none;
-            }
-
-        .content {
-            margin-left: 0;
-            padding: 15px;
-        }
-
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        }
-    </style>
-</head>
-<body>
-
-    <div class="sidebar">
-        <a href="#" class="logo">ROSSO <span>PANEL</span></a>
-        <a href="/Admin/Index" class="menu-item"><i class="fas fa-home me-2"></i> Özet</a>
-        <a href="/Admin/Rezervasyonlar" class="menu-item active"><i class="fas fa-calendar-check me-2"></i> Rezervasyonlar</a>
-        <a href="/Kategori/Index" class="menu-item"><i class="fas fa-list me-2"></i> Kategoriler</a>
-        <a href="/Urun/Index" class="menu-item"><i class="fas fa-utensils me-2"></i> Ürünler</a>
-        <a href="/Admin/Yorumlar" class="menu-item"><i class="fas fa-comments me-2"></i> Yorumlar</a>
-        <a href="/Admin/MailAyarlari" class="menu-item"><i class="fas fa-envelope me-2"></i> Mail Ayarları</a>
-        <a href="/Admin/Profil" class="menu-item"><i class="fas fa-user-cog me-2"></i> Ayarlar</a>
-        <a href="/" target="_blank" class="menu-item"><i class="fas fa-globe me-2"></i> Siteye Git</a>
-        <a href="/Admin/CikisYap" class="menu-item bg-dark mt-3"><i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap</a>
+    <div class="y-suzgec__alan y-suzgec__alan--genis">
+        <label class="y-suzgec__etiket" for="ara">Ara</label>
+        <input class="y-girdi" type="search" id="ara" name="ara" value="@s.Ara"
+               placeholder="Ad, telefon veya not" autocomplete="off">
     </div>
 
-    <div class="content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="m-0">Gelen Rezervasyonlar</h2>
-            <span class="badge bg-primary p-2">Toplam: @Model.Count</span>
-        </div>
+    <div class="y-suzgec__alan">
+        <label class="y-suzgec__etiket" for="bas">Başlangıç</label>
+        <input class="y-girdi y-girdi--sayi" type="date" id="bas" name="bas"
+               value="@(s.Bas?.ToString("yyyy-MM-dd"))">
+    </div>
 
-        <div class="card p-0 overflow-hidden">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>#</th>
-                            <th>Müşteri</th>
-                            <th>Telefon</th>
-                            <th>Tarih/Saat</th>
-                            <th>Kişi</th>
-                            <th style="min-width: 150px;">Not</th>
-                            <th>Durum</th>
-                            <th style="min-width: 140px;">İşlem & Bildir</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
-                            // Sayacı artır
-                            siraNo++;
+    <div class="y-suzgec__alan">
+        <label class="y-suzgec__etiket" for="bit">Bitiş</label>
+        <input class="y-girdi y-girdi--sayi" type="date" id="bit" name="bit"
+               value="@(s.Bit?.ToString("yyyy-MM-dd"))">
+    </div>
 
-                            // --- WhatsApp Mesajlarını Hazırla (DETAYLI) ---
-                            string wpLink = "";
-                            if (item.OnaylandiMi)
+    <div class="y-suzgec__alan">
+        <label class="y-suzgec__etiket" for="sirala">Sırala</label>
+        <select class="y-secim" id="sirala" name="sirala">
+            <option value="tarih_artan" selected="@(s.Sirala == "tarih_artan")">Tarihe göre (yakın önce)</option>
+            <option value="tarih_azalan" selected="@(s.Sirala == "tarih_azalan")">Tarihe göre (yeni önce)</option>
+            <option value="kisi_azalan" selected="@(s.Sirala == "kisi_azalan")">Kişi sayısı (çok önce)</option>
+            <option value="talep_azalan" selected="@(s.Sirala == "talep_azalan")">Talep zamanı (yeni önce)</option>
+        </select>
+    </div>
+
+    <div class="y-suzgec__eylemler">
+        <button type="submit" class="y-dugme y-dugme--birincil">Uygula</button>
+        @if (s.SuzgecAktif)
+        {
+            <a class="y-dugme" href="@Url.Action("Rezervasyonlar")?durum=@s.Durum">Temizle</a>
+        }
+    </div>
+</form>
+
+@if (Model.Kayitlar.Count == 0)
+{
+    <div class="y-bos">
+        <i class="y-bos__im fas fa-calendar-xmark" aria-hidden="true"></i>
+        <h2 class="y-bos__baslik">
+            @(s.SuzgecAktif ? "Süzgece uyan kayıt yok" : "Bu görünümde rezervasyon yok")
+        </h2>
+        <p class="y-bos__alt">
+            @if (s.SuzgecAktif)
+            {
+                <text>Arama veya tarih aralığını değiştirip tekrar deneyin.</text>
+            }
+            else
+            {
+                <text>Site üzerinden gelen masa talepleri burada listelenir.</text>
+            }
+        </p>
+        @if (s.SuzgecAktif)
+        {
+            <p class="y-bos__eylem">
+                <a class="y-dugme" href="@Url.Action("Rezervasyonlar")?durum=@s.Durum">Süzgeci temizle</a>
+            </p>
+        }
+    </div>
+}
+else
+{
+    <div class="y-tablo-sarmal">
+        <table class="y-tablo" id="rezervasyon-tablosu">
+            <caption class="y-gizli">Rezervasyon talepleri — @Model.ToplamKayit kayıt</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Tarih / Saat</th>
+                    <th scope="col">Misafir</th>
+                    <th scope="col">Telefon</th>
+                    <th scope="col">Kişi</th>
+                    <th scope="col">Not</th>
+                    <th scope="col">Talep</th>
+                    <th scope="col">Durum</th>
+                    <th scope="col" class="y-tablo__eylem"><span class="y-gizli">İşlemler</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Kayitlar)
+                {
+                    var gecmis = item.Tarih.Date < bugun;
+                    var bugunMu = item.Tarih.Date == bugun;
+
+                    var bekliyor = item.Durum == RezervasyonDurumu.Bekliyor;
+                    var iptalEdildi = item.Durum == RezervasyonDurumu.Iptal;
+
+                    // WhatsApp bildirim metni misafire gidecek: duruma göre değişmeli.
+                    string mesaj = item.Durum switch
+                    {
+                        RezervasyonDurumu.Onaylandi => $"Sayın {item.AdSoyad}, {item.Tarih:dd.MM.yyyy HH:mm} tarihli {item.KisiSayisi} kişilik rezervasyonunuz ONAYLANMIŞTIR. Sizi ağırlamaktan mutluluk duyarız. - Rosso Lounge Bistro",
+                        RezervasyonDurumu.Iptal => $"Sayın {item.AdSoyad}, {item.Tarih:dd.MM.yyyy HH:mm} tarihli rezervasyonunuz iptal edilmiştir. Anlayışınız için teşekkür eder, sizi başka bir tarihte ağırlamaktan memnuniyet duyarız. - Rosso Lounge Bistro",
+                        _ => $"Sayın {item.AdSoyad}, {item.Tarih:dd.MM.yyyy HH:mm} tarihli rezervasyon talebiniz alınmıştır. Müsaitlik durumuna göre size en kısa sürede dönüş yapılacaktır. - Rosso Lounge Bistro"
+                    };
+                    string wpLink = $"https://wa.me/90{item.Telefon}?text={System.Net.WebUtility.UrlEncode(mesaj)}";
+
+                    <tr class="@(bekliyor ? "y-satir--dikkat" : null) @(iptalEdildi ? "y-satir--iptal" : null) @(gecmis ? "y-satir--gecmis" : null)">
+                        <td>
+                            <span class="y-tablo__ad y-sayi">@item.Tarih.ToString("dd.MM.yyyy")</span>
+                            <span class="y-tablo__ikincil y-sayi">
+                                @item.Tarih.ToString("HH:mm")
+                                @if (bugunMu)
+                                {
+                                    <span class="y-rozet y-rozet--sonuk">Bugün</span>
+                                }
+                            </span>
+                        </td>
+
+                        <td class="y-tablo__ad">@item.AdSoyad</td>
+
+                        <td>
+                            <a class="y-bag y-sayi" href="tel:@item.Telefon">@item.Telefon</a>
+                        </td>
+
+                        <td class="y-sayi">@item.KisiSayisi</td>
+
+                        <td class="y-tablo__not">
+                            @if (string.IsNullOrWhiteSpace(item.Not))
                             {
-                                // Onaylandığında gidecek mesaj:
-                                string mesaj = $"Sayın {item.AdSoyad}, {item.Tarih.ToString("dd.MM.yyyy HH:mm")} tarihli {item.KisiSayisi} kişilik rezervasyonunuz ONAYLANMIŞTIR. Sizi ağırlamaktan mutluluk duyarız. - Rosso Lounge Bistro";
-
-                                // URL Encode: Boşlukları ve Türkçe karakterleri link formatına çevirir
-                                wpLink = $"https://wa.me/90{item.Telefon}?text={System.Net.WebUtility.UrlEncode(mesaj)}";
+                                <span class="y-tablo__ikincil">—</span>
+                            }
+                            else if (item.Not.Length > 40)
+                            {
+                                <button type="button" class="y-metin-bag"
+                                        data-metin-goster
+                                        data-baslik="@item.AdSoyad — not"
+                                        data-govde="@item.Not">
+                                    @item.Not.Substring(0, 40)…
+                                </button>
                             }
                             else
                             {
-                                // Beklemedeyken gidecek mesaj:
-                                string mesaj = $"Sayın {item.AdSoyad}, {item.Tarih.ToString("dd.MM.yyyy HH:mm")} tarihli rezervasyon talebiniz alınmıştır. Müsaitlik durumuna göre size en kısa sürede dönüş yapılacaktır. - Rosso Lounge Bistro";
-                                wpLink = $"https://wa.me/90{item.Telefon}?text={System.Net.WebUtility.UrlEncode(mesaj)}";
+                                @item.Not
                             }
+                        </td>
 
-                            <tr class="@(item.OnaylandiMi ? "table-success" : "")">
+                        <td class="y-tablo__ikincil" title="@item.OlusturulmaTarihi.ToString("dd.MM.yyyy HH:mm", tr)">
+                            @GecenSure(item.OlusturulmaTarihi)
+                        </td>
 
-                                <td><b>@siraNo</b></td>
+                        <td>
+                            @switch (item.Durum)
+                            {
+                                case RezervasyonDurumu.Onaylandi:
+                                    <span class="y-rozet y-rozet--basari">Onaylı</span>
+                                    break;
+                                case RezervasyonDurumu.Iptal:
+                                    <span class="y-rozet y-rozet--iptal">İptal</span>
+                                    break;
+                                default:
+                                    <span class="y-rozet y-rozet--uyari">Bekliyor</span>
+                                    break;
+                            }
+                        </td>
 
-                                <td>@item.AdSoyad</td>
-                                <td><a href="tel:@item.Telefon" class="text-decoration-none text-dark">@item.Telefon</a></td>
-                                <td>
-                                    <span class="badge bg-warning text-dark">@item.Tarih.ToString("dd.MM.yyyy")</span>
-                                    <small class="d-block text-muted">@item.Tarih.ToString("HH:mm")</small>
-                                </td>
-                                <td class="text-center">@item.KisiSayisi</td>
-                                <td><small>@item.Not</small></td>
+                        <td class="y-tablo__eylem">
+                            <div class="y-eylemler">
+                                @* Onayla: bekleyen talep için de, iptali geri almak için de aynı uç *@
+                                @if (item.Durum != RezervasyonDurumu.Onaylandi)
+                                {
+                                    <form method="post" action="/Admin/Onayla/@item.Id">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="donus" value="@donusAdres">
+                                        <button type="submit" class="y-hayalet"
+                                                title="@(iptalEdildi ? "İptali geri al ve onayla" : "Onayla")"
+                                                aria-label="@item.AdSoyad adına rezervasyonu onayla">
+                                            <i class="fas @(iptalEdildi ? "fa-rotate-left" : "fa-check")" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                }
 
-                                <td>
-                                    @if (item.OnaylandiMi)
-                                    {
-                                        <span class="badge bg-success"><i class="fas fa-check"></i> Onaylı</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary">Bekliyor</span>
-                                    }
-                                </td>
+                                @* İptal geri alınabilir olduğu için onay sorusu yok; silmede var. *@
+                                @if (!iptalEdildi)
+                                {
+                                    <form method="post" action="/Admin/Iptal/@item.Id">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="donus" value="@donusAdres">
+                                        <button type="submit" class="y-hayalet"
+                                                title="@(bekliyor ? "Talebi geri çevir" : "Rezervasyonu iptal et")"
+                                                aria-label="@item.AdSoyad adına rezervasyonu iptal et">
+                                            <i class="fas fa-ban" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                }
 
-                                <td>
-                                    <div class="d-flex gap-1">
-                                        @if (!item.OnaylandiMi)
-                                        {
-                                            <form action="/Admin/Onayla/@item.Id" method="post">
-                                                <button type="submit" class="btn btn-sm btn-success" title="Onayla">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                            </form>
-                                        }
+                                <a class="y-hayalet" href="@wpLink" target="_blank" rel="noopener"
+                                   title="WhatsApp ile bildir"
+                                   aria-label="@item.AdSoyad kişisine WhatsApp ile bildir">
+                                    <i class="fab fa-whatsapp" aria-hidden="true"></i>
+                                </a>
 
-                                        <form action="/Admin/Sil/@item.Id" method="post" onsubmit="return confirm('Silmek istediğinize emin misiniz?');">
-                                            <button type="submit" class="btn btn-sm btn-danger" title="Sil">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-
-                                        <a href="@wpLink" target="_blank" class="btn btn-sm btn-success" title="WhatsApp ile Bildir" style="background-color: #25D366; border-color: #25D366;">
-                                            <i class="fab fa-whatsapp"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-
-            @if (Model.Count == 0)
-            {
-                <div class="p-5 text-center text-muted">
-                    <i class="fas fa-inbox fa-3x mb-3"></i>
-                    <p>Henüz hiç rezervasyon yok.</p>
-                </div>
-            }
-        </div>
+                                <form method="post" action="/Admin/Sil/@item.Id"
+                                      onsubmit="return confirm('Bu rezervasyonu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="donus" value="@donusAdres">
+                                    <button type="submit" class="y-hayalet y-hayalet--tehlike"
+                                            title="Sil"
+                                            aria-label="@item.AdSoyad adına rezervasyonu sil">
+                                        <i class="fas fa-trash-can" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
 
-</body>
-</html>
+    @* ---------- Sayfalama ---------- *@
+    <nav class="y-sayfalama" aria-label="Sayfalar">
+        <p class="y-sayfalama__bilgi">
+            @(((s.Sayfa - 1) * s.Boyut) + 1)–@Math.Min(s.Sayfa * s.Boyut, Model.ToplamKayit)
+            / @Model.ToplamKayit kayıt
+        </p>
+
+        <div class="y-sayfalama__gezinme">
+            @if (Model.OncekiVar)
+            {
+                <a class="y-dugme y-dugme--minik" href="@Url.Action("Rezervasyonlar")@s.SorguKur(sayfa: s.Sayfa - 1)"
+                   rel="prev">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i> Önceki
+                </a>
+            }
+            else
+            {
+                <span class="y-dugme y-dugme--minik" aria-disabled="true">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i> Önceki
+                </span>
+            }
+
+            <span class="y-sayfalama__sayi y-sayi">@s.Sayfa / @Model.ToplamSayfa</span>
+
+            @if (Model.SonrakiVar)
+            {
+                <a class="y-dugme y-dugme--minik" href="@Url.Action("Rezervasyonlar")@s.SorguKur(sayfa: s.Sayfa + 1)"
+                   rel="next">
+                    Sonraki <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </a>
+            }
+            else
+            {
+                <span class="y-dugme y-dugme--minik" aria-disabled="true">
+                    Sonraki <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </span>
+            }
+        </div>
+
+        <div class="y-sayfalama__boyut">
+            <span class="y-suzgec__etiket">Sayfa başına</span>
+            @foreach (var b in new[] { 25, 50, 100 })
+            {
+                <a class="y-boyut @(s.Boyut == b ? "y-boyut--aktif" : null)"
+                   href="@Url.Action("Rezervasyonlar")@(s.SorguKur(sayfa: 1).Replace("boyut=" + s.Boyut, "boyut=" + b))">@b</a>
+            }
+        </div>
+    </nav>
+}
+
+@await Html.PartialAsync("_YonetimMetinKutusu")

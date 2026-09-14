@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using RossoLoungeWeb.Services;
 
 namespace RossoLoungeWeb.Models
 {
@@ -8,22 +9,53 @@ namespace RossoLoungeWeb.Models
         [Key] // Birincil Anahtar (Primary Key)
         public int Id { get; set; }
 
-        [Required] // Zorunlu alan
+        [Required(ErrorMessage = "Ad soyad zorunludur.")]
+        [MaxLength(100, ErrorMessage = "Ad soyad en fazla 100 karakter olabilir.")]
+        [Display(Name = "Ad Soyad")]
         public string AdSoyad { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Telefon numarası zorunludur.")]
+        [Phone(ErrorMessage = "Geçerli bir telefon numarası giriniz.")]
+        [MaxLength(25, ErrorMessage = "Telefon numarası en fazla 25 karakter olabilir.")]
+        [Display(Name = "Telefon")]
         public string Telefon { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Rezervasyon tarihi zorunludur.")]
+        [DataType(DataType.DateTime)]
+        [Display(Name = "Rezervasyon Tarihi")]
         public DateTime Tarih { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Kişi sayısı zorunludur.")]
+        [Range(1, 100, ErrorMessage = "Kişi sayısı 1 ile 100 arasında olmalıdır.")]
+        [Display(Name = "Kişi Sayısı")]
         public int KisiSayisi { get; set; }
 
+        // Sütun tipi nvarchar(max) kalıyor (bkz. ApplicationDbContext.OnModelCreating).
+        [StringLength(500, ErrorMessage = "Not en fazla 500 karakter olabilir.")]
+        [Display(Name = "Not")]
         public string? Not { get; set; } // Boş bırakılabilir
 
-        public DateTime OlusturulmaTarihi { get; set; } = DateTime.Now;
+        [Display(Name = "Oluşturulma Tarihi")]
+        public DateTime OlusturulmaTarihi { get; set; } = TurkiyeSaati.Simdi;
 
-        public bool OnaylandiMi { get; set; } = false;
+        [Display(Name = "Durum")]
+        public RezervasyonDurumu Durum { get; set; } = RezervasyonDurumu.Bekliyor;
+    }
+
+    /// <summary>
+    /// Rezervasyonun yaşam döngüsü.
+    ///
+    /// Önce yalnızca <c>OnaylandiMi</c> vardı: bir talebi geri çevirmenin tek
+    /// yolu kaydı SİLMEKTİ. Silinen kayıt hiç yaşanmamış gibi olur — ne
+    /// misafire ne de istatistiğe iz kalır. İptal artık ayrı bir durum.
+    ///
+    /// Sayılar veritabanında saklandığı için DEĞİŞTİRİLEMEZ; yeni durum
+    /// eklenecekse sıradaki sayı verilmeli.
+    /// </summary>
+    public enum RezervasyonDurumu
+    {
+        Bekliyor = 0,
+        Onaylandi = 1,
+        Iptal = 2
     }
 }

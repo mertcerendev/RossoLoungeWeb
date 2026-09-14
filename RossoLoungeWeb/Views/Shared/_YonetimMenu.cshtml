@@ -1,0 +1,99 @@
+@*
+    YÖNETİM — KENAR ÇUBUĞU MENÜSÜ
+    ---------------------------------------------------------------
+    Aktif öğe: ViewData["Aktif"] (ozet | rezervasyonlar | kategoriler |
+    urunler | yorumlar | mesajlar | ayarlar)
+
+    Rozet sayıları isteğe bağlı: ViewData["BekleyenYorum"] ve
+    ViewData["OkunmamisMesaj"] doluysa gösterilir. Doldurmak
+    controller'ın (ya da ileride bir ViewComponent'in) işi; layout
+    veri çekmez.
+
+    Daraltılmış hâlde yalnızca ikon kalır — bu yüzden her öğede
+    title + ekran okuyucu metni var.
+*@
+@{
+    var aktif = ViewData["Aktif"] as string ?? "";
+    // null dönüş kasıtlı: Razor, değeri null olan nitelikleri hiç basmaz.
+    string? Durum(string ad) => aktif == ad ? "y-menu__oge--aktif" : null;
+    string? Sayfa(string ad) => aktif == ad ? "page" : null;
+
+    var bekleyenYorum = ViewData["BekleyenYorum"] as int?;
+    var okunmamisMesaj = ViewData["OkunmamisMesaj"] as int?;
+}
+
+<nav class="y-kenar-cubuk" aria-label="Panel menüsü">
+    <a class="y-marka" href="/Admin/Index">
+        <span class="y-marka__im" aria-hidden="true">R</span>
+        <span class="y-marka__yazi">Rosso Panel</span>
+    </a>
+
+    <div class="y-menu">
+        <p class="y-menu__baslik">Genel</p>
+
+        <a class="y-menu__oge @Durum("ozet")" href="/Admin/Index" aria-current="@Sayfa("ozet")" title="Özet">
+            <i class="y-menu__im fas fa-chart-line" aria-hidden="true"></i>
+            <span class="y-menu__yazi">Özet</span>
+        </a>
+
+        <a class="y-menu__oge @Durum("rezervasyonlar")" href="/Admin/Rezervasyonlar" aria-current="@Sayfa("rezervasyonlar")" title="Rezervasyonlar">
+            <i class="y-menu__im fas fa-calendar-check" aria-hidden="true"></i>
+            <span class="y-menu__yazi">Rezervasyonlar</span>
+        </a>
+
+        <p class="y-menu__baslik">Menü</p>
+
+        <a class="y-menu__oge @Durum("kategoriler")" href="/Kategori/Index" aria-current="@Sayfa("kategoriler")" title="Kategoriler">
+            <i class="y-menu__im fas fa-layer-group" aria-hidden="true"></i>
+            <span class="y-menu__yazi">Kategoriler</span>
+        </a>
+
+        <a class="y-menu__oge @Durum("urunler")" href="/Urun/Index" aria-current="@Sayfa("urunler")" title="Ürünler">
+            <i class="y-menu__im fas fa-utensils" aria-hidden="true"></i>
+            <span class="y-menu__yazi">Ürünler</span>
+        </a>
+
+        <p class="y-menu__baslik">Etkileşim</p>
+
+        <a class="y-menu__oge @Durum("yorumlar")" href="/Admin/Yorumlar" aria-current="@Sayfa("yorumlar")" title="Yorumlar">
+            <i class="y-menu__im fas fa-star-half-stroke" aria-hidden="true"></i>
+            <span class="y-menu__yazi">Yorumlar</span>
+            @if (bekleyenYorum > 0)
+            {
+                <span class="y-menu__sayi" title="@bekleyenYorum onay bekliyor">@bekleyenYorum</span>
+            }
+        </a>
+
+        <a class="y-menu__oge @Durum("mesajlar")" href="/Admin/Mesajlar" aria-current="@Sayfa("mesajlar")" title="Mesajlar">
+            <i class="y-menu__im fas fa-envelope" aria-hidden="true"></i>
+            <span class="y-menu__yazi">Mesajlar</span>
+            @if (okunmamisMesaj > 0)
+            {
+                <span class="y-menu__sayi" title="@okunmamisMesaj okunmamış mesaj">@okunmamisMesaj</span>
+            }
+        </a>
+
+        <p class="y-menu__baslik">Sistem</p>
+
+        <a class="y-menu__oge @Durum("ayarlar")" href="/Admin/Ayarlar" aria-current="@Sayfa("ayarlar")" title="Ayarlar">
+            <i class="y-menu__im fas fa-sliders" aria-hidden="true"></i>
+            <span class="y-menu__yazi">Ayarlar</span>
+        </a>
+
+        <a class="y-menu__oge" href="/" target="_blank" rel="noopener" title="Siteyi yeni sekmede aç">
+            <i class="y-menu__im fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
+            <span class="y-menu__yazi">Siteyi Gör</span>
+        </a>
+    </div>
+
+    <div class="y-kenar-cubuk__ayak">
+        @* Çıkış oturum durumunu değiştiriyor: GET bağlantı değil, POST. *@
+        <form method="post" action="/Admin/CikisYap">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="y-menu__oge y-menu__oge--dugme" title="Çıkış yap">
+                <i class="y-menu__im fas fa-right-from-bracket" aria-hidden="true"></i>
+                <span class="y-menu__yazi">Çıkış Yap</span>
+            </button>
+        </form>
+    </div>
+</nav>

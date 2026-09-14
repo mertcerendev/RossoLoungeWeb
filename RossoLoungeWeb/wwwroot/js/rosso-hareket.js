@@ -1,0 +1,2686 @@
+/* =============================================================
+   ROSSO LOUNGE — SAHNE MOTORU
+   -------------------------------------------------------------
+   Lenis (momentumlu kaydırma) + GSAP/ScrollTrigger/SplitText/Flip
+   + sıvı imleç + sinematik perde.
+
+   TASARIM KARARI — BOZULMAYA DAYANIKLILIK
+   Kinetik girişler öğeleri CSS'te gizler. Bu gizleme yalnızca
+   <html class="rosso-kinetik"> altında geçerlidir ve bu sınıfı
+   AŞAĞIDAKİ kod, kütüphanelerin gerçekten yüklendiğini doğruladıktan
+   sonra ekler. CDN düşerse / JS kapalıysa / kullanıcı hareket
+   azaltma istiyorsa: sınıf hiç eklenmez, sayfa tam okunur açılır.
+   ============================================================= */
+(function () {
+    'use strict';
+
+    /* Head'deki satır içi betiğin emniyet zamanlayıcısı bunu görüyor:
+       ayarlanmazsa kinetik sınıfını söküp içeriği açığa çıkarıyor. */
+    window.__rossoBasladi = true;
+
+    var kok = document.documentElement;
+    var azHareket = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var inceIsaretci = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    var gsapVar = typeof window.gsap !== 'undefined';
+    var stVar = gsapVar && typeof window.ScrollTrigger !== 'undefined';
+    var lenisVar = typeof window.Lenis !== 'undefined';
+
+    /* =========================================================
+       0. YETENEK KAPISI
+       Kinetik moda ancak her şey hazırsa geçilir.
+       ========================================================= */
+    var kinetik = gsapVar && stVar && !azHareket;
+
+    if (!kinetik) {
+        /* Sınıfı head'deki betik iyimser şekilde eklemiş olabilir;
+           GSAP gelmediyse ya da hareket azaltma açıksa geri al. */
+        kok.classList.remove('rosso-kinetik');
+    }
+
+    if (kinetik) {
+        kok.classList.add('rosso-kinetik');
+        gsap.registerPlugin(ScrollTrigger);
+        if (typeof window.SplitText !== 'undefined') gsap.registerPlugin(SplitText);
+        if (typeof window.Flip !== 'undefined') gsap.registerPlugin(Flip);
+    }
+
+    /* =========================================================
+       1. LENIS — momentumlu kaydırma
+       ScrollTrigger ile senkron çalışması için tek rAF döngüsü.
+       ========================================================= */
+    var lenis = null;
+
+    // Galeri pin'i: ticker olurse emniyet katmani buradan soker
+    var galeriPin = null;
+
+    function lenisBaslat() {
+        if (!lenisVar || azHareket) return;
+
+        lenis = new Lenis({
+            duration: 1.15,
+            easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); },
+            smoothWheel: true,
+            syncTouch: false // dokunmatikte native kaydırma daha doğal
+        });
+
+        if (kinetik) {
+            lenis.on('scroll', ScrollTrigger.update);
+            gsap.ticker.add(function (zaman) { lenis.raf(zaman * 1000); });
+            gsap.ticker.lagSmoothing(0);
+        } else {
+            var dongu = function (z) { lenis.raf(z); requestAnimationFrame(dongu); };
+            requestAnimationFrame(dongu);
+        }
+    }
+
+    /* =========================================================
+       2. SİNEMATİK PERDE
+       Sayaç 0→100, ardından perde iki panel halinde yırtılır ve
+       hero içeriği zincirleme girer.
+       ========================================================= */
+    function perdeAc(sonra) {
+        var perde = document.querySelector('.sahne-perde');
+        var ustPanel = document.querySelector('.sahne-perde__panel--ust');
+        var altPanel = document.querySelector('.sahne-perde__panel--alt');
+        var sayac = document.querySelector('.sahne-perde__sayac');
+
+        function perdeyiKaldir() {
+            kok.classList.remove('rosso-kilit');
+            if (lenis) lenis.start();
+            if (perde && perde.parentNode) perde.remove();
+            if (ustPanel && ustPanel.parentNode) ustPanel.remove();
+            if (altPanel && altPanel.parentNode) altPanel.remove();
+        }
+
+        // Sayfa arka plan sekmesinde açıldıysa sinematik girişi hiç oynatma:
+        // kullanıcı izlemiyor, üstelik gizli sekmede rAF durduğu için
+        // zaman çizelgesi ilerlemez ve perde asla kalkmazdı.
+        if (document.visibilityState === 'hidden') {
+            perdeyiKaldir();
+            if (sonra) sonra();
+            return;
+        }
+
+        if (!perde || !kinetik) {
+            if (perde) perde.remove();
+            if (ustPanel) ustPanel.remove();
+            if (altPanel) altPanel.remove();
+            kok.classList.remove('rosso-kilit');
+            if (sonra) sonra();
+            return;
+        }
+
+        kok.classList.add('rosso-kilit');
+        if (lenis) lenis.stop();
+
+        /* Hero girişi perde KAPANDIKTAN sonra değil, paneller yırtılmaya
+           başlarken tetiklenir. Arka arkaya çalışınca yazılar ancak
+           ~4.5sn'de oturuyordu; iç içe girince ~1.8sn'ye iniyor. */
+        var girisBasladi = false;
+        function girisiBaslat() {
+            if (girisBasladi) return;
+            girisBasladi = true;
+            if (sonra) sonra();
+        }
+
+        var bitti = false;
+        function tamamla() {
+            if (bitti) return;
+            bitti = true;
+            perdeyiKaldir();
+            girisiBaslat();
+            ScrollTrigger.refresh();
+        }
+
+        // Emniyet: rAF durursa (arka plan sekmesi, ağır cihaz) perde
+        // duvar saatiyle yine de kalkar. Kullanıcı asla siyah ekranda kalmaz.
+        setTimeout(tamamla, 1800);
+
+        var ilerleme = { deger: 0 };
+        var zc = gsap.timeline({ onComplete: tamamla });
+
+        zc.to(ilerleme, {
+            deger: 100,
+            duration: 0.35,
+            ease: 'power2.inOut',
+            onUpdate: function () {
+                if (sayac) sayac.textContent = Math.round(ilerleme.deger).toString().padStart(3, '0');
+            }
+        })
+          .to('.sahne-perde__marka', { opacity: 0, y: -14, duration: 0.2, ease: 'power2.in' }, '-=0.1')
+          .to(sayac, { opacity: 0, duration: 0.18, ease: 'power2.in' }, '<')
+          .set(perde, { autoAlpha: 0 })
+          // Perde ortadan yırtılır
+          .to(ustPanel, { yPercent: -100, duration: 0.45, ease: 'expo.inOut' }, 'yirt')
+          .to(altPanel, { yPercent: 100, duration: 0.45, ease: 'expo.inOut' }, 'yirt')
+          // Yazılar paneller açılırken yükselmeye başlasın
+          .add(girisiBaslat, 'yirt-=0.12');
+
+        return zc;
+    }
+
+    /* =========================================================
+       3. HERO GİRİŞİ
+       Başlık satır satır (SplitText), diğerleri kayarak.
+       ========================================================= */
+    function heroGirisi() {
+        if (!kinetik) return;
+
+        var baslik = document.querySelector('.hero__baslik');
+        var zc = gsap.timeline({ defaults: { ease: 'expo.out' } });
+
+        if (baslik && typeof window.SplitText !== 'undefined') {
+            var bolunmus = new SplitText(baslik, { type: 'lines', linesClass: 'kn-satir-ic' });
+            // Her satırı taşan bir kaba al ki alttan yukarı "yükselsin"
+            bolunmus.lines.forEach(function (satir) {
+                var kap = document.createElement('span');
+                kap.className = 'kn-satir';
+                kap.style.display = 'block';
+                satir.parentNode.insertBefore(kap, satir);
+                kap.appendChild(satir);
+            });
+            gsap.set(baslik, { autoAlpha: 1 });
+            zc.from(bolunmus.lines, { yPercent: 115, duration: 0.85, stagger: 0.06 });
+        } else if (baslik) {
+            zc.fromTo(baslik, { yPercent: 20, autoAlpha: 0 },
+                      { yPercent: 0, autoAlpha: 1, duration: 0.8 });
+        }
+
+        /* fromTo ŞART, from DEĞİL.
+           Başlangıç durumu artık CSS'te (.rosso-kinetik ... { opacity: 0 }),
+           çünkü perde yırtılınca hazır sayfa görünüyordu. gsap.from()
+           mevcut değeri BİTİŞ olarak okur; CSS 0 dediği için animasyon
+           0'dan 0'a giderdi ve hero hiç açılmazdı. Bitişi açıkça yazıyoruz. */
+        zc.fromTo('.hero__ustbaslik', { autoAlpha: 0, y: 16 },
+                  { autoAlpha: 1, y: 0, duration: 0.55 }, 0.08)
+          .fromTo('.hero__alt', { autoAlpha: 0, y: 18 },
+                  { autoAlpha: 1, y: 0, duration: 0.55 }, '-=0.42')
+          .fromTo('.hero__eylemler > *', { autoAlpha: 0, y: 20 },
+                  { autoAlpha: 1, y: 0, duration: 0.5, stagger: 0.07 }, '-=0.38')
+          .fromTo('.hero__durum', { autoAlpha: 0 },
+                  { autoAlpha: 1, duration: 0.45 }, '-=0.3')
+          .fromTo('.nav__marka, .nav__menu > li, .nav__eylem', { autoAlpha: 0, y: -12 },
+                  { autoAlpha: 1, y: 0, duration: 0.45, stagger: 0.04 }, 0.1);
+
+        return zc;
+    }
+
+    /* =========================================================
+       4. FARE DUYARLI 3D PARALLAX (hero)
+       ========================================================= */
+    function heroParallax() {
+        var sahne = document.querySelector('.hero');
+        var zemin = document.querySelector('.hero__zemin');
+        if (!sahne || !zemin || !kinetik || !inceIsaretci) return;
+
+        /* AYRI KANALLAR — titremenin sebebi buydu.
+           Fare parallaxı yüzde kanalına (xPercent/yPercent), kaydırma
+           parallaxı PX kanalına (y) yazıyor. İkisi de yPercent'e
+           yazarken quickTo tweeni ile scrub her karede birbirinin
+           değerini eziyordu; fotoğraf kaydırırken titriyordu.
+           GSAP bu iki kanalı ayrı tutup nihai matriste topluyor. */
+        var xAyar = gsap.quickTo(zemin, 'xPercent', { duration: 0.9, ease: 'power3.out' });
+        var yAyar = gsap.quickTo(zemin, 'yPercent', { duration: 0.9, ease: 'power3.out' });
+
+        /* Hero belgenin başında; kutusu bir kez ölçülüp kaydırma
+           konumuyla birlikte hesaplanıyor. Her mousemove'da
+           getBoundingClientRect çağırmak, tam da kaydırırken zorunlu
+           layout okuması demekti. */
+        var kutu = null;
+        function kutuyuOlc() {
+            var r = sahne.getBoundingClientRect();
+            kutu = { sol: r.left, belgeUst: r.top + window.pageYOffset, gen: r.width, yuk: r.height };
+        }
+        kutuyuOlc();
+        window.addEventListener('resize', kutuyuOlc);
+
+        sahne.addEventListener('mousemove', function (olay) {
+            if (!kutu || !kutu.gen || !kutu.yuk) return;
+            var ust = kutu.belgeUst - window.pageYOffset;
+            xAyar(((olay.clientX - kutu.sol) / kutu.gen - 0.5) * -2.4);
+            yAyar(((olay.clientY - ust) / kutu.yuk - 0.5) * -2.4);
+        }, { passive: true });
+
+        sahne.addEventListener('mouseleave', function () { xAyar(0); yAyar(0); });
+
+        // Kaydırdıkça arka plan geride kalır (px kanalı; yPercent 12 ile aynı mesafe)
+        gsap.to(zemin, {
+            y: function () { return zemin.offsetHeight * 0.12; },
+            ease: 'none',
+            invalidateOnRefresh: true,
+            scrollTrigger: { trigger: sahne, start: 'top top', end: 'bottom top', scrub: true }
+        });
+    }
+
+    /* =========================================================
+       5. KAYDIRMA TETİKLİ GİRİŞLER
+       ========================================================= */
+    function kaydirmaGirisleri() {
+        if (!kinetik) return;
+
+        /* Maskeli açılış — her öğe kendi tetikleyicisiyle.
+           İstisna: kendi kademeli ritmini kuran bölümler
+           (data-ritim-sahibi). Aksi hâlde aynı clip-path üzerine iki
+           tween birden yazıyor ve tasarlanan kademe bozuluyor. */
+        gsap.utils.toArray('.kn-maske').forEach(function (oge) {
+            if (oge.closest('[data-ritim-sahibi]')) return;
+
+            gsap.to(oge, {
+                clipPath: 'inset(0 0 0% 0)',
+                duration: 1.3,
+                ease: 'expo.out',
+                scrollTrigger: { trigger: oge, start: 'top 82%' }
+            });
+        });
+
+        // Hafif eğilmeyle yerleşen bloklar
+        gsap.utils.toArray('.kn-kaydir').forEach(function (oge, i) {
+            gsap.to(oge, {
+                autoAlpha: 1, y: 0, skewY: 0,
+                duration: 1.0, ease: 'expo.out', delay: (i % 4) * 0.05,
+                scrollTrigger: { trigger: oge, start: 'top 88%' }
+            });
+        });
+
+        gsap.utils.toArray('.kn-solgun').forEach(function (oge) {
+            gsap.to(oge, {
+                autoAlpha: 1, duration: 1.1, ease: 'power2.out',
+                scrollTrigger: { trigger: oge, start: 'top 90%' }
+            });
+        });
+    }
+
+    /* =========================================================
+       6. SIVI İMLEÇ
+       ========================================================= */
+    /* =========================================================
+       GLOBAL ÖZEL İMLEÇ
+
+       Tek DOM örneği, tek delege dinleyici. Hover başına öğe
+       yaratılmaz, öğe başına listener bağlanmaz — yalnızca sınıf
+       değişir. Bütün durumlar (manyetik / metin / görsel) aynı
+       halkanın üstünde yaşar.
+
+       Konum gsap.quickTo ile: nokta kısa süreli (ani), halka uzun
+       süreli (gecikmeli) → sıvı momentum ve ağırlık hissi.
+
+       Manyetik kutu hover'da BİR KEZ ölçülür. Her mousemove'da
+       getBoundingClientRect çağırmak kare başına zorunlu layout
+       okuması demek olurdu; kaydırma ve yeniden boyutlandırmada
+       tazeleniyor.
+       ========================================================= */
+    /* =========================================================
+       NAVBAR AKTİF BÖLÜM İZLEYİCİSİ
+
+       Eski tasarımın scrollspy'ı .nav-links kancasına bağlıydı ve yeni
+       navbarla eşleşmiyordu; sonuç olarak "Ana Sayfa" hangi bölüme
+       gidilirse gidilsin altı çizili kalıyordu.
+
+       IntersectionObserver kullanılıyor: kaydırma dinleyicisi yok,
+       ölçüm yalnızca kesişim değiştiğinde yapılıyor.
+       ========================================================= */
+    function navIzleyici() {
+        var linkler = Array.prototype.slice.call(document.querySelectorAll('.nav__link'));
+        if (!linkler.length) return;
+
+        var hedefler = [];
+
+        /* Eşleme href'ten DEĞİL data-bolum'dan okunuyor: "Menü" bağlantısı
+           /Home/Menu'ye gidiyor ama ana sayfadaki vitrin bölümü de ona ait.
+           href'e bakıldığında o bölümde hiçbir eşleşme bulunamıyor ve
+           "Ana Sayfa" altı çizili kalıyordu. */
+        linkler.forEach(function (bag) {
+            var bolumId = bag.getAttribute('data-bolum');
+            if (!bolumId) return;
+            var bolum = document.getElementById(bolumId);
+            if (bolum) hedefler.push({ bag: bag, bolum: bolum });
+        });
+
+        if (!hedefler.length) return; // menü sayfası: sunucunun verdiği durum kalsın
+
+        function isaretle(etkin) {
+            linkler.forEach(function (bag) {
+                bag.classList.toggle('nav__link--aktif', bag === etkin);
+            });
+            adresiEsle(etkin);
+        }
+
+        /* ADRES ÇUBUĞU BÖLÜMLE EŞLEŞİR
+
+           Kural tek cümle: adres, o an BAKTIĞIN bölümü gösterir.
+           Hero'dayken "/", aşağıda "/#hakkimizda", "/#galeri"...
+
+           Önceden adres yalnızca BAŞKA sayfadan çıpayla gelindiğinde
+           değişiyordu; ana sayfada tıklamalar preventDefault edildiği
+           için hiç yazılmıyordu. Sonuç: /menu'den "Galeri"ye geçince
+           adres /#galeri oluyor, sonra sayfa içinde nereye gidilirse
+           gidilsin /#galeri'de KALIYORDU.
+
+           Adres, bağlantının KENDİ href'inden okunuyor — tek kaynak
+           _Nav.cshtml. JS'te ayrı bir id→adres tablosu tutulsaydı
+           ikisi zamanla ayrışırdı.
+
+           GECİKMELİ: uzun bir yumuşak kaydırmada aradaki her bölüm
+           sırayla referans çizgisini kesiyor ve adres tek tıklamada
+           beş kez değişiyordu. Kaydırma durulunca tek yazma yapılıyor.
+
+           replaceState, pushState DEĞİL: her bölüm geçmişe bir adım
+           eklemez; geri tuşu bölümleri değil, siteyi geri alır. */
+        var adresSayaci = null;
+
+        function suankiAdres() {
+            return window.location.pathname + window.location.search + window.location.hash;
+        }
+
+        function adresiEsle(bag) {
+            if (!bag || !window.history || !history.replaceState) return;
+
+            clearTimeout(adresSayaci);
+            adresSayaci = setTimeout(function () {
+                var href = bag.getAttribute('href') || '';
+                var kesit = href.indexOf('#');
+
+                /* Yalnızca çıpa kısmı alınıyor; yol ve sorgu dizesi
+                   olduğu gibi korunuyor. "Ana Sayfa"nın href'inde çıpa
+                   yok, o yüzden adres sade "/" hâline dönüyor. */
+                var yeni = window.location.pathname + window.location.search +
+                           (kesit >= 0 ? href.slice(kesit) : '');
+
+                if (yeni === suankiAdres()) return;
+
+                try { history.replaceState(null, '', yeni); } catch (h) { /* yoksay */ }
+            }, 180);
+        }
+
+        var gorunen = [];
+
+        var izleyici = new IntersectionObserver(function (girisler) {
+            girisler.forEach(function (giris) {
+                var yer = gorunen.indexOf(giris.target);
+                if (giris.isIntersecting) {
+                    if (yer < 0) gorunen.push(giris.target);
+                } else if (yer >= 0) {
+                    gorunen.splice(yer, 1);
+                }
+            });
+
+            /* Hiçbir bölüm bantta değilse (ör. footer) son durum kalsın;
+               temizlemek çizginin kaybolup geri gelmesine yol açıyordu. */
+            if (!gorunen.length) return;
+
+            // Birden fazla bölüm görünüyorsa en yukarıdaki kazanır
+            var enUst = gorunen.slice().sort(function (a, b) {
+                return a.getBoundingClientRect().top - b.getBoundingClientRect().top;
+            })[0];
+
+            var eslesen = null;
+            for (var i = 0; i < hedefler.length; i++) {
+                if (hedefler[i].bolum === enUst) { eslesen = hedefler[i].bag; break; }
+            }
+            if (eslesen) isaretle(eslesen);
+        }, {
+            /* Ekranın %40'ında SIFIR yükseklikte bir referans çizgisi:
+               o çizgiyi hangi bölüm kesiyorsa o aktif. Önceki geniş bant
+               (96px - %45) iki bölümün birden kesişmesine yol açıyor ve
+               en üstteki kazandığı için, ekranı iletişim bölümü doldurmuşken
+               "Yorumlar" altı çizili kalıyordu (ölçüldü: %82 konumunda). */
+            rootMargin: '-40% 0px -60% 0px',
+            threshold: 0
+        });
+
+        hedefler.forEach(function (h) { izleyici.observe(h.bolum); });
+    }
+
+    /* =========================================================
+       ÇAPA KAYDIRMASI — sayfadaki TEK kaydırma sahibi
+
+       Önceden iki sistem vardı: burada Lenis'e bağlı bir dinleyici,
+       script.js'te ise her a[href^="#"] tıklamasını preventDefault edip
+       window.scrollTo çağıran ikinci bir dinleyici. İkisi aynı anda
+       çalıştığı için hedef tam oturmuyordu. script.js'teki kaldırıldı.
+
+       Delege dinleyici: bağlantılar sonradan eklense de çalışır.
+       İki biçimi de kabul eder — "#hedef" ve aynı sayfayı gösteren
+       "/#hedef" (navbar partial'ı bu ikinci biçimi kullanıyor).
+
+       Ofset navbarın CANLI yüksekliğinden hesaplanıyor; sabit sayı
+       yazılsaydı navbar kompakt duruma geçtiğinde kayardı.
+       ========================================================= */
+    /* Navbarın KOMPAKT yüksekliği. Ofset bununla hesaplanmalı: hedefe
+       varıldığında sayfa kaydırılmış olacağı için navbar her zaman
+       kompakt oluyor. Anlık yükseklik kullanılınca sayfa başından
+       tıklayınca 24px fazla kaydırılıyor ve aynı link iki farklı yere
+       iniyordu (ölçüldü: tepeden 92px, ortadan 68px boşluk).
+
+       Ölçüm sırasında geçiş kapatılıyor: sınıf eklenip hemen okunursa
+       CSS geçişi henüz ilerlemediği için eski değer dönerdi. */
+    var kompaktNavYuk = 0;
+
+    function navOlcusunuAl() {
+        var nav = document.querySelector('.nav');
+        if (!nav) return;
+
+        var sabitMiydi = nav.classList.contains('nav--sabit');
+        var eskiGecis = nav.style.transition;
+
+        nav.style.transition = 'none';
+        nav.classList.add('nav--sabit');
+        kompaktNavYuk = nav.getBoundingClientRect().height;
+
+        if (!sabitMiydi) nav.classList.remove('nav--sabit');
+        void nav.offsetWidth;              // geçiş geri açılmadan durumu sabitle
+        nav.style.transition = eskiGecis;
+    }
+
+    function capaOfseti() {
+        if (!kompaktNavYuk) navOlcusunuAl();
+        return kompaktNavYuk + 12;
+    }
+
+    /* 'tepe' döner: aynı sayfaya giden hash'siz bağlantı (Ana Sayfa,
+       marka). Bunlar sayfayı yeniden yüklüyordu; artık başa kaydırıyor. */
+    function capayiCoz(bag) {
+        var ham = bag.getAttribute('href') || '';
+
+        if (ham.charAt(0) !== '#') {
+            if (bag.pathname !== window.location.pathname) return null;
+            if (!bag.hash) return 'tepe';
+            ham = bag.hash;
+        }
+
+        if (ham === '#') return 'tepe';
+        if (ham.length < 2) return null;
+
+        try {
+            return document.querySelector(ham);
+        } catch (h) {
+            return null; // geçersiz seçici içeren hash
+        }
+    }
+
+    /* Bölümlerin üst dolgusu ~200px. Kutunun tepesine gidince ekranın
+       üst yarısı boş kalıyor, içerik aşağıda başlıyordu. Bölüm hedefiyse
+       BAŞLIĞINA hizalıyoruz — tıklayan kişi içeriği görsün. */
+    /* Hedefe göre hem hizalanacak öğeyi hem üstte bırakılacak payı verir. */
+    function hizaBilgisi(hedef) {
+        var varsayilanPay = capaOfseti() + 28;
+        if (!hedef || hedef.tagName !== 'SECTION') {
+            return { oge: hedef, pay: varsayilanPay };
+        }
+
+        /* Pin'li bölüm (galeri): sahne 100vh ve kaydırmayla yatay akıyor.
+           Pay bırakmak sahnenin ÖNCESİNE düşürüyor — ölçüldü, tıklayınca
+           hâlâ vitrin bölümündeydi. Tam tepeye oturuyoruz. */
+        if (hedef.querySelector('.pin-spacer')) {
+            return { oge: hedef, pay: 0 };
+        }
+
+        /* Başlığa değil, bölümün İÇERİK BLOĞUNA hizalanıyor.
+           Hakkımızda'da başlık sağ sütunda, görseller sol sütunda daha
+           yukarıdan başlıyor; başlığı hizalayınca görsellerin üstü
+           kesiliyordu. .kap sarmalayıcısı iki sütunun da başladığı yer.
+
+           Pay da genişletildi: eski değerle üst başlık navın 29px
+           altına sıkışıyor, altta boşluk kalıyordu. */
+        var blok = hedef.querySelector('.kap') ||
+                   hedef.querySelector('h1, h2, .hero__baslik') || hedef;
+        return { oge: blok, pay: capaOfseti() + 56 };
+    }
+
+    /* Tek genel kaydırma girişi. script.js (rezervasyon formu ilk hatalı
+       alana giderken) buradan çağırıyor — ikinci bir kaydırma mantığı
+       yazmasın diye bilerek dışarı açıldı. */
+    window.rossoKaydir = function (hedef, aninda) {
+        if (!hedef) return;
+
+        var bilgi = hizaBilgisi(hedef);
+        var ust = bilgi.oge.getBoundingClientRect().top + window.pageYOffset - bilgi.pay;
+
+        // Sayfanın en başındaki bölüm için tepeye git, araya boşluk girmesin
+        if (ust < 140) ust = 0;
+
+        if (lenis && !aninda) {
+            lenis.scrollTo(ust, { duration: 1.2 });
+            return;
+        }
+
+        window.scrollTo({
+            top: Math.max(ust, 0),
+            behavior: (aninda || azHareket) ? 'auto' : 'smooth'
+        });
+    };
+
+    /* ---------------------------------------------------------
+       SAYFA GEÇİŞ PERDESİ
+
+       Çıkışta yukarıdan iniyor, yeni sayfada aşağı doğru çekilip
+       çıkıyor — tek sürekli hareket gibi okunsun diye yön aynı.
+
+       Ana sayfada KAPALI başlamıyor: orada sinematik loader
+       (.sahne-perde) zaten var, ikisi üst üste binerdi. Kararı
+       _Layout veriyor (ViewData["Giris"] == "sinematik"), JS
+       yalnızca sınıfa bakıyor.
+       --------------------------------------------------------- */
+    var gecisSuruyor = false;
+
+    function gecisGirisi() {
+        var perde = document.querySelector('.gecis-perde');
+        if (!perde || !perde.classList.contains('gecis-perde--kapali')) return;
+
+        function ac() {
+            perde.classList.remove('gecis-perde--kapali');
+        }
+
+        if (!kinetik || !gsapVar) { ac(); return; }
+
+        gsap.fromTo(perde,
+            { scaleY: 1, transformOrigin: 'bottom center' },
+            {
+                scaleY: 0, duration: 0.62, ease: 'expo.inOut', delay: 0.04,
+                onComplete: function () {
+                    ac();
+                    gsap.set(perde, { clearProps: 'transform' });
+                }
+            });
+    }
+
+    function gecisleGit(adres) {
+        if (gecisSuruyor) return;
+        gecisSuruyor = true;
+
+        var perde = document.querySelector('.gecis-perde');
+
+        function git() { window.location.href = adres; }
+
+        if (!perde || !kinetik || !gsapVar || azHareket) { git(); return; }
+
+        // Perde inerken kaydırma sürmesin; yeni sayfa da baştan başlıyor
+        if (lenis) lenis.stop();
+
+        gsap.fromTo(perde,
+            { scaleY: 0, transformOrigin: 'top center' },
+            { scaleY: 1, duration: 0.42, ease: 'power2.inOut', onComplete: git });
+    }
+
+    /* GERİ TUŞU — sayfa bfcache'ten dönerse perde, gitmeden hemen önce
+       indirdiğimiz KAPALI hâliyle geri geliyor. Tarayıcı bu durumda
+       script'i yeniden çalıştırmıyor; açmayı pageshow üstleniyor. */
+    window.addEventListener('pageshow', function (olay) {
+        if (!olay.persisted) return;
+
+        gecisSuruyor = false;
+        if (lenis) lenis.start();
+
+        var perde = document.querySelector('.gecis-perde');
+        if (!perde) return;
+
+        if (!gsapVar) { perde.classList.remove('gecis-perde--kapali'); return; }
+
+        gsap.to(perde, {
+            scaleY: 0, duration: 0.5, ease: 'expo.out', transformOrigin: 'bottom center',
+            onComplete: function () {
+                perde.classList.remove('gecis-perde--kapali');
+                gsap.set(perde, { clearProps: 'transform' });
+            }
+        });
+    });
+
+    /* Site içi BAŞKA sayfaya giden bağlantı mı? Değilse null döner ve
+       tıklama tarayıcıya bırakılır (yeni sekme, indirme, mailto, dış
+       site — hepsi burada eleniyor). */
+    function siteIciGezinme(bag) {
+        if (bag.hasAttribute('download')) return null;
+        if (bag.getAttribute('rel') === 'external') return null;
+        if (bag.protocol !== window.location.protocol) return null;  // mailto:, tel:
+        if (bag.host !== window.location.host) return null;
+        if (bag.pathname === window.location.pathname) return null;  // çapa işi
+        return bag.href;
+    }
+
+    /* =========================================================
+       GEZİNME — TEK tıklama sahibi
+
+       Öncelik sırası bilerek açık:
+         1) Aynı sayfadaki çapa → preventDefault + Lenis ile kaydır
+         2) Site içi başka sayfa → preventDefault + perde + git
+         3) Kalan her şey       → tarayıcıya bırak
+
+       Sayfa geçişi ayrı bir dinleyici OLARAK yazılmadı: aynı tıklama
+       iki koda birden düşer, hangisinin preventDefault ettiği sıraya
+       kalırdı. Tek dinleyici, tek karar.
+       ========================================================= */
+    function gezinmeBagla() {
+        navOlcusunuAl();
+        window.addEventListener('resize', navOlcusunuAl);
+
+        gecisGirisi();
+
+        document.addEventListener('click', function (olay) {
+            // Ctrl/Cmd/Shift/Alt + tık ve orta tık tarayıcının işi
+            if (olay.defaultPrevented || olay.button !== 0 ||
+                olay.metaKey || olay.ctrlKey || olay.shiftKey || olay.altKey) return;
+
+            var bag = olay.target.closest ? olay.target.closest('a[href]') : null;
+            if (!bag) return;
+            if (bag.target && bag.target !== '_self') return;
+
+            // --- 1) Sayfa içi çapa ---
+            var hedef = capayiCoz(bag);
+            if (hedef) {
+                olay.preventDefault();
+
+                if (hedef === 'tepe') {
+                    if (lenis) lenis.scrollTo(0, { duration: 1.1 });
+                    else window.scrollTo({ top: 0, behavior: azHareket ? 'auto' : 'smooth' });
+                    return;
+                }
+
+                window.rossoKaydir(hedef);
+
+                // Klavye odağı da hedefe taşınsın, yoksa Tab başa döner
+                if (!hedef.hasAttribute('tabindex')) hedef.setAttribute('tabindex', '-1');
+                hedef.focus({ preventScroll: true });
+                return;
+            }
+
+            // --- 2) Site içi sayfa geçişi ---
+            var adres = siteIciGezinme(bag);
+            if (!adres) return;
+
+            olay.preventDefault();
+            gecisleGit(adres);
+        });
+
+        /* Başka sayfadan #çıpa ile gelindiğinde tarayıcı sabit navbarı
+           hesaba katmıyor; yükleme bitince biz hizalıyoruz. */
+        window.addEventListener('load', function () {
+            if (!window.location.hash) return;
+            var hedef = null;
+            try { hedef = document.querySelector(window.location.hash); } catch (h) { return; }
+            if (hedef && hedef !== 'tepe') setTimeout(function () { window.rossoKaydir(hedef, true); }, 60);
+        });
+    }
+
+    /* =========================================================
+       7. ETKİLEŞİM KATMANI
+
+       ÖZEL İMLEÇ SÖKÜLDÜ. Ziyaretçinin kendi işletim sistemi imleci
+       her yerde görünür kalıyor; projede hiçbir yerde cursor: none
+       yok. Premium his artık imlecin kendisinde değil, imlecin
+       DOKUNDUĞU öğelerde.
+
+       Üç bağımsız modül, üçü de aynı iskeleti kullanıyor:
+         · Kutu ölçüsü mouseenter'da BİR KEZ okunuyor. mousemove
+           içinde getBoundingClientRect çağırmak her karede düzen
+           hesabı demek — kaydırırken kutu bayatlıyor ama modüller
+           yalnızca öğenin ÜSTÜNDEYKEN çalıştığı için fark edilmiyor.
+         · Değer ya bir CSS değişkenine yazılıyor ya gsap.quickTo ile
+           sönümleniyor; ikisi de kompozisyon katmanında kalıyor.
+         · mouseleave durumu sıfırlıyor — takılı kalma yok.
+
+       Üçü de kaba işaretçide (dokunmatik) ve hareket azaltmada hiç
+       kurulmuyor: dinleyici bile bağlanmıyor.
+
+       MANYETİK ÇEKİM KALDIRILDI. İki ayrı yerde vardı: burada butonlar
+       ve menü bağlantıları için, bir de form gönder butonlarında
+       (manyetikDugme). Tıklanabilir her şeyin imlece esnemesi gereksiz
+       ve yorucuydu — tek bir öğede istenirse geri gelir, ama "hepsine
+       uygula" doğru değildi.
+       ========================================================= */
+
+    var ISIK_SECICI = '.vitrin__kart, .form-panel';
+    var MUREKKEP_SECICI = '.btn, .nav__eylem, .paylas__gonder, .konsiyer__gonder';
+    var EGILME_SECICI = '.galeri__foto, .hakkinda__foto';
+
+    /* KUTU BAYATLAMASI — üç modülün de ortak tuzağı.
+
+       Ölçüm mouseenter'da bir kez yapılıyor; mousemove içinde
+       getBoundingClientRect çağırmak her karede düzen hesabı demek.
+       Ama kaydırırken fare KIPIRDAMIYOR: mousemove gelmiyor, öğe ise
+       kayıyor. Ölçülen kutu bayatlayınca efekt imlecin altından çıkıyor
+       (kullanıcı bunu ışıkta gördü: ışık yukarıda/aşağıda kalıyordu).
+
+       Çözüm: modül etkinken kaydırma ve yeniden boyutlandırmayı
+       dinliyoruz, kutuyu tazeleyip SON fare konumuyla yeniden
+       uyguluyoruz. Dinleyiciler yalnızca öğenin üstündeyken bağlı. */
+    function tazelemeyeBagla(tazele) {
+        window.addEventListener('scroll', tazele, { passive: true });
+        window.addEventListener('resize', tazele);
+
+        return function coz() {
+            window.removeEventListener('scroll', tazele);
+            window.removeEventListener('resize', tazele);
+        };
+    }
+
+
+    /* --- BUTON MÜREKKEBİ ---
+       İmleç butona girince içeride sıvı bir leke akıyor. Dört leke,
+       her biri bir öncekinden DAHA GEÇ yetişiyor: imleç hareket
+       ederken arkada kuyruk oluşuyor, imleç durunca hepsi aynı
+       noktaya varıp tek damlada birleşiyor. Kaynaşmayı CSS'teki
+       gooey filtresi yapıyor, burada yalnızca konum sürülüyor.
+
+       Buton KIPIRDAMIYOR — manyetik çekim bilerek kaldırılmıştı;
+       hareket yalnızca butonun İÇİNDE kalıyor.
+
+       DOM yükü: buton başına 5 düğüm, sayfa ömrü boyunca bir kez. */
+    function murekkepEfekti() {
+        if (!inceIsaretci || azHareket || !gsapVar) return;
+
+        // Filtre yoksa lekeler ayrı ayrı daireler olarak görünürdü
+        if (!document.getElementById('rosso-murekkep')) return;
+
+        var LEKE_SAYISI = 4;
+        var DURGUNLUK = 420; // ms — bundan sonra "toparlanma" başlıyor
+
+        Array.prototype.forEach.call(document.querySelectorAll(MUREKKEP_SECICI), function (dugme) {
+            var kat = document.createElement('span');
+            kat.className = 'mrk';
+            kat.setAttribute('aria-hidden', 'true');
+
+            var suruculer = [];
+            for (var i = 0; i < LEKE_SAYISI; i++) {
+                var leke = document.createElement('span');
+                leke.className = 'mrk__leke';
+                kat.appendChild(leke);
+
+                /* Her leke biraz daha geç yetişiyor — kuyruk bundan.
+                   Yalnızca KONUM quickTo ile sürülüyor: o değer her
+                   mousemove'da değişiyor. Ölçek üç anda değişiyor
+                   (giriş / durgunluk / çıkış), oraya gsap.to yetiyor. */
+                var sure = 0.2 + i * 0.17;
+                suruculer.push({
+                    x: gsap.quickTo(leke, 'x', { duration: sure, ease: 'power3.out' }),
+                    y: gsap.quickTo(leke, 'y', { duration: sure, ease: 'power3.out' })
+                });
+            }
+
+            dugme.appendChild(kat);
+            gsap.set(kat.children, { scale: 0 });
+
+            var kutu = null;
+            var coz = null;
+            var sonX = 0, sonY = 0;
+            var durgunlukSayaci = null;
+
+            function konumla() {
+                if (!kutu) return;
+                var x = sonX - kutu.left;
+                var y = sonY - kutu.top;
+                suruculer.forEach(function (s) { s.x(x); s.y(y); });
+            }
+
+            /* Arkadaki lekeler biraz daha küçük: damlanın ucu incelsin. */
+            function boyut(deger, sure) {
+                gsap.to(kat.children, {
+                    scale: function (i) { return deger * (1 - i * 0.13); },
+                    duration: sure,
+                    ease: 'power2.out',
+                    overwrite: 'auto'
+                });
+            }
+
+            /* Fare durunca lekeler zaten aynı noktada birleşiyor;
+               üstüne hafifçe küçülüp sakinleşiyorlar. */
+            function durgunluguKur() {
+                clearTimeout(durgunlukSayaci);
+                durgunlukSayaci = setTimeout(function () { boyut(0.6, 0.9); }, DURGUNLUK);
+            }
+
+            function tazele() {
+                if (!kutu) return;
+                kutu = dugme.getBoundingClientRect();
+                konumla();
+            }
+
+            function birak() {
+                kutu = null;
+                clearTimeout(durgunlukSayaci);
+                if (coz) { coz(); coz = null; }
+                kat.classList.remove('mrk--acik');
+                boyut(0, 0.5);
+            }
+
+            dugme.addEventListener('mouseenter', function (olay) {
+                kutu = dugme.getBoundingClientRect();
+                sonX = olay.clientX;
+                sonY = olay.clientY;
+
+                // Lekeler imlecin girdiği noktadan doğsun
+                gsap.set(kat.children, { x: sonX - kutu.left, y: sonY - kutu.top });
+
+                kat.classList.add('mrk--acik');
+                boyut(1, 0.55);
+                durgunluguKur();
+                coz = tazelemeyeBagla(tazele);
+            });
+
+            dugme.addEventListener('mousemove', function (olay) {
+                if (!kutu) return;
+                sonX = olay.clientX;
+                sonY = olay.clientY;
+                konumla();
+                boyut(1, 0.35);
+                durgunluguKur();
+            }, { passive: true });
+
+            dugme.addEventListener('mouseleave', birak);
+        });
+    }
+
+    /* --- YAKINLIK IŞIĞI ---
+       Koyu kartın zemininde, imlecin altında süzülen bronz parıltı.
+       JS yalnızca iki sayıyı CSS değişkenine yazıyor; parıltıyı
+       tamamen CSS çiziyor (radial-gradient). Böylece burada hiç stil
+       hesabı yok, tek iş iki custom property yazımı. */
+    function yakinlikIsigi() {
+        if (!inceIsaretci || azHareket) return;
+
+        Array.prototype.forEach.call(document.querySelectorAll(ISIK_SECICI), function (kart) {
+            var kutu = null;
+            var coz = null;
+            var sonX = 0, sonY = 0;
+
+            function uygula() {
+                if (!kutu) return;
+                kart.style.setProperty('--isik-x', (sonX - kutu.left) + 'px');
+                kart.style.setProperty('--isik-y', (sonY - kutu.top) + 'px');
+            }
+
+            function tazele() {
+                if (!kutu) return;
+                kutu = kart.getBoundingClientRect();
+                uygula();
+            }
+
+            kart.addEventListener('mouseenter', function (olay) {
+                sonX = olay.clientX;
+                sonY = olay.clientY;
+                kutu = kart.getBoundingClientRect();
+                uygula();
+
+                kart.classList.add('isik--acik');
+                coz = tazelemeyeBagla(tazele);
+            });
+
+            kart.addEventListener('mousemove', function (olay) {
+                if (!kutu) return;
+                sonX = olay.clientX;
+                sonY = olay.clientY;
+                uygula();
+            }, { passive: true });
+
+            kart.addEventListener('mouseleave', function () {
+                kutu = null;
+                kart.classList.remove('isik--acik');
+                if (coz) { coz(); coz = null; }
+            });
+        });
+    }
+
+    /* --- KİNETİK 3B EĞİLME ---
+       Eğilen şey ÇERÇEVE DEĞİL FOTOĞRAF. Çerçevenin kutusu bilerek
+       sabit kalıyor: galeri karesine tıklanınca tam ekran görüntüleyici
+       o çerçevenin getBoundingClientRect'inden büyüyor — eğik bir kutu
+       açılışı kaydırırdı.
+
+       Perspektif çerçevede (CSS); burada yalnızca iki açı sürülüyor.
+       0.7sn'lik power3.out olmadan hareket mekanik oluyor: fare
+       durduktan sonra da bir an akmaya devam etmesi gerekiyor. */
+    function egilmeEfekti() {
+        if (!inceIsaretci || azHareket || !gsapVar) return;
+
+        var EN_COK_ACI = 4; // derece
+
+        Array.prototype.forEach.call(document.querySelectorAll(EGILME_SECICI), function (foto) {
+            /* Fotoğrafın x/yPercent kanalını ScrollTrigger parallaxı
+               sürüyor. Dönme AYRI bir kanal, GSAP ikisini birleştirip
+               tek matrise yazıyor — çakışma yok. */
+            var yatay = gsap.quickTo(foto, 'rotationY', { duration: 0.7, ease: 'power3.out' });
+            var dikey = gsap.quickTo(foto, 'rotationX', { duration: 0.7, ease: 'power3.out' });
+
+            // Fotoğraf çerçeveden taştığı için ölçü ÇERÇEVEDEN alınıyor
+            var cerceve = foto.parentElement;
+            var kutu = null;
+            var coz = null;
+            var sonX = 0, sonY = 0;
+
+            function uygula() {
+                if (!kutu || !kutu.width || !kutu.height) return;
+
+                // -0.5 … +0.5
+                var ox = (sonX - kutu.left) / kutu.width - 0.5;
+                var oy = (sonY - kutu.top) / kutu.height - 0.5;
+
+                yatay(ox * EN_COK_ACI * 2);
+                dikey(-oy * EN_COK_ACI * 2);
+            }
+
+            function tazele() {
+                if (!kutu) return;
+                kutu = cerceve.getBoundingClientRect();
+                uygula();
+            }
+
+            cerceve.addEventListener('mouseenter', function (olay) {
+                sonX = olay.clientX;
+                sonY = olay.clientY;
+                kutu = cerceve.getBoundingClientRect();
+                uygula();
+                coz = tazelemeyeBagla(tazele);
+            });
+
+            cerceve.addEventListener('mousemove', function (olay) {
+                if (!kutu) return;
+                sonX = olay.clientX;
+                sonY = olay.clientY;
+                uygula();
+            }, { passive: true });
+
+            cerceve.addEventListener('mouseleave', function () {
+                kutu = null;
+                if (coz) { coz(); coz = null; }
+                yatay(0);
+                dikey(0);
+            });
+        });
+    }
+
+    /* =========================================================
+       7. NAVBAR DURUMU
+       ========================================================= */
+    function navDurumu() {
+        var nav = document.querySelector('.nav');
+        if (!nav) return;
+
+        var bekle = false;
+        function guncelle() {
+            nav.classList.toggle('nav--sabit', (window.scrollY || window.pageYOffset) > 40);
+            bekle = false;
+        }
+
+        window.addEventListener('scroll', function () {
+            if (bekle) return;
+            bekle = true;
+            requestAnimationFrame(guncelle);
+        }, { passive: true });
+
+        guncelle();
+    }
+
+    /* =========================================================
+       8. MOBİL MENÜ
+       ========================================================= */
+    function menuBagla() {
+        var dugme = document.querySelector('.nav__hamburger');
+        var menu = document.querySelector('.nav__menu');
+        var perde = document.querySelector('.nav-perde');
+        if (!dugme || !menu) return;
+
+        function ayarla(ac) {
+            menu.classList.toggle('nav__menu--acik', ac);
+            if (perde) perde.classList.toggle('nav-perde--acik', ac);
+            dugme.setAttribute('aria-expanded', ac ? 'true' : 'false');
+            if (lenis) ac ? lenis.stop() : lenis.start();
+            document.body.style.overflow = ac ? 'hidden' : '';
+        }
+
+        dugme.addEventListener('click', function () {
+            ayarla(dugme.getAttribute('aria-expanded') !== 'true');
+        });
+        if (perde) perde.addEventListener('click', function () { ayarla(false); });
+        menu.addEventListener('click', function (o) { if (o.target.closest('a')) ayarla(false); });
+        document.addEventListener('keydown', function (o) { if (o.key === 'Escape') ayarla(false); });
+    }
+
+
+    /* =========================================================
+       9. HAKKIMIZDA BÖLÜMÜ
+       - Çerçeveler maskeyle açılır (clip-path)
+       - İçlerindeki fotoğraflar ZIT yönde, farklı hızda kayar
+       - Başlık kelime kelime maskeden yükselir
+       - Gövde metni okuma hizasına gelince yumuşak açılır
+       ========================================================= */
+    function hakkindaBolumu() {
+        var bolum = document.querySelector('.hakkinda');
+        if (!bolum || !kinetik) return;
+
+        /* --- Çerçevelerin maskeli açılışı --- */
+        gsap.utils.toArray('.hakkinda__cerceve').forEach(function (cerceve, i) {
+            gsap.to(cerceve, {
+                clipPath: 'inset(0 0 0% 0)',
+                duration: 1.4,
+                ease: 'expo.out',
+                delay: i * 0.12,
+                scrollTrigger: { trigger: cerceve, start: 'top 85%' }
+            });
+        });
+
+        /* --- Zıt yönlü parallax ---
+           data-parallax değeri yPercent hedefi. Geniş çerçeve negatif
+           (yukarı), dar çerçeve pozitif (aşağı) → ters akış. */
+        gsap.utils.toArray('.hakkinda__cerceve').forEach(function (cerceve) {
+            var foto = cerceve.querySelector('.hakkinda__foto');
+            var mesafe = parseFloat(cerceve.dataset.parallax || '0');
+            if (!foto || !mesafe) return;
+
+            gsap.fromTo(foto,
+                { yPercent: -mesafe },
+                {
+                    yPercent: mesafe,
+                    ease: 'none',
+                    scrollTrigger: {
+                        trigger: cerceve,
+                        start: 'top bottom',
+                        end: 'bottom top',
+                        scrub: 1.1
+                    }
+                });
+        });
+
+        /* --- Başlık: kelime kelime maskeden yükselir --- */
+        var baslik = bolum.querySelector('[data-kelime-acilis]');
+        if (baslik && typeof window.SplitText !== 'undefined') {
+            var bol = new SplitText(baslik, { type: 'words' });
+
+            // Her kelimeyi taşan bir kaba al → maske etkisi
+            bol.words.forEach(function (kelime) {
+                var kap = document.createElement('span');
+                kap.className = 'kelime-kap';
+                kelime.parentNode.insertBefore(kap, kelime);
+                kap.appendChild(kelime);
+            });
+
+            gsap.from(bol.words, {
+                yPercent: 118,
+                duration: 1.05,
+                ease: 'expo.out',
+                stagger: 0.045,
+                scrollTrigger: { trigger: baslik, start: 'top 84%' }
+            });
+        }
+
+        /* --- Gövde metni: okuma hizasına gelince --- */
+        gsap.to('.hakkinda__govde', {
+            autoAlpha: 1,
+            duration: 1.2,
+            ease: 'power2.out',
+            scrollTrigger: { trigger: '.hakkinda__govde', start: 'top 78%' }
+        });
+
+        /* --- Ölçütler, buton, yıl rozeti --- */
+        gsap.to('.hakkinda__olcut', {
+            autoAlpha: 1, duration: 1, ease: 'power2.out',
+            scrollTrigger: { trigger: '.hakkinda__olcut', start: 'top 88%' }
+        });
+
+        gsap.to('.hakkinda__yil', {
+            autoAlpha: 1, duration: 0.9, ease: 'power2.out', delay: 0.5,
+            scrollTrigger: { trigger: '.hakkinda__gorseller', start: 'top 70%' }
+        });
+
+        /* --- İmza alıntısı --- */
+        gsap.to('.hakkinda__alinti', {
+            autoAlpha: 1,
+            duration: 1.5,
+            ease: 'power2.out',
+            scrollTrigger: { trigger: '.hakkinda__alinti', start: 'top 86%' }
+        });
+    }
+
+
+    /* =========================================================
+       11. MENÜ SERGİSİ
+       - Kategori filtresi: GSAP Flip ile pürüzsüz yer değiştirme,
+         girenlerde blur + yukarıdan kayma
+       - Görsel önizleme: satırlardaki data-gorsel, sol rayın altında
+       ========================================================= */
+    /* Ana sayfadaki vitrin (seçilmiş birkaç tabak) */
+    function vitrinBolumu() {
+        var bolum = document.querySelector('.vitrin');
+        if (!bolum || !kinetik) return;
+
+        gsap.to(bolum.querySelectorAll('.vitrin__bas > *'), {
+            autoAlpha: 1, y: 0, duration: 0.9, ease: 'expo.out', stagger: 0.08,
+            scrollTrigger: { trigger: bolum, start: 'top 78%' }
+        });
+
+        gsap.to(bolum.querySelectorAll('.vitrin__kart'), {
+            autoAlpha: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.12,
+            scrollTrigger: { trigger: bolum.querySelector('.vitrin__izgara'), start: 'top 84%' }
+        });
+
+        gsap.to(bolum.querySelector('.vitrin__eylem'), {
+            autoAlpha: 1, duration: 0.9, ease: 'power2.out',
+            scrollTrigger: { trigger: bolum.querySelector('.vitrin__eylem'), start: 'top 92%' }
+        });
+    }
+
+    /* =========================================================
+       11. KARTA — tam menü sayfası
+       -------------------------------------------------------------
+       İki işi var:
+
+       a) CANLI ARAMA — tuşa basıldığı an DOM'da süzme. Havuz bir kez
+          kuruluyor (data-ara), her vuruşta yeniden okunmuyor. Türkçe
+          sadeleştirme var: "sarap" yazınca "Şarap" da geliyor.
+          Arama başlayınca kategori "Tümü"ye dönüyor — aksi hâlde
+          kategori ∩ arama boş çıkıp "arama bozuk" hissi veriyor.
+
+       b) KATEGORİ GEÇİŞİ — GSAP ile blur + yukarı kayma, kademeli.
+          Arama ANİMASYONSUZ (anlık olması gerekiyor), animasyon
+          yalnızca kategori tıklamasına ayrıldı.
+
+       Blur pahalı bir filtre: yalnızca o an EKRANDA olan kalemlere
+       uygulanıyor. Alttakiler doğrudan açık geliyor, kullanıcı oraya
+       vardığında farkı görmüyor.
+       ========================================================= */
+    function menuSergisi() {
+        var bolum = document.querySelector('.menu--karta');
+        if (!bolum) return;
+
+        var akis = bolum.querySelector('.menu__akis');
+        var kalemler = Array.prototype.slice.call(bolum.querySelectorAll('.menu__kalem'));
+        var odalar = Array.prototype.slice.call(bolum.querySelectorAll('.menu__oda'));
+        var sekmeler = Array.prototype.slice.call(bolum.querySelectorAll('.menu__sekme'));
+        var alan = bolum.querySelector('.menu__ara-alan');
+        var sayac = bolum.querySelector('.menu__sayac-adet');
+        var bosMesaj = bolum.querySelector('.menu__bos');
+        if (!akis || !kalemler.length) return;
+
+        /* Türkçe sadeleştirme. toLocaleLowerCase('tr') "İ"yi "i"ye,
+           "I"yı "ı"ya çeviriyor; ardından ı→i ile ikisi de aynı
+           noktada buluşuyor. Böylece "Italyan" da "İtalyan" da bulunuyor. */
+        function sadelestir(metin) {
+            return (metin || '').toLocaleLowerCase('tr')
+                .replace(/ı/g, 'i').replace(/ş/g, 's').replace(/ğ/g, 'g')
+                .replace(/ü/g, 'u').replace(/ö/g, 'o').replace(/ç/g, 'c')
+                .replace(/â/g, 'a').replace(/î/g, 'i').replace(/û/g, 'u')
+                .replace(/\s+/g, ' ').trim();
+        }
+
+        var havuz = kalemler.map(function (kalem) {
+            return {
+                oge: kalem,
+                kat: kalem.getAttribute('data-kategori'),
+                metin: sadelestir(kalem.getAttribute('data-ara'))
+            };
+        });
+
+        /* ---------- Giriş animasyonu ---------- */
+        var girisler = [];
+
+        if (kinetik) {
+            girisler.push(gsap.fromTo(bolum.querySelectorAll('.menu__bas > *'),
+                { autoAlpha: 0, y: 26 },
+                { autoAlpha: 1, y: 0, duration: 0.9, ease: 'expo.out', stagger: 0.08 }));
+
+            girisler.push(gsap.fromTo(bolum.querySelector('.menu__ray-ic'),
+                { autoAlpha: 0, y: 18 },
+                { autoAlpha: 1, y: 0, duration: 0.9, ease: 'expo.out', delay: 0.22 }));
+
+            odalar.forEach(function (oda) {
+                var sira = [oda.querySelector('.menu__oda-bas')].concat(
+                    Array.prototype.slice.call(oda.querySelectorAll('.menu__kalem')));
+
+                girisler.push(gsap.fromTo(sira,
+                    { autoAlpha: 0, y: 22 },
+                    {
+                        autoAlpha: 1, y: 0, duration: 0.75, ease: 'power2.out',
+                        stagger: { amount: Math.min(0.45, sira.length * 0.04) },
+                        scrollTrigger: { trigger: oda, start: 'top 88%' }
+                    }));
+            });
+        }
+
+        /* Süzme başlayınca kaydırmaya bağlı açılışın işi biter: gizli
+           kalmış kalemler süzgeçten geçip görünür olabilir, o yüzden
+           tetikleyiciler sökülüp hepsi açık duruma çekiliyor. */
+        var acildi = false;
+
+        function perdeyiKaldir() {
+            if (acildi) return;
+            acildi = true;
+
+            girisler.forEach(function (tw) {
+                if (tw.scrollTrigger) tw.scrollTrigger.kill();
+                tw.kill();
+            });
+            girisler.length = 0;
+
+            gsap.set(bolum.querySelectorAll(
+                '.menu__bas > *, .menu__ray-ic, .menu__oda-bas, .menu__kalem'),
+                { autoAlpha: 1, y: 0 });
+        }
+
+        /* ---------- Süzme ---------- */
+        var aktifKat = 'tumu';
+        var sorgu = '';
+
+        function suz(animasyonlu) {
+            perdeyiKaldir();
+
+            var gorunen = [];
+            havuz.forEach(function (k) {
+                var uygun = (aktifKat === 'tumu' || k.kat === aktifKat) &&
+                            (!sorgu || k.metin.indexOf(sorgu) !== -1);
+                k.oge.hidden = !uygun;
+                if (uygun) gorunen.push(k.oge);
+            });
+
+            // Tek ürünü kalmayan oda başlığıyla birlikte kapanıyor
+            odalar.forEach(function (oda) {
+                oda.hidden = !oda.querySelector('.menu__kalem:not([hidden])');
+            });
+
+            if (sayac) sayac.textContent = gorunen.length;
+            if (bosMesaj) bosMesaj.hidden = gorunen.length > 0;
+
+            if (animasyonlu && kinetik && gorunen.length) {
+                gsap.set(gorunen, { autoAlpha: 1, y: 0, clearProps: 'filter' });
+
+                var ekranda = gorunen.filter(function (oge) {
+                    var kutu = oge.getBoundingClientRect();
+                    return kutu.bottom > 0 && kutu.top < window.innerHeight;
+                });
+
+                if (ekranda.length) {
+                    gsap.fromTo(ekranda,
+                        { autoAlpha: 0, y: 26, filter: 'blur(10px)' },
+                        {
+                            autoAlpha: 1, y: 0, filter: 'blur(0px)',
+                            duration: 0.7, ease: 'expo.out', overwrite: true,
+                            stagger: { amount: Math.min(0.45, ekranda.length * 0.03) },
+                            clearProps: 'filter'
+                        });
+                }
+            }
+
+            // Sayfa boyu değişti: yapışkan ray ve başa-dön eşiği bayatlamasın
+            if (gsapVar && window.ScrollTrigger) ScrollTrigger.refresh();
+        }
+
+        /* ---------- Kategori rayı ---------- */
+        sekmeler.forEach(function (sekme) {
+            sekme.addEventListener('click', function () {
+                var deger = sekme.getAttribute('data-filtre');
+                if (deger === aktifKat && !sorgu) return;
+
+                aktifKat = deger;
+
+                /* Kategori seçimi aramayı temizliyor: ikisi birden açıkken
+                   "kategoriye tıkladım ama hiçbir şey gelmedi" durumu doğuyor. */
+                if (alan && alan.value) {
+                    alan.value = '';
+                    sorgu = '';
+                }
+
+                sekmeleriIsaretle();
+                suz(true);
+                akisaDon();
+            });
+        });
+
+        function sekmeleriIsaretle() {
+            sekmeler.forEach(function (s) {
+                var etkin = s.getAttribute('data-filtre') === aktifKat;
+                s.classList.toggle('menu__sekme--aktif', etkin);
+                s.setAttribute('aria-pressed', etkin ? 'true' : 'false');
+            });
+        }
+
+        /* Süzme sonrası liste kısalıyor; kullanıcı listenin altındaysa
+           boş alana bakakalıyor. Yalnızca akış ekranın ÜSTÜNDE kaldıysa
+           hizaya çekiliyor — görünürken kaydırma yapılmıyor. */
+        function akisaDon() {
+            if (akis.getBoundingClientRect().top >= -40) return;
+            if (window.rossoKaydir) window.rossoKaydir(bolum.querySelector('.menu__duzen'));
+        }
+
+        /* ---------- Canlı arama ---------- */
+        if (alan) {
+            var zamanlayici = null;
+
+            alan.addEventListener('input', function () {
+                clearTimeout(zamanlayici);
+                zamanlayici = setTimeout(function () {
+                    var yeni = sadelestir(alan.value);
+                    if (yeni === sorgu) return;
+                    sorgu = yeni;
+
+                    // Arama tüm menüde geçerli; kategori kısıtı kalkıyor
+                    if (sorgu && aktifKat !== 'tumu') {
+                        aktifKat = 'tumu';
+                        sekmeleriIsaretle();
+                    }
+
+                    suz(false);
+                }, 120);
+            });
+
+            alan.addEventListener('keydown', function (olay) {
+                if (olay.key !== 'Escape' || !alan.value) return;
+                alan.value = '';
+                sorgu = '';
+                suz(false);
+            });
+        }
+
+        onizlemeBagla();
+
+        /* ---------- Tabak önizlemesi ----------
+           Fotoğraf eskiden özel imlecin içinde açılıyordu. İmleç
+           söküldü; önizleme SOL RAYIN altındaki boş sütuna taşındı.
+
+           Fareyi değil ÖĞEYİ takip ediyor: konum, üzerine gelinen
+           satırdan değil rayın kutusundan okunuyor. Böylece hiçbir
+           metnin üstünü örtmüyor ve mousemove başına iş yok — hover
+           başına tek ölçüm.
+
+           Yalnızca ray gerçekten sütunken (>1024px) kuruluyor; dar
+           ekranda ray yatay şeride dönüyor ve altında yer kalmıyor. */
+        function onizlemeBagla() {
+            if (!inceIsaretci || azHareket) return;
+            if (!window.matchMedia('(min-width: 1025px)').matches) return;
+
+            var kap = bolum.querySelector('.menu__onizleme');
+            var ray = bolum.querySelector('.menu__ray');
+            if (!kap || !ray) return;
+
+            var foto = kap.querySelector('.menu__onizleme-foto');
+            var rayIc = ray.querySelector('.menu__ray-ic');
+            if (!foto) return;
+
+            kap.hidden = false;
+
+            /* Önizleme rayın SÜTUNUNU DEVRALIYOR: rayın tepesine hizalanıp
+               ray içeriği sönüyor (.menu--onizlemeli). Önce rayın ALTINA
+               konuyordu ama ray ekranı neredeyse dolduruyor; önizleme
+               yukarı kırpılıp kategorilerin yarısını örtüyor, kaza gibi
+               duruyordu. Şimdi sütunun tamamı bilinçli olarak değişiyor. */
+            /* ÜST SINIR = rayın yapışkan durduğu yükseklik.
+
+               Ray `position: sticky` ve sabit başlığın hemen altında
+               duruyor. Sayfa sonunda ray konteynerin dibine takılıp
+               yukarı kayıyor, r.top eksiye düşüyor; önizleme onu takip
+               edince ekranın üstüne çıkıyordu. Önce düz 16px sınır
+               konmuştu ama o da başlığın üstüne biniyordu (ölçüldü:
+               önizleme 26px'te, başlık 0–93px arası).
+
+               Rayın kendi `top` değeri kullanılınca önizleme sayfa
+               sonunda da diğer kaydırma konumlarındaki yerinde kalıyor.
+               Medya sorgusuyla değişebildiği için resize'da yeniden
+               okunuyor; kaydırma sırasında stil okuması yapılmıyor. */
+            var ustSinir = 16;
+
+            function sinirOku() {
+                var t = parseFloat(window.getComputedStyle(ray).top);
+                ustSinir = isNaN(t) ? 16 : t;
+            }
+
+            sinirOku();
+
+            function yerlestir() {
+                var r = ray.getBoundingClientRect();
+                var yuk = kap.offsetHeight || 272;
+
+                kap.style.width = Math.round(r.width) + 'px';
+                kap.style.left = Math.round(r.left) + 'px';
+                kap.style.top = Math.round(
+                    Math.max(ustSinir, Math.min(r.top, window.innerHeight - yuk - 16))
+                ) + 'px';
+            }
+
+            /* Konum YALNIZCA mouseenter'da yazılıyordu. Fare satırın
+               üzerinde dururken sayfa kaydırılınca ray kayıyor, position
+               fixed önizleme ise yerinde kalıyordu — ölçüldü: 600px
+               kaydırmada rayla arasında 256px açıklık, önizleme
+               kategorilerin üstüne biniyor ya da ekrandan çıkıyordu.
+
+               Açıkken kaydırma ve yeniden boyutlandırmada tazeleniyor;
+               kapalıyken tek satır bile çalışmıyor. rAF ile karede en
+               fazla bir ölçüm yapılıyor. */
+            var bekleyenKare = 0;
+
+            function tazele() {
+                if (!kap.classList.contains('menu__onizleme--acik')) return;
+                if (bekleyenKare) return;
+                bekleyenKare = requestAnimationFrame(function () {
+                    bekleyenKare = 0;
+                    yerlestir();
+                });
+            }
+
+            window.addEventListener('scroll', tazele, { passive: true });
+            window.addEventListener('resize', function () {
+                sinirOku();
+                tazele();
+            });
+
+            kalemler.forEach(function (kalem) {
+                var kaynak = kalem.getAttribute('data-gorsel');
+                if (!kaynak) return;
+
+                kalem.addEventListener('mouseenter', function () {
+                    // Aynı görsel tekrar atanırsa tarayıcı yeniden çözmesin
+                    if (foto.getAttribute('src') !== kaynak) foto.setAttribute('src', kaynak);
+                    yerlestir();
+                    kap.classList.add('menu__onizleme--acik');
+
+                    /* Ray içeriği SATIR İÇİ opaklıkla söndürülüyor, sınıfla
+                       değil: giriş animasyonu .menu__ray-ic'e inline
+                       opacity:1 bırakıyor ve sınıf kuralını eziyordu
+                       (ölçüldü — sınıf ekleniyor ama opaklık 1 kalıyordu). */
+                    if (rayIc) rayIc.style.opacity = '0.14';
+                });
+
+                kalem.addEventListener('mouseleave', function () {
+                    kap.classList.remove('menu__onizleme--acik');
+                    if (rayIc) rayIc.style.opacity = '1';
+                });
+            });
+        }
+    }
+
+    /* =========================================================
+       12. GALERİ SERGİSİ — yatay akış
+       -------------------------------------------------------------
+       - ScrollTrigger pin: dikey kaydırma yatay çeviriye dönüşür
+       - containerAnimation ile çerçeve içi ZIT YÖNLÜ parallax
+       - Kaydırma hızına bağlı skewX, durunca yumuşak düzelme
+       - Tıklanınca çerçeve bulunduğu yerden tam ekrana büyür
+
+       TASARIM KARARI — pin YALNIZCA burada kurulursa .galeri--pinli
+       eklenir. Sınıf yoksa CSS rayı doğal bir yatay kaydırıcı olarak
+       bırakır; JS/GSAP düşse bile kareler gezilebilir kalır.
+       ========================================================= */
+    function galeriSergisi() {
+        var bolum = document.querySelector('.galeri');
+        if (!bolum) return;
+
+        var sahne = bolum.querySelector('.galeri__sahne');
+        var ray = bolum.querySelector('.galeri__ray');
+        var kareler = Array.prototype.slice.call(bolum.querySelectorAll('.galeri__kare'));
+        if (!sahne || !ray || !kareler.length) return;
+
+        // Tam ekran her koşulda bağlanır (kinetik olmasa da tıklanabilir)
+        tamEkranBagla(bolum, kareler);
+
+        if (!kinetik || typeof gsap.matchMedia !== 'function') return;
+
+        var mm = gsap.matchMedia();
+
+        /* Yatay akış yalnızca geniş ekranda. Dar ekranda parmakla
+           kaydırılan doğal ray daha rahat — pin dokunmatikte hantal. */
+        mm.add('(min-width: 900px)', function () {
+            bolum.classList.add('galeri--pinli');
+
+            var dolgu = bolum.querySelector('.galeri__ilerleme-dolgu');
+
+            // Ray ekran genişliğinden ne kadar taşıyorsa o kadar yol var
+            function mesafe() {
+                return Math.max(0, ray.scrollWidth - window.innerWidth);
+            }
+
+            /* --- Hıza bağlı eğilme ---
+               Yatay harekette sürüklenme hissini skewX verir (skewY
+               dikey kaydırmanın karşılığı). Kaydırma durduğunda
+               ScrollTrigger artık onUpdate yollamaz; bu yüzden
+               düzelmeyi zamanlayıcı tetikler. */
+            var egimAyar = gsap.quickTo(kareler, 'skewX', { duration: 0.5, ease: 'power3.out' });
+            var durakZaman;
+
+            function egimUygula(hiz) {
+                egimAyar(gsap.utils.clamp(-7, 7, hiz / -260));
+                clearTimeout(durakZaman);
+                durakZaman = setTimeout(function () { egimAyar(0); }, 120);
+            }
+
+            /* --- Yatay çeviri ---
+               scrub: 1 → kaydırmayı bir saniyelik gecikmeyle takip
+               eder; momentum hissi buradan geliyor. */
+            var yatay = gsap.to(ray, {
+                x: function () { return -mesafe(); },
+                ease: 'none',
+                scrollTrigger: {
+                    trigger: sahne,
+                    start: 'top top',
+                    end: function () { return '+=' + mesafe(); },
+                    pin: true,
+                    /* anticipatePin KAPALI. Pini hıza göre erken uygulayıp
+                       öğeyi yerine "atıyordu": ölçümde pin devreye girerken
+                       sahne tek karede 46px zıplıyordu (scroll o karede
+                       yalnızca 18px ilerlemişti). Lenis'in yumuşak
+                       kaydırmasında zaten flaş riski yok. */
+                    anticipatePin: 0,
+                    scrub: 1,
+                    invalidateOnRefresh: true,
+                    onUpdate: function (kendi) {
+                        if (dolgu) gsap.set(dolgu, { scaleX: kendi.progress });
+                        egimUygula(kendi.getVelocity());
+                    }
+                }
+            });
+
+            galeriPin = yatay.scrollTrigger;
+
+            /* --- Çerçeve içi zıt yönlü parallax ---
+               Kare sağdan sola akarken foto çerçeve içinde sola→sağa
+               kayar. Foto %124 genişlikte olduğu için ±%8.7'lik kayma
+               hiçbir kenarda boşluk açmaz.
+               containerAnimation: tetikleyici, sayfanın dikey kaydırması
+               değil yukarıdaki yatay tween'dir. */
+            kareler.forEach(function (kare) {
+                var foto = kare.querySelector('.galeri__foto');
+                if (!foto) return;
+
+                gsap.fromTo(foto,
+                    { xPercent: -7 },
+                    {
+                        xPercent: 7,
+                        ease: 'none',
+                        scrollTrigger: {
+                            trigger: kare,
+                            containerAnimation: yatay,
+                            start: 'left right',
+                            end: 'right left',
+                            scrub: true
+                        }
+                    });
+            });
+
+            // matchMedia sorgu dışına çıkınca tween'leri kendisi geri alır;
+            // sınıfı ve eğimi biz temizliyoruz.
+            return function () {
+                clearTimeout(durakZaman);
+                gsap.set(kareler, { skewX: 0 });
+                bolum.classList.remove('galeri--pinli');
+                galeriPin = null;
+            };
+        });
+    }
+
+    /* =========================================================
+       12b. TAM EKRAN GÖRÜNTÜLEYİCİ
+       -------------------------------------------------------------
+       Çerçeve, tıklanan karenin çerçevesinin ölçüldüğü dikdörtgenden
+       doğal tam ekran yerine doğru büyür ("seamless scale").
+
+       NEDEN Flip DEĞİL: Flip.from öğeyi ya grid akışında bırakıp
+       transform yazar (kap `place-items:center` olduğu için genişlik
+       değişirken merkez kayar) ya da absolute:true ile akıştan çıkarır
+       (bu sefer de kapanışta yerine oturması kırılgan). Ölçülen iki
+       dikdörtgen arasında position:fixed ile tweenlemek aynı görüntüyü
+       verir ve tamamen belirlenimli — kenar durumu yok.
+       ========================================================= */
+    function tamEkranBagla(bolum, kareler) {
+        var kat = document.getElementById('tamekran');
+        if (!kat) return;
+
+        var zemin = kat.querySelector('.tamekran__zemin');
+        var cerceve = kat.querySelector('.tamekran__cerceve');
+        var foto = kat.querySelector('.tamekran__foto');
+        var noEt = kat.querySelector('.tamekran__no');
+        var etiketEt = kat.querySelector('.tamekran__etiket');
+        var ayak = kat.querySelector('.tamekran__ayak');
+        var kapatDugme = kat.querySelector('.tamekran__kapat');
+        var oncekiDugme = kat.querySelector('.tamekran__ok--onceki');
+        var sonrakiDugme = kat.querySelector('.tamekran__ok--sonraki');
+        if (!cerceve || !foto || !kapatDugme) return;
+
+        /* Canlandırma kararı HER ÇAĞRIDA yeniden veriliyor.
+           `kinetik` açılışta bir kez hesaplanıyor; emniyet katmanı ticker
+           ölü olduğunda rosso-kinetik sınıfını sonradan kaldırıyor. Bayrağı
+           dondurursak tween'ler hiç ilerlemez ve katman açık kilitli kalır —
+           bir kez yaşandı. Sınıf canlı sağlık sinyali, onu okuyoruz. */
+        function canlandirMi() {
+            return gsapVar && kok.classList.contains('rosso-kinetik');
+        }
+
+        var suSira = 0;
+        var acanKare = null;    // ekranda GÖSTERİLEN kare (ileri/geri ile değişir)
+        var acilisKare = null;  // katmanı AÇAN kare (odak buraya döner)
+        var acik = false;
+
+        var arayuz = [ayak, kapatDugme, oncekiDugme, sonrakiDugme].filter(Boolean);
+
+        function karedekiCerceve(kare) { return kare.querySelector('.galeri__cerceve'); }
+
+        function icerikYaz(sira) {
+            suSira = (sira + kareler.length) % kareler.length;
+            var kare = kareler[suSira];
+            var kaynak = kare.querySelector('.galeri__foto');
+            if (!kaynak) return;
+
+            foto.src = kaynak.currentSrc || kaynak.src;
+            foto.alt = kaynak.alt || '';
+            if (noEt) noEt.textContent = kare.dataset.galeriNo || '';
+            if (etiketEt) etiketEt.textContent = kare.dataset.galeriEtiket || '';
+        }
+
+        /* Pin sırasında sayfa kaymasın. Pinli modda body overflow'una
+           dokunmuyoruz — pin-spacer'ın yüksekliğini bozup ScrollTrigger'ı
+           şaşırtıyor. Lenis'i durdurmak tekerleği zaten kesiyor. */
+        function kaydirmaKilidi(kilit) {
+            if (lenis) {
+                if (kilit) { lenis.stop(); } else { lenis.start(); }
+            }
+            if (!bolum.classList.contains('galeri--pinli')) {
+                document.body.style.overflow = kilit ? 'hidden' : '';
+            }
+        }
+
+        function ac(sira) {
+            icerikYaz(sira);
+            acanKare = kareler[suSira];
+            acilisKare = acanKare;
+            acik = true;
+
+            kat.hidden = false;
+            kok.classList.add('tamekran-acik');
+            kaydirmaKilidi(true);
+            kapatDugme.focus();
+
+            if (!canlandirMi()) {
+                // Canlandırmasız açılış: önceki animasyonlu turdan kalmış
+                // opaklıklar katmanı görünmez bırakmasın
+                if (gsapVar) gsap.set([zemin].concat(arayuz), { clearProps: 'opacity' });
+                return;
+            }
+
+            // Eğim açıkken ölçüm bozulur; kareleri düz bırak
+            gsap.set(kareler, { skewX: 0 });
+
+            var kaynakCerceve = karedekiCerceve(acanKare);
+            var k = kaynakCerceve ? kaynakCerceve.getBoundingClientRect() : null;
+            var h = cerceve.getBoundingClientRect(); // doğal tam ekran yeri
+
+            /* set + to; fromTo başlangıç değerini bir sonraki kareye
+                erteleyebilir ve çerçeve bir kare boyu tam boy görünür. */
+            gsap.set(zemin, { opacity: 0 });
+            gsap.to(zemin, { opacity: 1, duration: 0.5, ease: 'power2.out' });
+            gsap.set(arayuz, { opacity: 0 });
+
+            if (!k || !k.width) {
+                gsap.set(cerceve, { opacity: 0, scale: 0.94 });
+                gsap.to(cerceve, { opacity: 1, scale: 1, duration: 0.5, ease: 'expo.out' });
+                gsap.to(arayuz, { opacity: 1, duration: 0.4, delay: 0.25 });
+                return;
+            }
+
+            gsap.set(cerceve, { position: 'fixed', margin: 0, left: k.left, top: k.top, width: k.width, height: k.height });
+            gsap.to(cerceve, {
+                left: h.left, top: h.top, width: h.width, height: h.height,
+                duration: 0.85, ease: 'expo.inOut',
+                onComplete: function () {
+                    gsap.set(cerceve, { clearProps: 'position,margin,left,top,width,height' });
+                    gsap.to(arayuz, { opacity: 1, duration: 0.4, ease: 'power2.out' });
+                }
+            });
+        }
+
+        function kapat() {
+            if (!acik) return;
+            acik = false;
+            kok.classList.remove('tamekran-acik');
+
+            function bitir() {
+                kat.hidden = true;
+                if (gsap.set) {
+                    gsap.set(cerceve, { clearProps: 'position,margin,left,top,width,height,opacity,scale' });
+                    // Kare değiştirme tween'i yarıda kalmışsa foto opak 0 kalmasın
+                    gsap.set(foto, { clearProps: 'opacity,scale' });
+                }
+                foto.removeAttribute('src');
+                kaydirmaKilidi(false);
+
+                /* ODAK, KATMANI AÇAN KAREYE döner — o an gösterilene değil.
+                   İkisi ileri/geri gezilince ayrışıyor ve gösterilen kare
+                   sahnenin çok sağında, ekran dışında kalabiliyor.
+
+                   preventScroll ŞART: odak, ekran dışı bir kareyi görünür
+                   kılmak için EN YAKIN KAYDIRILABİLİR KUTUYU kaydırıyor.
+                   Pinli galeride o kutu .galeri__sahne ve ölçüldü:
+                   scrollLeft 0 → 2027. Ray'ın GSAP dönüşümü hâlâ -900
+                   olduğu hâlde sahne 2027 kaymış oluyor; akış kendiliğinden
+                   ileri gidiyor, dikey kaydırma devam ederken ray tükeniyor
+                   ve sonlar boş kalıyor. Kullanıcının bildirdiği hata bu. */
+                var odakHedefi = acilisKare || acanKare;
+                if (odakHedefi) odakHedefi.focus({ preventScroll: true });
+            }
+
+            if (!canlandirMi()) { bitir(); return; }
+
+            var kaynakCerceve = acanKare ? karedekiCerceve(acanKare) : null;
+            var k = kaynakCerceve ? kaynakCerceve.getBoundingClientRect() : null;
+
+            /* Kare ekran dışındaysa oraya doğru küçültmek fotoğrafı
+               kadrajın dışına uçuruyor: 01'i açıp 07'ye gelip kapatınca
+               07 sahnenin çok sağında. O durumda yerinde soluyor. */
+            var kareEkranda = k && k.width > 0 &&
+                              k.right > 8 && k.left < window.innerWidth - 8;
+
+            gsap.to(arayuz, { opacity: 0, duration: 0.2, ease: 'power2.in' });
+            gsap.to(zemin, { opacity: 0, duration: 0.45, ease: 'power2.in', delay: 0.15 });
+
+            if (!kareEkranda) {
+                gsap.to(cerceve, {
+                    opacity: 0, scale: 0.94, duration: 0.45, ease: 'power2.in',
+                    onComplete: bitir
+                });
+                return;
+            }
+
+            var h = cerceve.getBoundingClientRect();
+
+            gsap.set(cerceve, { position: 'fixed', margin: 0, left: h.left, top: h.top, width: h.width, height: h.height });
+            gsap.to(cerceve, {
+                left: k.left, top: k.top, width: k.width, height: k.height,
+                duration: 0.6, ease: 'expo.inOut', onComplete: bitir
+            });
+        }
+
+        function goster(sira) {
+            icerikYaz(sira);
+            acanKare = kareler[suSira];
+            if (!canlandirMi()) return;
+            gsap.set(foto, { opacity: 0, scale: 1.04 });
+            gsap.to(foto, { opacity: 1, scale: 1, duration: 0.45, ease: 'power2.out' });
+        }
+
+        kareler.forEach(function (kare, sira) {
+            kare.addEventListener('click', function () { ac(sira); });
+        });
+
+        kapatDugme.addEventListener('click', kapat);
+        if (oncekiDugme) oncekiDugme.addEventListener('click', function () { goster(suSira - 1); });
+        if (sonrakiDugme) sonrakiDugme.addEventListener('click', function () { goster(suSira + 1); });
+
+        // Boşluğa tıklayınca kapansın (çerçevenin ve butonların dışı)
+        kat.addEventListener('click', function (olay) {
+            if (olay.target === kat || olay.target === zemin) kapat();
+        });
+
+        document.addEventListener('keydown', function (olay) {
+            if (!acik) return;
+
+            if (olay.key === 'Escape') {
+                kapat();
+            } else if (olay.key === 'ArrowLeft') {
+                goster(suSira - 1);
+            } else if (olay.key === 'ArrowRight') {
+                goster(suSira + 1);
+            } else if (olay.key === 'Tab') {
+                // Odak tuzağı: sekme katman içinde dönsün
+                var odaklanabilir = [kapatDugme, oncekiDugme, sonrakiDugme].filter(Boolean);
+                var su = odaklanabilir.indexOf(document.activeElement);
+                olay.preventDefault();
+                var yon = olay.shiftKey ? -1 : 1;
+                odaklanabilir[(su + yon + odaklanabilir.length) % odaklanabilir.length].focus();
+            }
+        });
+    }
+
+    /* =========================================================
+       13. ZİYARETÇİ DEFTERİ — tipografik yorum sergisi
+       -------------------------------------------------------------
+       - Sürükleyerek geçiş (pointer events), sönümlü takip + eşik
+       - Kenar bölgelerinde sıvı imleç "Geri/İleri" etiketine dönüşür
+         ve halka bölgeye doğru manyetik olarak çekilir
+       - Geçiş: eski yorum satır satır bulanıklaşıp dağılır, yeni
+         yorum maskeden yükselerek gelir (SplitText)
+       - İnce ilerleme çizgisi + sayaç
+
+       Galerideki desenin aynısı: .defter--sahnede sınıfı yalnızca
+       sergi gerçekten devralındığında ekleniyor. Yoksa yapraklar
+       CSS'te alt alta okunur bir liste olarak kalıyor.
+       ========================================================= */
+    function yorumDefteri() {
+        var bolum = document.querySelector('.defter');
+        if (!bolum) return;
+
+        var sahne = bolum.querySelector('.defter__sahne');
+        var yapraklar = Array.prototype.slice.call(bolum.querySelectorAll('.defter__yaprak'));
+        // Tek yorumda sergiye gerek yok; sıfırda zaten boş durum var
+        if (!sahne || yapraklar.length < 2 || !kinetik) return;
+
+        var geri = bolum.querySelector('.defter__yon--geri');
+        var ileri = bolum.querySelector('.defter__yon--ileri');
+        var dolgu = bolum.querySelector('.defter__ilerleme-dolgu');
+        var suEt = bolum.querySelector('.defter__su');
+        var bolmeVar = typeof window.SplitText !== 'undefined';
+
+        var suSira = 0;
+        var mesgul = false;
+
+        bolum.classList.add('defter--sahnede');
+
+        // Tek döngü: ilk yaprak daha ilk adımda açılıyor, arada bir
+        // hata olsa bile "hepsi gizli" durumu oluşmuyor.
+        yapraklar.forEach(function (yaprak, i) {
+            gsap.set(yaprak, { autoAlpha: i === 0 ? 1 : 0 });
+            yaprak.setAttribute('aria-hidden', i === 0 ? 'false' : 'true');
+        });
+        durumYaz(0);
+
+        /* KENAR İŞARETLERİNİN GİRİŞİ
+           Etiketler CSS'te zaten sessizce duruyor; buradaki tek seferlik
+           kayma onları GÖZE SOKMADAN fark ettirmek için. Bölüm ekrana
+           girerken kenarlardan içeri süzülüyorlar; sonra oldukları yerde
+           kalıp sergi üzerine gelindiğinde belirginleşiyorlar (CSS).
+
+           x yönü indekse bağlı: soldaki soldan, sağdaki sağdan. */
+        if (geri && ileri) {
+            gsap.fromTo([geri, ileri],
+                {
+                    autoAlpha: 0,
+                    x: function (i) { return i === 0 ? -16 : 16; }
+                },
+                {
+                    autoAlpha: 1, x: 0, duration: 0.9, ease: 'expo.out', stagger: 0.12,
+                    scrollTrigger: { trigger: bolum, start: 'top 70%' }
+                });
+        }
+
+        function durumYaz(i) {
+            if (dolgu) {
+                gsap.to(dolgu, {
+                    scaleX: (i + 1) / yapraklar.length,
+                    duration: 0.7, ease: 'expo.out'
+                });
+            }
+            if (suEt) suEt.textContent = ('0' + (i + 1)).slice(-2);
+        }
+
+        /* ---------- Satır bölme ----------
+           Bölme her geçişte yapılıp sonra geri alınıyor. Satır kutuları
+           böylece HER ZAMAN o anki genişliğe göre hesaplanır; yeniden
+           boyutlandırmada bayat bölme kalmaz, resize dinleyicisi
+           gerekmez. Birkaç satır için maliyeti yok denecek kadar az. */
+        function satirlaraBol(yaprak) {
+            var hedef = yaprak.querySelector('.defter__metin');
+            if (!bolmeVar || !hedef) return null;
+
+            var bol = new SplitText(hedef, { type: 'lines', linesClass: 'defter__satir' });
+
+            // Her satırı taşan bir kaba al → maske etkisi
+            var kaplar = bol.lines.map(function (satir) {
+                var kap = document.createElement('span');
+                kap.className = 'defter__satir-kap';
+                satir.parentNode.insertBefore(kap, satir);
+                kap.appendChild(satir);
+                return kap;
+            });
+
+            return {
+                satirlar: bol.lines,
+                geriAl: function () {
+                    // Önce kapları söküyoruz; revert() sarmalanmış
+                    // düğümleri geride bırakabiliyor.
+                    kaplar.forEach(function (kap) {
+                        if (kap.firstChild) kap.parentNode.insertBefore(kap.firstChild, kap);
+                        if (kap.parentNode) kap.parentNode.removeChild(kap);
+                    });
+                    bol.revert();
+                }
+            };
+        }
+
+        function suslerOf(yaprak) {
+            return yaprak.querySelectorAll('.defter__isaret, .defter__imza');
+        }
+
+        /* ---------- Geçiş ---------- */
+        function gecis(hedef, yon) {
+            if (mesgul || hedef === suSira || hedef < 0 || hedef >= yapraklar.length) return;
+            mesgul = true;
+
+            var eski = yapraklar[suSira];
+            var yeni = yapraklar[hedef];
+
+            eski.setAttribute('aria-hidden', 'true');
+            yeni.setAttribute('aria-hidden', 'false');
+            suSira = hedef;
+            durumYaz(hedef);
+
+            var eskiBol = satirlaraBol(eski);
+            var yeniBol = satirlaraBol(yeni);
+
+            var zc = gsap.timeline({
+                onComplete: function () {
+                    if (eskiBol) eskiBol.geriAl();
+                    if (yeniBol) yeniBol.geriAl();
+                    gsap.set(eski, { autoAlpha: 0, x: 0, rotate: 0, filter: 'none' });
+                    gsap.set(yeni, { clearProps: 'transform,filter' });
+                    mesgul = false;
+                }
+            });
+
+            // Yeni yaprağın süsleri girişten önce kapalı olsun
+            zc.set(suslerOf(yeni), { autoAlpha: 0 }, 0);
+
+            /* ÇIKIŞ — satırlar bulanıklaşıp sürükleme yönünde dağılır */
+            if (eskiBol) {
+                zc.to(eskiBol.satirlar, {
+                    autoAlpha: 0, filter: 'blur(7px)', yPercent: -14 * yon,
+                    duration: 0.42, ease: 'power2.in', stagger: 0.03
+                }, 0);
+            } else {
+                zc.to(eski, { autoAlpha: 0, filter: 'blur(7px)', duration: 0.4, ease: 'power2.in' }, 0);
+            }
+
+            zc.to(suslerOf(eski), { autoAlpha: 0, duration: 0.3, ease: 'power2.in' }, 0);
+
+            // Sahneyi devret
+            zc.set(eski, { autoAlpha: 0 }, 0.44);
+            zc.set(yeni, { autoAlpha: 1 }, 0.44);
+
+            /* GİRİŞ — satırlar maskeden yükselir */
+            if (yeniBol) {
+                zc.fromTo(yeniBol.satirlar,
+                    { yPercent: 112, autoAlpha: 0, filter: 'blur(9px)' },
+                    {
+                        yPercent: 0, autoAlpha: 1, filter: 'blur(0px)',
+                        duration: 0.85, ease: 'expo.out', stagger: 0.055
+                    }, 0.46);
+            } else {
+                zc.fromTo(yeni,
+                    { autoAlpha: 0, filter: 'blur(9px)' },
+                    { autoAlpha: 1, filter: 'blur(0px)', duration: 0.7, ease: 'expo.out' }, 0.46);
+            }
+
+            zc.fromTo(suslerOf(yeni),
+                { autoAlpha: 0, y: 14 },
+                { autoAlpha: 1, y: 0, duration: 0.7, ease: 'expo.out', stagger: 0.08 }, 0.62);
+        }
+
+        function git(yon) {
+            gecis((suSira + yon + yapraklar.length) % yapraklar.length, yon);
+        }
+
+        /* ---------- Sürükleme ----------
+           Yaprak imleci sönümlü takip eder (1 px → 0.34 px); eşiği
+           geçerse geçiş yapılır, geçmezse yaylanarak yerine döner. */
+        var basX = 0, basY = 0, kayma = 0, tutuluyor = false, niyet = null;
+
+        sahne.addEventListener('pointerdown', function (olay) {
+            if (mesgul) return;
+            if (olay.pointerType === 'mouse' && olay.button !== 0) return;
+            tutuluyor = true;
+            niyet = null;
+            kayma = 0;
+            basX = olay.clientX;
+            basY = olay.clientY;
+        });
+
+        sahne.addEventListener('pointermove', function (olay) {
+            if (!tutuluyor) return;
+
+            var gx = olay.clientX - basX;
+            var gy = olay.clientY - basY;
+
+            /* İlk 10 px'te niyeti belirle. Dikey ise sürüklemeyi bırak:
+               dokunmatikte sayfanın kendi kaydırması bloke olmasın. */
+            if (niyet === null) {
+                if (Math.abs(gx) < 10 && Math.abs(gy) < 10) return;
+                niyet = Math.abs(gx) > Math.abs(gy) ? 'yatay' : 'dikey';
+                if (niyet === 'yatay') {
+                    bolum.classList.add('defter--tutuluyor');
+                    try { sahne.setPointerCapture(olay.pointerId); } catch (h) { /* yoksay */ }
+                } else {
+                    tutuluyor = false;
+                    return;
+                }
+            }
+
+            kayma = gx;
+            gsap.set(yapraklar[suSira], { x: kayma * 0.34, rotate: kayma * 0.0035 });
+        });
+
+        function birak(olay) {
+            if (!tutuluyor) return;
+            tutuluyor = false;
+            bolum.classList.remove('defter--tutuluyor');
+
+            if (olay && olay.pointerId != null) {
+                try { sahne.releasePointerCapture(olay.pointerId); } catch (h) { /* yoksay */ }
+            }
+
+            var esik = Math.min(110, sahne.offsetWidth * 0.11);
+            var yeter = Math.abs(kayma) >= esik;
+            var yon = kayma < 0 ? 1 : -1;
+            kayma = 0;
+
+            if (yeter) {
+                // Yaprak sürüklendiği yerden çıkışa devam etsin diye
+                // x sıfırlanmıyor; geçiş sonunda temizleniyor.
+                git(yon);
+            } else {
+                gsap.to(yapraklar[suSira], {
+                    x: 0, rotate: 0, duration: 0.7, ease: 'elastic.out(1, 0.55)'
+                });
+            }
+        }
+
+        sahne.addEventListener('pointerup', birak);
+        sahne.addEventListener('pointercancel', birak);
+
+        /* ---------- Klavye ---------- */
+        sahne.addEventListener('keydown', function (olay) {
+            if (olay.key === 'ArrowLeft') { olay.preventDefault(); git(-1); }
+            else if (olay.key === 'ArrowRight') { olay.preventDefault(); git(1); }
+        });
+
+        /* ---------- Kenar bölgeleri + manyetik imleç ---------- */
+        [[geri, 'Geri', -1], [ileri, 'İleri', 1]].forEach(function (uc) {
+            var dugme = uc[0];
+            if (!dugme) return;
+
+            dugme.addEventListener('click', function () { git(uc[2]); });
+
+            /* Eskiden burada özel imlece "Geri/İleri" etiketi yazılıyor
+               ve halka bölgeye doğru çekiliyordu. İmleç söküldü; kenarın
+               tıklanabilir olduğunu artık dikey etiketin kendisi
+               söylüyor (CSS: .defter__yon-yazi). */
+        });
+    }
+
+    /* =========================================================
+       14. YORUM GÖNDERME PANELİ
+       -------------------------------------------------------------
+       - Puan sözcüğü + karakter sayacı: JS varsa her koşulda çalışır
+       - Katman modu (sağdan kayan off-canvas) yalnızca kinetik modda
+       - Gönderim durumu: buton "İletiliyor" + belirsiz ilerleme çizgisi
+
+       Katman moduna geçilmezse panel akışın içinde normal bir form
+       olarak kalır; ziyaretçi yorumunu her hâlükârda gönderebilir.
+       ========================================================= */
+    function paylasPaneli() {
+        var kat = document.getElementById('paylas');
+        if (!kat) return;
+
+        var panel = kat.querySelector('.paylas__panel');
+        var form = kat.querySelector('.paylas__form');
+        if (!panel || !form) return;
+
+        formYardimcilari(form);
+        gonderimDurumu(form);
+
+        // Akışta kalsın: GSAP yoksa katmanı açacak bir şey de yok
+        if (!kinetik) return;
+        katmanKur(kat, panel);
+    }
+
+    /* ---------- Puan sözcüğü + karakter sayacı ---------- */
+    function formYardimcilari(form) {
+        var sozcukler = {
+            '1': 'Geliştirilmeli', '2': 'Orta', '3': 'İyi',
+            '4': 'Çok iyi', '5': 'Mükemmel'
+        };
+
+        var puanYazi = form.querySelector('.puan__yazi');
+        var radyolar = Array.prototype.slice.call(form.querySelectorAll('.puan__radyo'));
+
+        if (puanYazi) {
+            radyolar.forEach(function (radyo) {
+                radyo.addEventListener('change', function () {
+                    puanYazi.textContent = sozcukler[radyo.value] || '';
+                });
+            });
+        }
+
+        var govde = form.querySelector('.alan--govde .alan__girdi');
+        var sayac = form.querySelector('.alan__sayac');
+
+        if (govde && sayac) {
+            var sinir = govde.getAttribute('maxlength') || '1000';
+            var yaz = function () { sayac.textContent = govde.value.length + ' / ' + sinir; };
+            govde.addEventListener('input', yaz);
+            yaz();
+        }
+
+    }
+
+    /* ---------- Gönderim durumu ----------
+       ortak.js formu kilitleyip butonun textContent'ini değiştiriyor;
+       bu yüzden görünen yazıyı CSS ::before üstleniyor, biz yalnızca
+       sınıfı ekliyoruz. Tarayıcı doğrulaması gönderimi engellerse
+       submit olayı hiç tetiklenmez, buton da durum değiştirmez. */
+    function gonderimDurumu(form, dugme) {
+        dugme = dugme || form.querySelector('.paylas__gonder');
+        if (!dugme) return;
+
+        form.addEventListener('submit', function () {
+            dugme.classList.add('rosso-iletiliyor');
+        });
+
+        // Geri tuşuyla önbellekten dönülünce buton takılı kalmasın
+        window.addEventListener('pageshow', function (olay) {
+            if (olay.persisted) dugme.classList.remove('rosso-iletiliyor');
+        });
+    }
+
+    /* =========================================================
+       İMZA + BAŞA DÖN
+
+       Devasa ROSSO LOUNGE yazısı artık footer'da değil, iletişim
+       bölümünde haritanın sağında. Eski "sabit footer perdesi"
+       (fixed footer + boşluk ölçme) tamamen kaldırıldı: footer iki
+       satıra indi, perdeye gerek kalmadı.
+
+       İmza görünürken NAVBAR gizleniyor — aynı anda iki ROSSO LOUNGE
+       yazısı ekranda durmasın. IntersectionObserver kullanılıyor,
+       kaydırma dinleyicisi yok.
+       ========================================================= */
+    function imzaBolumu() {
+        var imza = document.querySelector('.imza');
+        var nav = document.querySelector('.nav');
+
+        /* --- Navbarı gizle/göster --- */
+        if (imza && nav && 'IntersectionObserver' in window) {
+            new IntersectionObserver(function (girisler) {
+                girisler.forEach(function (giris) {
+                    nav.classList.toggle('nav--gizli', giris.isIntersecting);
+                });
+            }, {
+                /* Üstte navbar yüksekliği kadar pay: imza gerçekten
+                   navbarın hizasına gelmeden gizlemeye gerek yok. */
+                rootMargin: '-72px 0px -25% 0px',
+                threshold: 0
+            }).observe(imza);
+        }
+
+        /* --- Harflerin maskeden yükselmesi --- */
+        if (imza && kinetik) {
+            var harfler = imza.querySelectorAll('.imza__harf > span');
+            if (harfler.length) {
+                /* y: 0 ŞART. GSAP, CSS'teki translateY(105%) değerini kendi
+                   PX kanalına emiyor; yPercent ayrı kanal olduğu için ikisi
+                   toplanıyor ve harfler bitişte hâlâ aşağıda kalıyordu. */
+                gsap.fromTo(harfler,
+                    { yPercent: 105, y: 0 },
+                    {
+                        yPercent: 0,
+                        duration: 1.05,
+                        ease: 'expo.out',
+                        stagger: 0.035,
+                        scrollTrigger: { trigger: imza, start: 'top 88%' }
+                    });
+            }
+        }
+
+        /* --- Footer şeridi --- */
+        var serit = document.querySelector('.finale__alt');
+        if (serit && kinetik) {
+            gsap.fromTo(serit,
+                { autoAlpha: 0, y: 20 },
+                {
+                    autoAlpha: 1, y: 0, duration: 0.8, ease: 'power2.out',
+                    /* 'top bottom': şerit görünmeye başlar başlamaz.
+                       'top 95%' ULAŞILAMIYORDU — ölçüldü: tetik başlangıcı
+                       9275, sayfanın gidebildiği son nokta 9274. Sayfanın
+                       en dibindeki öğede yüzdeli başlangıç bu yüzden riskli. */
+                    scrollTrigger: { trigger: serit, start: 'top bottom' }
+                });
+        }
+
+        /* --- Başa dön + ilerleme halkası ---
+           Buton SÜREKLİ ekranda; eskiden yalnızca footer'a yaklaşınca
+           beliriyordu. Karşılığında boş durmuyor: SVG yayı sayfanın ne
+           kadarının geçildiğini gösteriyor. */
+        var dugme = document.querySelector('.basa-don');
+        if (!dugme) return;
+
+        dugme.hidden = false;
+
+        var yay = dugme.querySelector('.basa-don__yay');
+
+        /* Çevre DOM'dan ölçülüyor, elle yazılmıyor: yarıçap CSS'te ya da
+           viewBox'ta değişirse dolum kendiliğinden doğru kalsın. */
+        var cevre = 169.65;
+        if (yay && typeof yay.getTotalLength === 'function') {
+            var olculen = yay.getTotalLength();
+            if (olculen > 0) cevre = olculen;
+        }
+        if (yay) yay.style.strokeDasharray = cevre;
+
+        var sonOfset = -1;
+
+        function ilerlemeyiYaz() {
+            var yol = document.documentElement.scrollHeight - window.innerHeight;
+            var kaydirma = window.scrollY || window.pageYOffset || 0;
+
+            /* Galeri pin'i sayfa boyunu değiştiriyor; oran her karede
+               yeniden hesaplanıyor, önbelleğe alınmıyor. */
+            var oran = yol > 0 ? Math.min(1, Math.max(0, kaydirma / yol)) : 0;
+
+            if (!yay) return;
+
+            /* Yalnızca gerçekten değiştiyse yaz. Aynı değeri tekrar
+               yazmak stil geçersizleştirmesi demek; yarım pikselin
+               altındaki fark ekranda zaten görünmüyor. */
+            var ofset = Math.round(cevre * (1 - oran) * 2) / 2;
+            if (ofset === sonOfset) return;
+
+            sonOfset = ofset;
+            yay.style.strokeDashoffset = ofset;
+        }
+
+        /* Tek dinleyici + tek rAF. Kaydırma olayı kareden sık gelebiliyor;
+           rAF ile kare başına en çok bir yazıma indiriliyor.
+           Lenis zaten gsap.ticker üzerinden yerel kaydırmayı sürdüğü için
+           bu dinleyici hem Lenis'li hem Lenis'siz durumda çalışıyor. */
+        var bekliyor = false;
+        window.addEventListener('scroll', function () {
+            if (bekliyor) return;
+            bekliyor = true;
+            requestAnimationFrame(function () {
+                ilerlemeyiYaz();
+                bekliyor = false;
+            });
+        }, { passive: true });
+
+        // Ekran boyu ve geç yüklenen görseller sayfa boyunu değiştiriyor
+        window.addEventListener('resize', ilerlemeyiYaz);
+        window.addEventListener('load', ilerlemeyiYaz);
+        ilerlemeyiYaz();
+
+        dugme.addEventListener('click', function () {
+            if (lenis) lenis.scrollTo(0, { duration: 1.1 });
+            else window.scrollTo({ top: 0, behavior: azHareket ? 'auto' : 'smooth' });
+        });
+    }
+
+
+    /* ---------- Katman modu ---------- */
+    function katmanKur(kat, panel) {
+        var acDugme = document.getElementById('paylas-ac');
+        var kapatDugme = kat.querySelector('.paylas__kapat');
+        var zemin = kat.querySelector('.paylas__zemin');
+        if (!acDugme || !kapatDugme) return;
+
+        kat.classList.add('paylas--katman');
+        kat.hidden = true;
+        panel.setAttribute('role', 'dialog');
+        panel.setAttribute('aria-modal', 'true');
+        acDugme.hidden = false;
+        kapatDugme.hidden = false;
+
+        var acik = false;
+
+        /* Kinetik mod açılışta doğrulanıyor ama emniyet katmanı ticker
+           ölüyse sınıfı sonradan kaldırıyor. Bayrağı dondurursak panel
+           ekran dışında (xPercent 100) kilitli kalır — galeri büyütecinde
+           bir kez yaşandı. Karar her çağrıda canlı sinyalden okunuyor. */
+        function canlandirMi() {
+            return gsapVar && kok.classList.contains('rosso-kinetik');
+        }
+
+        /* Panel açıkken sayfa kaydırması kilitli.
+           Yalnızca Lenis'i durdurmak yetmiyordu: tekerlek kesiliyor ama
+           sayfa kaydırma çubuğu görünür kalıyor ve panelin kendi çubuğuyla
+           birlikte İKİ çubuk görünüyordu. Kilit artık html'e
+           overflow:hidden veren bir sınıf; scrollbar-gutter: stable oluğu
+           koruduğu için içerik yana kaymıyor ve pin-spacer'ın yüksekliğine
+           dokunulmadığı için ScrollTrigger da şaşmıyor. */
+        function kilit(kapali) {
+            if (lenis) {
+                if (kapali) { lenis.stop(); } else { lenis.start(); }
+            }
+            kok.classList.toggle('katman-kilit', kapali);
+        }
+
+        function odaklanabilirler() {
+            return Array.prototype.slice.call(panel.querySelectorAll(
+                'button:not([hidden]):not(:disabled), input:not([type="hidden"]),' +
+                ' select, textarea, [href], [tabindex]:not([tabindex="-1"])'
+            ));
+        }
+
+        function ac() {
+            if (acik) return;
+            acik = true;
+
+            kat.hidden = false;
+            kilit(true);
+            panel.focus();
+
+            if (!canlandirMi()) {
+                gsap.set([zemin, panel], { clearProps: 'opacity,visibility,transform,filter' });
+                return;
+            }
+
+            gsap.set(zemin, { opacity: 0 });
+            gsap.to(zemin, { opacity: 1, duration: 0.45, ease: 'power2.out' });
+
+            gsap.set(panel, { xPercent: 100, filter: 'blur(14px)' });
+            gsap.to(panel, {
+                xPercent: 0, filter: 'blur(0px)',
+                duration: 0.8, ease: 'expo.out'
+            });
+
+            gsap.fromTo(icerikler(),
+                { autoAlpha: 0, y: 24 },
+                {
+                    autoAlpha: 1, y: 0, duration: 0.7, ease: 'expo.out',
+                    stagger: 0.05, delay: 0.18
+                });
+        }
+
+        function icerikler() {
+            return panel.querySelectorAll(
+                '.paylas__ustbaslik, .paylas__baslik, .paylas__alt, .paylas__form > *'
+            );
+        }
+
+        function kapat() {
+            if (!acik) return;
+            acik = false;
+
+            function bitir() {
+                kat.hidden = true;
+                if (gsapVar) {
+                    gsap.set([panel, zemin], { clearProps: 'transform,filter,opacity' });
+                    gsap.set(icerikler(), { clearProps: 'opacity,visibility,transform' });
+                }
+                kilit(false);
+                acDugme.focus();
+            }
+
+            if (!canlandirMi()) { bitir(); return; }
+
+            gsap.to(zemin, { opacity: 0, duration: 0.4, ease: 'power2.in' });
+            gsap.to(panel, {
+                xPercent: 100, filter: 'blur(10px)',
+                duration: 0.5, ease: 'power3.in', onComplete: bitir
+            });
+        }
+
+        acDugme.addEventListener('click', ac);
+        kapatDugme.addEventListener('click', kapat);
+        if (zemin) zemin.addEventListener('click', kapat);
+
+        document.addEventListener('keydown', function (olay) {
+            if (!acik) return;
+
+            if (olay.key === 'Escape') {
+                kapat();
+                return;
+            }
+
+            if (olay.key !== 'Tab') return;
+
+            // Odak tuzağı: sekme panel içinde dönsün
+            var liste = odaklanabilirler();
+            if (!liste.length) return;
+
+            var ilk = liste[0];
+            var son = liste[liste.length - 1];
+
+            if (olay.shiftKey && (document.activeElement === ilk || document.activeElement === panel)) {
+                olay.preventDefault();
+                son.focus();
+            } else if (!olay.shiftKey && document.activeElement === son) {
+                olay.preventDefault();
+                ilk.focus();
+            }
+        });
+    }
+
+    /* =========================================================
+       15. KONSİYER — iletişim bölümü
+       -------------------------------------------------------------
+       - Başlık kelime kelime maskeden yükseliyor (SplitText)
+       - Bilgi satırları kaydırmada sırayla, aşağıdan yukarı
+         maskelenerek açılıyor (.kn-maske → clip-path)
+       - İki formun gönder butonunda "İletiliyor" durumu
+
+       .kn-maske gizlemesi yalnızca html.rosso-kinetik altında
+       geçerli ve gorunurlukEmniyeti onu zaten temizliyor; GSAP
+       düşerse bilgiler olduğu gibi açık gelir.
+       ========================================================= */
+    function konsiyerBolumu() {
+        var bolum = document.querySelector('.konsiyer');
+        if (!bolum) return;
+
+        // Formlar ve harita kinetik moddan bağımsız çalışmalı
+        Array.prototype.slice.call(bolum.querySelectorAll('.konsiyer__form')).forEach(function (form) {
+            var dugme = form.querySelector('.konsiyer__gonder');
+            gonderimDurumu(form, dugme);
+        });
+
+        haritaKur(bolum.querySelector('.harita'));
+
+        if (!kinetik) return;
+
+        var sol = bolum.querySelector('.konsiyer__sol');
+        if (!sol) return;
+
+        /* --- Başlık: kelime kelime maskeden --- */
+        var baslik = bolum.querySelector('[data-kelime-acilis]');
+        if (baslik && typeof window.SplitText !== 'undefined') {
+            var bol = new SplitText(baslik, { type: 'words' });
+
+            bol.words.forEach(function (kelime) {
+                var kap = document.createElement('span');
+                kap.className = 'kelime-kap';
+                kelime.parentNode.insertBefore(kap, kelime);
+                kap.appendChild(kelime);
+            });
+
+            gsap.from(bol.words, {
+                yPercent: 118,
+                duration: 1.05,
+                ease: 'expo.out',
+                stagger: 0.05,
+                scrollTrigger: { trigger: baslik, start: 'top 86%' }
+            });
+        }
+
+        /* --- Bilgi satırları: kademeli maske ---
+           Tek bir ritim olsun diye soldaki tüm .kn-maske öğeleri
+           aynı zaman çizgisinde, yukarıdan aşağı sırayla açılıyor. */
+        var maskeliler = sol.querySelectorAll('.kn-maske');
+        if (maskeliler.length) {
+            gsap.to(maskeliler, {
+                clipPath: 'inset(0 0 0% 0)',
+                duration: 1,
+                ease: 'expo.out',
+                stagger: 0.085,
+                scrollTrigger: { trigger: sol, start: 'top 74%' }
+            });
+        }
+    }
+
+    /* =========================================================
+       15a. HARİTA
+       -------------------------------------------------------------
+       KAYDIRMA KİLİDİ: gömülü harita tekerlek olaylarını yutuyor,
+       imleç üstündeyken sayfa kaydırılamıyordu. Çerçeve CSS'te
+       pointer-events almıyor; kullanıcı tıklayınca etkileşim
+       açılıyor, fare ayrıldığında / dışarı tıklandığında /
+       Escape'e basıldığında kapanıyor.
+
+       CANLILIK: grilik --harita-gri değişkeninde ve ScrollTrigger
+       ile sürülüyor — harita ekrana girerken renkleniyor, yukarı
+       çıktıkça geri griliyor. Sürülmezse CSS varsayılanı (tam gri)
+       geçerli kalır.
+       ========================================================= */
+    function haritaKur(harita) {
+        if (!harita) return;
+
+        function ac() { harita.classList.add('harita--etkin'); }
+        function kapat() { harita.classList.remove('harita--etkin'); }
+
+        harita.addEventListener('click', ac);
+        harita.addEventListener('mouseleave', kapat);
+
+        // Dokunmatikte mouseleave yok; harita dışına dokunmak kapatsın
+        document.addEventListener('pointerdown', function (olay) {
+            if (!harita.contains(olay.target)) kapat();
+        }, { passive: true });
+
+        document.addEventListener('keydown', function (olay) {
+            if (olay.key === 'Escape') kapat();
+        });
+
+        if (!kinetik) return;
+
+        gsap.timeline({
+            scrollTrigger: {
+                trigger: harita,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: 0.6
+            }
+        })
+            .fromTo(harita,
+                { '--harita-gri': 1 },
+                { '--harita-gri': 0.42, ease: 'none', duration: 1 })
+            .to(harita, { '--harita-gri': 1, ease: 'none', duration: 1 });
+    }
+
+    /* =========================================================
+       10. GÖRÜNÜRLÜK EMNİYETİ
+       -------------------------------------------------------------
+       rosso-kinetik sınıfı GSAP'in YÜKLENDİĞİNİ doğrular, ÇALIŞTIĞINI
+       değil. Ticker ilerlemezse (arka plan sekmesi, rAF kısıtlı ortam,
+       beklenmedik hata) clip-path ve opacity:0 kalır → içerik kalıcı
+       olarak görünmez olur. Burada tickerın gerçekten ilerlediğini
+       ölçüyoruz; ilerlemiyorsa kinetik mod tamamen bırakılır ve tüm
+       içerik açılır. İçerik hiçbir koşulda gizli kalmaz.
+       ========================================================= */
+    function gorunurlukEmniyeti() {
+        if (!kinetik) return;
+
+        var kareSayisi = 0;
+        function say() { kareSayisi++; }
+        gsap.ticker.add(say);
+
+        setTimeout(function () {
+            gsap.ticker.remove(say);
+            if (kareSayisi > 0) return; // ticker sağlıklı, dokunma
+
+            if (window.console) {
+                console.warn('rosso: GSAP tickerı ilerlemiyor — kinetik mod bırakıldı, içerik açılıyor.');
+            }
+
+            kok.classList.remove('rosso-kinetik', 'rosso-kilit', 'katman-kilit');
+
+            /* ÖNCE tween'leri öldür. gsap.from(...) immediateRender ile
+               "gizli" başlangıç durumunu geri yazıyor: inline stilleri
+               temizlesek bile maskeli başlık kelimeleri yPercent 118'de
+               kalıp taşan kabın dışında görünmez oluyordu. Ölçümle
+               yakalandı — hem konsiyer hem hakkımızda başlığı etkiliyordu. */
+            var kinetikOgeler = document.querySelectorAll('.kelime-kap > *, .kn-satir-ic, .imza__harf > span');
+            if (kinetikOgeler.length) {
+                gsap.killTweensOf(kinetikOgeler);
+                gsap.set(kinetikOgeler, { clearProps: 'all' });
+            }
+
+            // GSAP'in inline yazdığı gizlemeleri de temizle
+            document.querySelectorAll(
+                '.hakkinda__govde, .hakkinda__olcut, .hakkinda__yil,' +
+                ' .hakkinda__alinti, .hakkinda__cerceve, .kn-maske, .kn-kaydir, .kn-solgun,' +
+                ' .hero__baslik, .hero__ustbaslik, .hero__alt, .hero__eylemler,' +
+                ' .hero__eylemler > *, .hero__durum,' +
+                ' .nav__marka, .nav__menu > li, .nav__eylem,' +
+                ' .menu__kalem, .menu__bas > *, .menu__ray-ic, .menu__oda-bas,' +
+                ' .vitrin__kart, .vitrin__bas > *, .vitrin__eylem,' +
+                ' .defter__yaprak, .defter__satir, .defter__isaret, .defter__imza, .defter__yon,' +
+                ' .paylas__panel, .paylas__zemin, .paylas__ustbaslik, .paylas__baslik,' +
+                ' .paylas__alt, .paylas__form > *,' +
+                ' .kelime-kap > *, .konsiyer__satir, .konsiyer__baslik,' +
+                ' .finale__alt, .imza__harf > span'
+            ).forEach(function (oge) {
+                oge.style.opacity = '';
+                oge.style.visibility = '';
+                oge.style.clipPath = '';
+                oge.style.transform = '';
+            });
+
+            /* Galeri pin'i tickersız ilerleyemez: kullanıcı 100vh'lik
+               kıpırdamayan bir bölümde sıkışır. Pin sökülür, ray CSS'teki
+               doğal yatay kaydırıcı hâline geri döner. */
+            if (galeriPin) {
+                galeriPin.kill(true);
+                galeriPin = null;
+            }
+            var galeri = document.querySelector('.galeri');
+            if (galeri) galeri.classList.remove('galeri--pinli');
+
+            /* Defter sergisi de tickersız ilerlemez: yapraklar alt alta
+               okunur listeye dönsün, hiçbir yorum gizli kalmasın. */
+            var defter = document.querySelector('.defter');
+            if (defter) defter.classList.remove('defter--sahnede');
+
+            /* Yorum gönderme paneli katman modunda ekran dışında
+               (xPercent 100) duruyor olabilir; akıştaki normal form
+               hâline döndürülüyor ki gönderim yolu kapanmasın. */
+            var harita = document.querySelector('.harita');
+            if (harita) {
+                harita.classList.remove('harita--etkin');
+                harita.style.removeProperty('--harita-gri');
+            }
+
+            var paylas = document.getElementById('paylas');
+            if (paylas) {
+                paylas.classList.remove('paylas--katman');
+                paylas.hidden = false;
+                document.body.style.overflow = '';
+
+                var paylasAc = document.getElementById('paylas-ac');
+                if (paylasAc) paylasAc.hidden = true;
+
+                var paylasKapat = paylas.querySelector('.paylas__kapat');
+                if (paylasKapat) paylasKapat.hidden = true;
+
+                var paylasPanel = paylas.querySelector('.paylas__panel');
+                if (paylasPanel) {
+                    paylasPanel.removeAttribute('role');
+                    paylasPanel.removeAttribute('aria-modal');
+                }
+            }
+
+            var perde = document.querySelector('.sahne-perde');
+            if (perde) perde.remove();
+            document.querySelectorAll('.sahne-perde__panel').forEach(function (p) { p.remove(); });
+        }, 2600);
+    }
+
+    /* =========================================================
+       BAŞLAT
+       Her modül kendi try/catch'inde — biri patlarsa sahne durmaz.
+       ========================================================= */
+    var acildi = false;
+
+    function baslat() {
+        if (acildi) return;
+        acildi = true;
+
+        [lenisBaslat, gezinmeBagla, navIzleyici, murekkepEfekti, yakinlikIsigi, egilmeEfekti, navDurumu, menuBagla, heroParallax, kaydirmaGirisleri, hakkindaBolumu, vitrinBolumu, menuSergisi, galeriSergisi, yorumDefteri, paylasPaneli, konsiyerBolumu, imzaBolumu, gorunurlukEmniyeti]
+            .forEach(function (modul) {
+                try { modul(); } catch (h) {
+                    if (window.console) console.error('rosso:', modul.name, h);
+                }
+            });
+
+        try { perdeAc(heroGirisi); } catch (h) {
+            // Perde açılamazsa sahneyi kilitli bırakma
+            kok.classList.remove('rosso-kilit', 'rosso-kinetik');
+            var p = document.querySelector('.sahne-perde');
+            if (p) p.remove();
+            if (window.console) console.error('rosso: perde', h);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', baslat);
+    } else {
+        baslat();
+    }
+
+    window.addEventListener('load', baslat);
+})();

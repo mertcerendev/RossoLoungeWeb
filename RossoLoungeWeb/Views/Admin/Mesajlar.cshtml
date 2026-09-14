@@ -1,151 +1,273 @@
-﻿@model List<RossoLoungeWeb.Models.Iletisim>
+@model RossoLoungeWeb.Models.MesajListeModeli
+@*
+    MESAJLAR (gelen kutusu)
+    ===============================================================
+    Uçlar: /Admin/MesajOku/{id} (okuma), POST /Admin/MesajOkunmadi/{id},
+    POST /Admin/MesajSil/{id} — hepsi `donus` ile geldiği süzgeç/sayfaya
+    dönüyor.
+
+    OKUNMADI İŞARETİ: bir mesajı açmak onu kalıcı olarak okundu
+    yapıyordu; yarıda kalan bir işi tekrar işaretlemenin yolu yoktu.
+
+    HACİM SORUNU: liste bütün mesajları tek sayfada basıyordu. Çözüm
+    sunucu tarafında sekme + süzgeç + sayfalama.
+
+    Üst bardaki istemci araması bu sayfada KAPALI
+    (ViewData["AramaHedefi"] verilmiyor): yalnızca o sayfadaki satırları
+    süzerdi, "arama sonuç vermedi" sanılırdı.
+*@
 @{
-    Layout = null;
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Baslik"] = "Mesajlar";
+    ViewData["AltBaslik"] = "İletişim formundan gelenler";
+    ViewData["Aktif"] = "mesajlar";
+
+    var s = Model.Suzgec;
+
+    // Okuma/işaretleme/silme sonrası bu adrese dönülüyor
+    var donusAdres = Url.Action("Mesajlar") + s.SorguKur();
+
+    var sekmeler = new (string Deger, string Ad)[]
+    {
+        ("tumu", "Tümü"),
+        ("okunmamis", "Okunmamış"),
+        ("okundu", "Okundu")
+    };
 }
 
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <title>Gelen Kutusu</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body {
-            background-color: #f4f6f9;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        .sidebar {
-            height: 100vh;
-            background: #1a1a1a;
-            color: white;
-            padding: 20px;
-            position: fixed;
-            width: 250px;
-            top: 0;
-            left: 0;
-            z-index: 100;
-        }
-
-        .content {
-            margin-left: 250px;
-            padding: 30px;
-        }
-
-        .menu-item {
-            display: block;
-            padding: 12px 15px;
-            color: #bbb;
-            text-decoration: none;
-            margin-bottom: 5px;
-            border-radius: 8px;
-            transition: 0.3s;
-        }
-
-            .menu-item:hover, .menu-item.active {
-                background: #e74c3c;
-                color: white;
-            }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 40px;
-            display: block;
-            color: white;
-            text-decoration: none;
-        }
-
-            .logo span {
-                color: #e74c3c;
-            }
-
-        .unread {
-            font-weight: bold;
-            background-color: #fff3cd !important;
-        }
-        /* Okunmamış mesaj rengi */
-        @@media (max-width: 768px) {
-            .sidebar
-
+@section Eylemler {
+    <span class="y-rozet y-rozet--sonuk">
+        @if (s.SuzgecAktif)
         {
-            width: 100%;
-            height: auto;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            <text>@Model.ToplamKayit / @Model.SayiTumu mesaj</text>
         }
+        else
+        {
+            <text>@Model.SayiTumu mesaj</text>
+        }
+    </span>
+    @if (Model.SayiOkunmamis > 0 && s.Durum != "okunmamis")
+    {
+        <a class="y-dugme" href="@Url.Action("Mesajlar")?durum=okunmamis">
+            <i class="fas fa-envelope" aria-hidden="true"></i> @Model.SayiOkunmamis okunmadı
+        </a>
+    }
+}
 
-        .content {
-            margin-left: 0;
-            padding: 15px;
-        }
+@* ---------- Sekmeler ---------- *@
+<nav class="y-sekmeler" aria-label="Gelen kutusu görünümü">
+    @foreach (var sekme in sekmeler)
+    {
+        var aktif = s.Durum == sekme.Deger;
+        <a class="y-sekme @(aktif ? "y-sekme--aktif" : null)"
+           href="@Url.Action("Mesajlar")@s.SorguKur(sayfa: 1, sirala: "", durum: sekme.Deger)"
+           aria-current="@(aktif ? "page" : null)">
+            @sekme.Ad
+            <span class="y-sekme__sayi">@Model.SayiGetir(sekme.Deger)</span>
+        </a>
+    }
+</nav>
 
-        .menu-item {
-            width: 100%;
-            text-align: center;
-        }
+@* ---------- Süzgeç çubuğu ---------- *@
+<form class="y-suzgec y-suzgec--genis" method="get" action="@Url.Action("Mesajlar")">
+    <input type="hidden" name="durum" value="@s.Durum">
+    <input type="hidden" name="boyut" value="@s.Boyut">
 
-        }
-    </style>
-</head>
-<body>
-    <div class="sidebar">
-        <a href="#" class="logo">ROSSO <span>PANEL</span></a>
-        <a href="/Admin/Index" class="menu-item"><i class="fas fa-home me-2"></i> Özet</a>
-        <a href="/Admin/Rezervasyonlar" class="menu-item"><i class="fas fa-calendar-check me-2"></i> Rezervasyonlar</a>
-        <a href="/Kategori/Index" class="menu-item"><i class="fas fa-list me-2"></i> Kategoriler</a>
-        <a href="/Urun/Index" class="menu-item"><i class="fas fa-utensils me-2"></i> Ürünler</a>
-        <a href="/Admin/Mesajlar" class="menu-item active"><i class="fas fa-comment-dots me-2"></i> Mesajlar</a> <a href="/Admin/MailAyarlari" class="menu-item"><i class="fas fa-envelope me-2"></i> Mail Ayarları</a>
-        <a href="/Admin/Profil" class="menu-item"><i class="fas fa-user-cog me-2"></i> Ayarlar</a>
-        <a href="/" target="_blank" class="menu-item"><i class="fas fa-globe me-2"></i> Siteye Git</a>
-        <a href="/Admin/CikisYap" class="menu-item bg-dark mt-3"><i class="fas fa-sign-out-alt me-2"></i> Çıkış Yap</a>
+    <div class="y-suzgec__alan y-suzgec__alan--genis">
+        <label class="y-suzgec__etiket" for="ara">Ara</label>
+        <input class="y-girdi" type="search" id="ara" name="ara" value="@s.Ara"
+               placeholder="Ad, e-posta, telefon veya mesaj metni" autocomplete="off">
     </div>
 
-    <div class="content">
-        <h2 class="mb-4">Gelen Mesajlar</h2>
-        <div class="card shadow-sm">
-            <table class="table table-hover m-0 align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Kimden</th>
-                        <th>Konu (Mesaj)</th>
-                        <th>Tarih</th>
-                        <th>İşlem</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model)
-                    {
-                        <tr class="@(item.OkunduMu ? "" : "table-warning fw-bold")">
-                            <td>
-                                @item.AdSoyad
-                                <br><small class="text-muted">@item.Email</small>
-                            </td>
-                            <td>
-                                @if (item.Mesaj.Length > 50)
-                                {
-                                    @item.Mesaj.Substring(0, 50) <text>...</text>
-                                }
-                                else
-                                {
+    <div class="y-suzgec__alan">
+        <label class="y-suzgec__etiket" for="sirala">Sırala</label>
+        <select class="y-secim" id="sirala" name="sirala">
+            @if (s.Durum == "tumu")
+            {
+                <option value="okunmamis_once" selected="@(s.Sirala == "okunmamis_once")">Okunmamışlar önce</option>
+            }
+            <option value="yeni" selected="@(s.Sirala == "yeni")">Tarihe göre (yeni önce)</option>
+            <option value="eski" selected="@(s.Sirala == "eski")">Tarihe göre (eski önce)</option>
+            <option value="ad" selected="@(s.Sirala == "ad")">Gönderen adına göre (A–Z)</option>
+        </select>
+    </div>
 
-                                    @item.Mesaj
+    <div class="y-suzgec__eylemler">
+        <button type="submit" class="y-dugme y-dugme--birincil">Uygula</button>
+        @if (s.SuzgecAktif)
+        {
+            <a class="y-dugme" href="@Url.Action("Mesajlar")?durum=@s.Durum">Temizle</a>
+        }
+    </div>
+</form>
+
+@if (Model.Kayitlar.Count == 0)
+{
+    <div class="y-bos">
+        <i class="y-bos__im fas fa-inbox" aria-hidden="true"></i>
+        <h2 class="y-bos__baslik">
+            @(s.SuzgecAktif ? "Aramaya uyan mesaj yok" : "Bu görünümde mesaj yok")
+        </h2>
+        <p class="y-bos__alt">
+            @if (s.SuzgecAktif)
+            {
+                <text>Aramayı değiştirip tekrar deneyin.</text>
+            }
+            else if (s.Durum == "okunmamis")
+            {
+                <text>Okunmamış mesaj kalmadı — gelen kutusu temiz.</text>
+            }
+            else
+            {
+                <text>Sitedeki iletişim formundan gönderilen mesajlar burada listelenir.</text>
+            }
+        </p>
+        @if (s.SuzgecAktif)
+        {
+            <p class="y-bos__eylem">
+                <a class="y-dugme" href="@Url.Action("Mesajlar")?durum=@s.Durum">Aramayı temizle</a>
+            </p>
+        }
+    </div>
+}
+else
+{
+    <div class="y-tablo-sarmal">
+        <table class="y-tablo" id="mesaj-tablosu">
+            <caption class="y-gizli">İletişim formundan gelen mesajlar — @Model.ToplamKayit kayıt</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Kimden</th>
+                    <th scope="col">Mesaj</th>
+                    <th scope="col" class="y-tablo__dar">Tarih</th>
+                    <th scope="col" class="y-tablo__dar">Durum</th>
+                    <th scope="col" class="y-tablo__eylem"><span class="y-gizli">İşlemler</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Kayitlar)
+                {
+                    var okumaAdresi = $"/Admin/MesajOku/{item.Id}?donus={Uri.EscapeDataString(donusAdres)}";
+
+                    <tr class="@(item.OkunduMu ? null : "y-satir--dikkat")">
+                        <td>
+                            <span class="y-tablo__ad">@item.AdSoyad</span>
+                            <span class="y-tablo__ikincil">@item.Email</span>
+                        </td>
+
+                        <td class="y-tablo__not">
+                            @* Metnin kendisi mesajı açıyor: göz ikonunu aramaya
+                               gerek yok, gelen kutusunda beklenen davranış bu. *@
+                            <a class="y-metin-bag" href="@okumaAdresi">
+                                @(item.Mesaj.Length > 70 ? item.Mesaj.Substring(0, 70) + "…" : item.Mesaj)
+                            </a>
+                        </td>
+
+                        <td class="y-tablo__dar y-sayi">@item.Tarih.ToString("dd.MM.yyyy HH:mm")</td>
+
+                        <td class="y-tablo__dar">
+                            @if (item.OkunduMu)
+                            {
+                                <span class="y-rozet y-rozet--sonuk">Okundu</span>
+                            }
+                            else
+                            {
+                                <span class="y-rozet y-rozet--uyari">Yeni</span>
+                            }
+                        </td>
+
+                        <td class="y-tablo__eylem">
+                            <div class="y-eylemler">
+                                <a class="y-hayalet" href="@okumaAdresi"
+                                   title="Oku"
+                                   aria-label="@item.AdSoyad kişisinden gelen mesajı oku">
+                                    <i class="fas fa-envelope-open-text" aria-hidden="true"></i>
+                                </a>
+
+                                <a class="y-hayalet" href="mailto:@item.Email"
+                                   title="E-posta ile yanıtla"
+                                   aria-label="@item.AdSoyad kişisine e-posta ile yanıt yaz">
+                                    <i class="fas fa-reply" aria-hidden="true"></i>
+                                </a>
+
+                                @if (item.OkunduMu)
+                                {
+                                    @* Geri alınabilir olduğu için onay sorusu yok. *@
+                                    <form method="post" action="/Admin/MesajOkunmadi/@item.Id">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="donus" value="@donusAdres">
+                                        <button type="submit" class="y-hayalet"
+                                                title="Okunmadı olarak işaretle"
+                                                aria-label="@item.AdSoyad kişisinden gelen mesajı okunmadı olarak işaretle">
+                                            <i class="fas fa-rotate-left" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
                                 }
-                            </td>
-                            <td>@item.Tarih.ToString("dd.MM.yyyy HH:mm")</td>
-                            <td>
-                                <a href="/Admin/MesajOku/@item.Id" class="btn btn-sm btn-info text-white">Oku</a>
-                                <form action="/Admin/MesajSil/@item.Id" method="post" style="display:inline;" onsubmit="return confirm('Silmek istediğinize emin misiniz?');">
-                                    <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+
+                                @* Onay metnine ad gömülmüyor: kesme işareti taşıyan
+                                   bir ad JS dizesini kırar. *@
+                                <form method="post" action="/Admin/MesajSil/@item.Id"
+                                      onsubmit="return confirm('Bu mesajı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="donus" value="@donusAdres">
+                                    <button type="submit" class="y-hayalet y-hayalet--tehlike"
+                                            title="Sil"
+                                            aria-label="@item.AdSoyad kişisinden gelen mesajı sil">
+                                        <i class="fas fa-trash-can" aria-hidden="true"></i>
+                                    </button>
                                 </form>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
-</body>
-</html>
+
+    @* ---------- Sayfalama ---------- *@
+    <nav class="y-sayfalama" aria-label="Sayfalar">
+        <p class="y-sayfalama__bilgi">
+            @(((s.Sayfa - 1) * s.Boyut) + 1)–@Math.Min(s.Sayfa * s.Boyut, Model.ToplamKayit)
+            / @Model.ToplamKayit mesaj
+        </p>
+
+        <div class="y-sayfalama__gezinme">
+            @if (Model.OncekiVar)
+            {
+                <a class="y-dugme y-dugme--minik" href="@Url.Action("Mesajlar")@s.SorguKur(sayfa: s.Sayfa - 1)" rel="prev">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i> Önceki
+                </a>
+            }
+            else
+            {
+                <span class="y-dugme y-dugme--minik" aria-disabled="true">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i> Önceki
+                </span>
+            }
+
+            <span class="y-sayfalama__sayi y-sayi">@s.Sayfa / @Model.ToplamSayfa</span>
+
+            @if (Model.SonrakiVar)
+            {
+                <a class="y-dugme y-dugme--minik" href="@Url.Action("Mesajlar")@s.SorguKur(sayfa: s.Sayfa + 1)" rel="next">
+                    Sonraki <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </a>
+            }
+            else
+            {
+                <span class="y-dugme y-dugme--minik" aria-disabled="true">
+                    Sonraki <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </span>
+            }
+        </div>
+
+        <div class="y-sayfalama__boyut">
+            <span class="y-suzgec__etiket">Sayfa başına</span>
+            @foreach (var b in new[] { 25, 50, 100 })
+            {
+                <a class="y-boyut @(s.Boyut == b ? "y-boyut--aktif" : null)"
+                   href="@Url.Action("Mesajlar")@(s.SorguKur(sayfa: 1).Replace("boyut=" + s.Boyut, "boyut=" + b))">@b</a>
+            }
+        </div>
+    </nav>
+}

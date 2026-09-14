@@ -1,0 +1,27 @@
+@*
+    YÖNETİM — METİN KUTUSU (dialog)
+    ---------------------------------------------------------------
+    Uzun bir metnin tamamını göstermek için. Native <dialog>:
+    odak tuzağı, Escape ve arka planın etkisizleşmesi tarayıcının
+    işi — Bootstrap modalı yüklemeye gerek yok.
+
+    Açan taraf: herhangi bir öğeye
+        data-metin-goster data-baslik="..." data-govde="..."
+    koymak yeterli (bkz. yonetim.js).
+*@
+<dialog class="y-kutu" id="y-metin-kutusu" aria-labelledby="y-kutu-baslik">
+    <form method="dialog" class="y-kutu__form">
+        <header class="y-kutu__bas">
+            <h2 class="y-kutu__baslik" id="y-kutu-baslik"></h2>
+            <button type="submit" class="y-hayalet" aria-label="Kapat" value="kapat">
+                <i class="fas fa-xmark" aria-hidden="true"></i>
+            </button>
+        </header>
+
+        <p class="y-kutu__govde"></p>
+
+        <footer class="y-kutu__ayak">
+            <button type="submit" class="y-dugme" value="kapat">Kapat</button>
+        </footer>
+    </form>
+</dialog>

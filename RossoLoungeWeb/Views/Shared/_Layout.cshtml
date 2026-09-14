@@ -1,49 +1,163 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@*
+    ============================================================
+    ZİYARETÇİ SİTESİ KABUĞU
+
+    Bu dosya ÖNCEDEN ÖLÜYDÜ: bütün view'lar "Layout = null" diyordu,
+    head ve script listesi Index/Menu içinde ayrı ayrı kopyalanmıştı ve
+    zamanla birbirinden sapmıştı (Menu'de SplitText ve script.js yoktu).
+    Artık ziyaretçi sayfaları buradan render oluyor; panel sayfaları
+    kendi kabuğunu kullanmaya devam ediyor (bilerek, tamamen farklı bir
+    arayüz).
+
+    Script sırası kritik ve bilerek şöyle:
+      1) Lenis + GSAP çekirdeği ve eklentileri
+      2) Sayfaya özel scriptler  (@@section Scriptler)
+      3) Uygulama scriptleri     (rosso-hareket.js, ortak.js, script.js)
+    Hepsi "defer": ayrıştırmayı bloklamazlar, belge sırasında çalışırlar.
+    Bu yüzden 3. adımdaki dosyalar 1. ve 2. adımı hazır bulur.
+    ============================================================
+*@
+<!DOCTYPE html>
+<html lang="tr">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - RossoLoungeWeb</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/RossoLoungeWeb.styles.css" asp-append-version="true" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@(ViewData["Baslik"] ?? "Rosso Lounge Bistro | Bandırma")</title>
+    <meta name="description" content="@(ViewData["Aciklama"] ?? "Rosso Lounge Bistro — Bandırma'da modern atmosfer, taze lezzetler ve imza kokteyller.")">
+    <link rel="icon" href="~/favicon.jpg" type="image/jpeg">
+
+    @* Sahne motoru CDN'i: bağlantı kurulumu script isteğinden önce başlasın *@
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    @* Eski katman önce, yeni sahne mimarisi sonra — sıra bilinçli.
+       Not: panel bu katmanı kullanmıyor; kendi yonetim.css'i var. *@
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/rosso-tema.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/rosso-bilesenler.css" asp-append-version="true">
+
+    @* Kinetik sınıfı İLK BOYAMADAN ÖNCE eklenmeli.
+       Bunu ertelenmiş (defer) script'e bırakınca sayfa bir kez tamamen
+       görünüyor, hemen ardından JS her şeyi gizleyip baştan oynatıyordu:
+       "sayfa yeniden yükleniyor" hissi bundandı. Ölçüldü — 80ms'de içerik
+       açık (kinetik yok), 160ms'de gizleniyordu.
+
+       Açılış perdesi ve tüm giriş animasyonları CSS'te
+       html:not(.rosso-kinetik) ile kapalı olduğu için sınıfın erken
+       eklenmesi perdeyi de ilk kareden itibaren gösteriyor. *@
+    <script>
+        (function () {
+            try {
+                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+                document.documentElement.classList.add('rosso-kinetik');
+
+                /* EMNİYET: rosso-hareket.js hiç çalışmazsa (CDN düşer, JS
+                   hatası olur) sayfa perdenin altında gizli kalmasın. */
+                setTimeout(function () {
+                    if (!window.__rossoBasladi) {
+                        document.documentElement.classList.remove('rosso-kinetik', 'rosso-kilit');
+                    }
+                }, 5000);
+            } catch (h) { /* yoksay */ }
+        })();
+    </script>
+
+    @await RenderSectionAsync("Basliklar", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">RossoLoungeWeb</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+    @* ÖZEL İMLEÇ SÖKÜLDÜ. Ziyaretçinin kendi işletim sistemi imleci her
+       yerde görünür kalıyor; projede hiçbir yerde cursor: none yok.
+       Premium his artık imlecin kendisinde değil, imlecin dokunduğu
+       öğelerde: yakınlık ışığı ve 3B eğilme
+       (rosso-hareket.js → "ETKİLEŞİM KATMANI"). *@
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - RossoLoungeWeb - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    @* --- Sayfa geçiş perdesi ---
+       Çıkışta her sayfada kullanılıyor. GİRİŞTE ise yalnızca sinematik
+       loader'ı OLMAYAN sayfalarda kapalı başlıyor; ana sayfada
+       .sahne-perde zaten ekranı kapatıyor, ikisi üst üste binerdi.
+
+       Kapalı hâli CSS'te html.rosso-kinetik'e bağlı: hareket azaltma
+       açıkken ya da head'deki emniyet zamanlayıcısı sınıfı düşürdüğünde
+       perde kendiliğinden açılıyor, JS hiç çalışmasa bile sayfa siyah
+       ekranda kalmıyor. *@
+    <div class="gecis-perde@((ViewData["Giris"] as string) == "sinematik" ? "" : " gecis-perde--kapali")"
+         aria-hidden="true"></div>
+
+    @* MÜREKKEP FİLTRESİ — butonların içindeki sıvı etki.
+       feGaussianBlur bulanıklaştırıyor, feColorMatrix alfayı sertleştiriyor:
+       ayrı lekeler birbirine değince tek bir damla gibi kaynaşıyor
+       ("gooey"). Tek tanım, bütün butonlar bunu paylaşıyor. *@
+    <svg class="svg-tanim" aria-hidden="true" focusable="false" width="0" height="0">
+        <filter id="rosso-murekkep" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="bulanik" />
+            <feColorMatrix in="bulanik" type="matrix"
+                           values="1 0 0 0 0
+                                   0 1 0 0 0
+                                   0 0 1 0 0
+                                   0 0 0 17 -7" />
+        </filter>
+    </svg>
+
+    <a href="#icerik" class="atla">İçeriğe atla</a>
+    <div class="nav-perde" aria-hidden="true"></div>
+
+    @await Html.PartialAsync("_Nav")
+
+    @RenderBody()
+
+    @* Sayfanın başına dön — SÜREKLİ görünür; ayrıca sayfada ne kadar
+       ilerlendiğini gösteriyor (rosso-hareket.js → imzaBolumu).
+       JS yoksa gizli kalır: bir <button> onsuz zaten hiçbir şey yapmaz. *@
+    <button type="button" class="basa-don" aria-label="Sayfanın başına dön" hidden>
+        @* İLERLEME HALKASI
+           İki eşmerkezli daire: sabit ray + üstünde dolan yay. Dolum
+           stroke-dashoffset ile yapılıyor; JS tek bir sayı yazıyor,
+           düzen hesabı çıkmıyor.
+
+           r=27 → çevre 2πr ≈ 169.65. Bu değeri JS getTotalLength() ile
+           ÖLÇÜYOR: yarıçap CSS'te değişirse dolum bozulmasın.
+
+           Yay 12 yönünden başlasın diye SVG -90° döndürülüyor (CSS). *@
+        <svg class="basa-don__halka" viewBox="0 0 60 60" width="60" height="60"
+             aria-hidden="true" focusable="false">
+            <defs>
+                <linearGradient id="basaDonAkim" x1="0" y1="1" x2="1" y2="0">
+                    <stop class="basa-don__renk-1" offset="0" />
+                    <stop class="basa-don__renk-2" offset="1" />
+                </linearGradient>
+            </defs>
+            <circle class="basa-don__ray" cx="30" cy="30" r="27" />
+            <circle class="basa-don__yay" cx="30" cy="30" r="27" />
+        </svg>
+
+        @* Merkezdeki ince ok. Üzerine gelince yukarı sekiyor ve
+           halkanın içi şampanyayla doluyor (CSS). *@
+        <span class="basa-don__ic" aria-hidden="true">
+            <svg class="basa-don__ok" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                 stroke="currentColor" stroke-width="1.25"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 18.5V6" />
+                <path d="m6.75 11.25 5.25-5.25 5.25 5.25" />
+            </svg>
+        </span>
+    </button>
+
+    @* --- 1) Sahne motoru --- *@
+    <script defer src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
+
+    @* --- 2) Sayfaya özel (ör. flatpickr) --- *@
+    @await RenderSectionAsync("Scriptler", required: false)
+
+    @* --- 3) Uygulama --- *@
+    <script defer src="~/js/rosso-hareket.js" asp-append-version="true"></script>
+    <script defer src="~/js/ortak.js" asp-append-version="true"></script>
+    <script defer src="~/js/script.js" asp-append-version="true"></script>
 </body>
 </html>

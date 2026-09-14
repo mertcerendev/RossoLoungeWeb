@@ -1,0 +1,54 @@
+@{
+    // Aktif bağlantı rotadan çıkarılıyor; sayfalar parametre geçmiyor.
+    var eylem = (ViewContext.RouteData.Values["action"] ?? "").ToString();
+    var anaSayfada = string.Equals(eylem, "Index", StringComparison.OrdinalIgnoreCase);
+
+    string Aktif(bool kosul) => kosul ? " nav__link--aktif" : "";
+}
+
+@* ============================================================
+   NAVBAR — tek kaynak.
+
+   Bağlantılar her sayfada "/#hedef" biçiminde. Ana sayfadayken de
+   aynı biçim kullanılıyor: rosso-hareket.js'teki çapa yakalayıcı
+   yolun aynı olduğunu görüp sayfayı yeniden yüklemeden Lenis ile
+   kaydırıyor. Böylece bu partial hiçbir koşul taşımıyor.
+
+   BU DOSYA ADRESLERİN TEK KAYNAĞI. Kaydırdıkça adres çubuğunu
+   güncelleyen kod (navIzleyici → adresiEsle) hedefi buradaki
+   href'ten okuyor; JS'te ikinci bir bölüm→adres tablosu YOK.
+   Bir bölümün adresi değişecekse yalnızca burası düzenlenir.
+
+   Bölüm kimlikleri Türkçe: #hakkimizda, #menu, #galeri, #yorumlar,
+   #iletisim. Önce yarısı İngilizceydi (#about, #gallery) ve adres
+   çubuğunda karışık bir liste çıkıyordu.
+
+   "Menü" bağlantısı ana sayfadaki seçki bölümüne (#menu) iniyor;
+   tam menüye oradaki "Tüm Menüyü Gör" düğmesiyle geçiliyor.
+
+   data-bolum: scrollspy hangi bağlantının hangi bölüme ait olduğunu
+   buradan okuyor.
+   ============================================================ *@
+<header class="nav" id="navbar">
+    <div class="kap nav__ic">
+        <a href="/" class="nav__marka">ROSSO <span>LOUNGE</span></a>
+
+        <nav aria-label="Ana menü">
+            <ul class="nav__menu">
+                <li><a href="/" class="nav__link@(Aktif(anaSayfada))" data-bolum="home">Ana Sayfa</a></li>
+                <li><a href="/#hakkimizda" class="nav__link" data-bolum="hakkimizda">Hakkımızda</a></li>
+                <li><a href="/#menu" class="nav__link@(Aktif(string.Equals(eylem, "Menu", StringComparison.OrdinalIgnoreCase)))" data-bolum="menu">Menü</a></li>
+                <li><a href="/#galeri" class="nav__link" data-bolum="galeri">Galeri</a></li>
+                <li><a href="/#yorumlar" class="nav__link" data-bolum="yorumlar">Yorumlar</a></li>
+                <li><a href="/#iletisim" class="nav__link" data-bolum="iletisim">İletişim</a></li>
+                <li class="nav__mobil"><a href="/#rezervasyon" class="nav__eylem">Rezervasyon</a></li>
+            </ul>
+        </nav>
+
+        <a href="/#rezervasyon" class="nav__eylem nav__eylem--masaustu">Rezervasyon</a>
+
+        <button type="button" class="nav__hamburger" aria-label="Menüyü aç veya kapat" aria-expanded="false">
+            <span class="nav__cizgi"></span>
+        </button>
+    </div>
+</header>
